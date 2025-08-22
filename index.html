@@ -3741,25 +3741,28 @@ window.seConnecter = async function(e){
   }
 };
 
-window.sInscrire = async function(e){
-  try{
-    if (e && e.preventDefault) e.preventDefault();
-    const email = (document.getElementById("emailInscription")||{}).value?.trim();
-    const password = (document.getElementById("motPasseInscription")||{}).value;
-    const confirm  = (document.getElementById("confirmMotPasse")||{}).value;
-    if (!email || !password) { alert("Veuillez saisir email et mot de passe"); return false; }
-    if (password !== confirm) { alert("Les mots de passe ne correspondent pas"); return false; }
-    const r = await apiFetch("/auth/register", { method:"POST", body: JSON.stringify({ email, password }) });
-    const data = await r.json();
-    if (!r.ok) { alert(data.error || "Inscription échouée"); return false; }
-    alert("✅ Compte créé, vous pouvez vous connecter.");
-    return false;
-  }catch(err){
+window.sInscrire = async function(e) {
+  e.preventDefault();
+  const email = document.getElementById("registerEmail").value;
+  const password = document.getElementById("registerPassword").value;
+
+  try {
+    const data = await apiFetch("/auth/register", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+
+    // data contient déjà { token }
+    localStorage.setItem("token", data.token);
+    alert("✅ Compte créé avec succès !");
+    initialiserApplication();
+    ouvrirPage("accueil");
+  } catch (err) {
     console.error(err);
-    alert("Erreur d'inscription");
-    return false;
+    alert("❌ Échec de l'inscription : " + (err.message || "Erreur serveur"));
   }
 };
+
 
 window.seDeconnecter = function(){
   localStorage.removeItem("token");
