@@ -3483,265 +3483,50 @@ function estEnRetardPeriode(membre, tontine) {
         }
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<!-- Backend integration adapter: non-breaking overrides (keeps UI/HTML intact). -->
 <script>
-(() => {
-  // ======== CONFIG ========
-  const DEFAULT_API = localStorage.getItem('api_url') || (window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://YOUR-RENDER-API.onrender.com');
-  const API_URL = window.API_URL || DEFAULT_API;
-  const TOKEN_KEY = 'jwt_token';
+// ================= API CONFIG =================
+const API_BASE = "https://ma-tontine-backend.onrender.com"; // ton backend Render
 
-  // Expose some helpers for debugging
-  window.__API_URL__ = API_URL;
+function getToken() {
+  return localStorage.getItem("token");
+}
 
-  function getToken() {
-    return localStorage.getItem(TOKEN_KEY) || null;
+async function apiFetch(endpoint, options = {}) {
+  const headers = options.headers || {};
+  headers["Content-Type"] = "application/json";
+  const token = getToken();
+  if (token) headers["Authorization"] = "Bearer " + token;
+  const res = await fetch(API_BASE + endpoint, { ...options, headers });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || "Erreur API");
   }
-  function setToken(token) {
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-  }
-  async function apiFetch(path, options = {}) {
-    const url = path.startsWith('http') ? path : API_URL + path;
-    const headers = Object.assign({'Content-Type': 'application/json'}, options.headers || {});
-    const token = getToken();
-    if (token) { headers['Authorization'] = 'Bearer ' + token; }
-    const opts = Object.assign({}, options, { headers });
-    const res = await fetch(url, opts);
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      const msg = body && body.error ? body.error : res.status + ' ' + res.statusText;
-      throw new Error(msg);
-    }
-    // 204 no content
-    if (res.status === 204) return null;
-    return res.json();
-  }
+  return res.json();
+}
 
-  // ======== AUTH SHORTCUTS (optional if you already have a UI) ========
-  // Call window.backendLogin(email, password) from your existing login form if any.
-  window.backendLogin = async (email, password) => {
-    const data = await apiFetch('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
-    });
-    setToken(data.token);
-    console.log('✅ Connecté au backend');
-    if (typeof chargerDepuisBackend === 'function') await chargerDepuisBackend();
-    if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage();
-    return data;
-  };
-  window.backendRegister = async (email, password) => {
-    const data = await apiFetch('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
-    });
-    setToken(data.token);
-    console.log('✅ Compte créé et connecté');
-    if (typeof chargerDepuisBackend === 'function') await chargerDepuisBackend();
-    if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage();
-    return data;
-  };
+// Auth helpers
+async function login(email, password) {
+  const r = await apiFetch("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ email, password })
+  });
+  localStorage.setItem("token", r.token);
+}
 
-  // ======== LOAD DATA FROM BACKEND INTO EXISTING FRONTEND STATE ========
-  async function chargerDepuisBackend() {
-    try {
-      const tList = await apiFetch('/tontines');
-      // Map API rows -> front model
-      const mapT = (t) => ({
-        id: t.id,
-        nom: t.nom,
-        type: t.type,
-        montant: Number(t.montant),
-        frequenceCotisation: t.type === 'hebdomadaire' ? 'hebdomadaire' : (t.type === 'mensuelle' ? 'mensuel' : 'mensuel'),
-        jourCotisation: 1,
-        frequenceTirage: t.type === 'hebdomadaire' ? 'hebdomadaire' : 'mensuel',
-        nombreMembresMax: t.membres_max || 9999,
-        statut: t.statut || 'active',
-        description: '',
-        membres: [],
-        cotisations: [],
-        tirages: []
-      });
+async function register(email, password) {
+  const r = await apiFetch("/auth/register", {
+    method: "POST",
+    body: JSON.stringify({ email, password })
+  });
+  localStorage.setItem("token", r.token);
+}
 
-      const tontinesMap = tList.map(mapT);
-      // Fetch members + payments + draws per tontine (best effort to avoid breaking if route missing)
-      for (const t of tontinesMap) {
-        try {
-          const ms = await apiFetch('/membres/' + t.id);
-          t.membres = ms.map(m => ({
-            id: m.id,
-            nom: m.nom + (m.prenom ? ' ' + m.prenom : ''),
-            dateAjout: m.created_at || new Date().toISOString(),
-            cotisationsPayees: [],
-            aGagne: false
-          }));
-        } catch (e) { console.warn('Membres fetch failed for', t.id, e.message); }
-        try {
-          const ps = await apiFetch('/paiements/' + t.id);
-          // group by membre
-          ps.forEach(p => {
-            const membre = t.membres.find(mm => mm.id === p.membre_id);
-            if (membre) {
-              membre.cotisationsPayees.push({
-                id: p.id,
-                date: (p.periode || p.created_at),
-                montant: Number(p.montant)
-              });
-            }
-            t.cotisations.push({
-              id: p.id,
-              membreId: p.membre_id,
-              date: (p.periode || p.created_at),
-              montant: Number(p.montant)
-            });
-          });
-        } catch (e) { console.warn('Paiements fetch failed for', t.id, e.message); }
-        try {
-          // Optional: list draws if your backend exposes it as GET /tirages/:tontineId
-          const ds = await apiFetch('/tirages/' + t.id).catch(() => []);
-          if (Array.isArray(ds)) {
-            t.tirages = ds.map(d => ({
-              id: d.id,
-              membreId: d.membre_id,
-              date: d.date_tirage || d.created_at,
-              ordre: d.ordre
-            }));
-            // mark winners
-            t.membres.forEach(m => { m.aGagne = !!t.tirages.find(tr => tr.membreId === m.id); });
-          }
-        } catch (e) { console.warn('Tirages fetch failed for', t.id, e.message); }
-      }
-
-      // inject into global state the app already uses
-      if (Array.isArray(window.tontines)) {
-        window.tontines.splice(0, window.tontines.length, ...tontinesMap);
-      } else {
-        window.tontines = tontinesMap;
-      }
-      // Set active tontine if needed
-      if (!window.tontineActive && window.tontines.length) {
-        window.tontineActive = window.tontines[0];
-      }
-      // Trigger existing UI refreshers if present
-      if (typeof afficherTontines === 'function') afficherTontines();
-      if (typeof afficherInfosTontine === 'function') afficherInfosTontine();
-      if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage();
-      console.log('✅ Données chargées depuis le backend');
-    } catch (e) {
-      console.warn('Chargement backend échoué:', e.message);
-    }
-  }
-  window.chargerDepuisBackend = chargerDepuisBackend;
-
-  // ======== OVERRIDES (keep your UI, replace only JS logic to call API) ========
-  // sauvegarder(): do not write to localStorage; delegate to backend when possible
-  const _sauvegarderOriginal = window.sauvegarder;
-  window.sauvegarder = function() {
-    // Keep original behavior if needed for UI, but skip localStorage-heavy writes
-    try { if (typeof sauvegarderDonneesUtilisateur === 'function') sauvegarderDonneesUtilisateur(); } catch(e){}
-    try {
-      window.donneesModifiees = true;
-      if (typeof mettreAJourStatutReseau === 'function') mettreAJourStatutReseau();
-      if (navigator.onLine && typeof synchroniserDonnees === 'function') {
-        setTimeout(() => synchroniserDonnees().catch(()=>{}), 300);
-      }
-    } catch(e){}
-  };
-
-  // Sync function used by the app -> pull from backend so UI stays correct
-  window.synchroniserDonnees = async function() {
-    await chargerDepuisBackend();
-  };
-
-  // Ajouter membre: call POST /membres/:tontineId then update local state and UI
-  const _ajouterMembreTontine = window.ajouterMembreTontine;
-  window.ajouterMembreTontine = async function() {
-    try {
-      const input = document.getElementById('nouveauMembre');
-      const nom = input ? input.value.trim() : null;
-      if (!nom) { return _ajouterMembreTontine ? _ajouterMembreTontine() : alert('Veuillez entrer un nom'); }
-      if (!window.tontineActive) return alert('Aucune tontine active');
-      // Check max
-      if (window.tontineActive.membres && window.tontineActive.nombreMembresMax &&
-          window.tontineActive.membres.length >= window.tontineActive.nombreMembresMax) {
-        return alert('Nombre maximum de membres atteint');
-      }
-      // Split nom into nom/prenom naive
-      const [prenomMaybe, ...rest] = nom.split(' ');
-      const body = {
-        nom: rest.length ? rest.join(' ') : nom,
-        prenom: rest.length ? prenomMaybe : null,
-        identifiant: null
-      };
-      const m = await apiFetch('/membres/' + window.tontineActive.id, { method: 'POST', body: JSON.stringify(body) });
-      const membre = {
-        id: m.id,
-        nom: [m.nom, m.prenom].filter(Boolean).join(' '),
-        dateAjout: m.created_at || new Date().toISOString(),
-        cotisationsPayees: [],
-        aGagne: false
-      };
-      window.tontineActive.membres.push(membre);
-      if (input) input.value = '';
-      if (typeof afficherMembresTontineGestion === 'function') afficherMembresTontineGestion();
-      if (typeof mettreAJourSelectMembres === 'function') mettreAJourSelectMembres();
-      if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage();
-      console.log('✅ Membre ajouté via backend');
-    } catch (e) {
-      alert('Erreur ajout membre: ' + e.message);
-    }
-  };
-
-  // Effectuer un tirage via backend, puis mettre à jour l'état local et l'UI
-  window.effectuerTirage = async function(tontineId) {
-    try {
-      const id = tontineId || (window.tontineActive && window.tontineActive.id);
-      if (!id) return alert('Aucune tontine sélectionnée');
-      const res = await apiFetch('/tirages/run/' + id, { method: 'POST' });
-      const t = (window.tontines || []).find(tt => tt.id === id) || window.tontineActive;
-      if (t) {
-        const draw = { id: res.id, membreId: res.membre_id, date: res.date_tirage || res.created_at, ordre: res.ordre };
-        t.tirages = t.tirages || [];
-        t.tirages.push(draw);
-        // mark winner
-        const m = (t.membres || []).find(mm => mm.id === res.membre_id);
-        if (m) m.aGagne = true;
-      }
-      if (typeof afficherTirages === 'function') afficherTirages();
-      if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage();
-      console.log('✅ Tirage effectué');
-      return res;
-    } catch (e) {
-      alert('Erreur tirage: ' + e.message);
-    }
-  };
-
-  // Enregistrer un paiement via backend; expose a helper you can call from your existing flow
-  window.backendAjouterPaiement = async function({ tontineId, membreId, montant, periode /* yyyy-mm-dd */ }) {
-    const body = { tontine_id: tontineId, membre_id: membreId, montant, periode };
-    const p = await apiFetch('/paiements', { method: 'POST', body: JSON.stringify(body) });
-    // reflect locally for UI
-    const t = (window.tontines || []).find(tt => tt.id === tontineId);
-    if (t) {
-      t.cotisations = t.cotisations || [];
-      t.cotisations.push({ id: p.id, membreId, date: p.periode || p.created_at, montant: Number(p.montant) });
-      const m = (t.membres || []).find(mm => mm.id === membreId);
-      if (m) {
-        m.cotisationsPayees = m.cotisationsPayees || [];
-        m.cotisationsPayees.push({ id: p.id, date: p.periode || p.created_at, montant: Number(p.montant) });
-      }
-    }
-    if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage();
-    return p;
-  };
-
-  // Try initial load if token already present
-  if (getToken()) {
-    chargerDepuisBackend();
-  } else {
-    console.log('ℹ️ Non connecté au backend. Utilisez window.backendLogin(email, pass) ou backendRegister().');
-  }
-})();
+// Example usage in place of sauvegarder()
+async function sauvegarder() {
+  // Désormais, les données se synchronisent via API
+  mettreAJourAlertes();
+}
 </script>
+
 </body>
 </html>
