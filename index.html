@@ -3734,6 +3734,193 @@ if ("serviceWorker" in navigator) {
 }
 
 </script>
+<script>
+// ===== Correctifs d'intégration backend & PWA (version stable) =====
 
+// --- Base URL & helper fetch ---
+if (typeof window.API_BASE === "undefined") {
+  window.API_BASE = "https://ma-tontine-backend.onrender.com";
+}
+if (typeof window.apiFetch === "undefined") {
+  window.apiFetch = function(path, options = {}) {
+    const token = localStorage.getItem("token");
+    const headers = Object.assign({}, options.headers || {});
+    if (!headers["Content-Type"] && !(options.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+    if (token) headers["Authorization"] = "Bearer " + token;
+    return fetch(window.API_BASE + path, Object.assign({}, options, { headers }));
+  };
+}
+
+// --- Auth ---
+window.seConnecter = async function(e){
+  try{
+    if (e && e.preventDefault) e.preventDefault();
+    const emailEl = document.getElementById("emailConnexion");
+    const passEl  = document.getElementById("motPasseConnexion");
+    const email = emailEl ? emailEl.value.trim() : "";
+    const password = passEl ? passEl.value : "";
+    if (!email || !password) { alert("Veuillez saisir email et mot de passe"); return false; }
+    const r = await apiFetch("/auth/login", { method:"POST", body: JSON.stringify({ email, password }) });
+    const data = await r.json();
+    if (!r.ok) { alert(data.error || "Connexion échouée"); return false; }
+    localStorage.setItem("token", data.token);
+    await initialiserApplication();
+    return false;
+  }catch(err){
+    console.error(err);
+    alert("Erreur de connexion");
+    return false;
+  }
+};
+
+window.sInscrire = async function(e){
+  try{
+    if (e && e.preventDefault) e.preventDefault();
+    const email = (document.getElementById("emailInscription")||{}).value?.trim();
+    const password = (document.getElementById("motPasseInscription")||{}).value;
+    const confirm  = (document.getElementById("confirmMotPasse")||{}).value;
+    if (!email || !password) { alert("Veuillez saisir email et mot de passe"); return false; }
+    if (password !== confirm) { alert("Les mots de passe ne correspondent pas"); return false; }
+    const r = await apiFetch("/auth/register", { method:"POST", body: JSON.stringify({ email, password }) });
+    const data = await r.json();
+    if (!r.ok) { alert(data.error || "Inscription échouée"); return false; }
+    alert("✅ Compte créé, vous pouvez vous connecter.");
+    return false;
+  }catch(err){
+    console.error(err);
+    alert("Erreur d'inscription");
+    return false;
+  }
+};
+
+window.seDeconnecter = function(){
+  localStorage.removeItem("token");
+  try { sessionStorage.clear(); } catch(e){}
+  location.reload();
+};
+
+// --- Alertes ---
+window.verifierAlertes = async function(){
+  try{
+    const r = await apiFetch("/alertes");
+    if (!r.ok) throw new Error("HTTP "+r.status);
+    const data = await r.json();
+    if (typeof window.afficherAlertes === "function") {
+      window.afficherAlertes(data);
+    }
+    const badge = document.getElementById("badgeAlertes");
+    if (badge) {
+      const n = Array.isArray(data) ? data.length : (data?.count || 0);
+      badge.textContent = n;
+      badge.classList.toggle("hidden", !n);
+    }
+    return data;
+  }catch(err){
+    console.warn("verifierAlertes:", err);
+    const badge = document.getElementById("badgeAlertes");
+    if (badge) badge.classList.add("hidden");
+    return [];
+  }
+};
+
+// --- Tirages ---
+window.supprimerTirage = async function(tirageId, tontineId){
+  if(!confirm("Supprimer ce tirage ?")) return;
+  try{
+    const r = await apiFetch(`/tirages/${tirageId}`, { method:"DELETE" });
+    if (!r.ok) throw new Error("HTTP "+r.status);
+    alert("✅ Tirage supprimé !");
+    if (typeof window.chargerTontineTirage === "function") window.chargerTontineTirage();
+    await window.verifierAlertes();
+  }catch(err){
+    console.error(err);
+    alert("❌ Erreur lors de la suppression du tirage");
+  }
+};
+
+// --- Statut réseau ---
+window.mettreAJourStatutReseau = function(){
+  const online = navigator.onLine;
+  const bandeau = document.getElementById("banniereReseau");
+  if (bandeau) bandeau.classList.toggle("hidden", online);
+};
+
+// --- Stats + rafraîchissement UI ---
+window.mettreAJourAffichage = async function(){
+  try{
+    // Exemple: vous pouvez appeler un endpoint de résumé si disponible
+    // const r = await apiFetch("/dashboard/overview");
+    // const stats = (await r.json()) || {};
+
+    // Sinon, on met juste à jour les alertes + quelques compteurs déjà présents en DOM si vous les remplissez ailleurs
+    await window.verifierAlertes();
+
+    // Affichage des cartes de stats si elles existent dans le DOM (hors API pour l'instant)
+    const elT = document.getElementById("statTotalTontines");
+    const elM = document.getElementById("statTotalMembres");
+    const elTi = document.getElementById("statTotalTirages");
+    // Laissez la logique existante les mettre à jour ailleurs; ici, on ne force rien s'ils n'existent pas.
+    // Vous pourrez compléter avec de vraies données si vous exposez un endpoint /dashboard/overview côté backend.
+  }catch(e){
+    console.warn("mettreAJourAffichage:", e);
+  }
+};
+
+// --- PWA Install (dropdown + header s'ils existent) ---
+(function(){
+  let deferredPrompt = null;
+  const updateBtn = (show) => {
+    ["installAppBtnDropdown","installAppBtn"].forEach(id=>{
+      const b = document.getElementById(id);
+      if (!b) return;
+      b.classList.toggle("hidden", !show);
+      b.onclick = async () => {
+        try{
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+        }finally{
+          deferredPrompt = null;
+          updateBtn(false);
+        }
+      };
+    });
+  };
+
+  window.addEventListener("beforeinstallprompt", (e)=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    updateBtn(true);
+  });
+  window.addEventListener("appinstalled", ()=> updateBtn(false));
+})();
+
+// --- SW registration (ne duplique pas si déjà fait ailleurs) ---
+if ("serviceWorker" in navigator && !navigator.serviceWorker.controller) {
+  navigator.serviceWorker.register("/pwa/sw.js").catch(()=>{});
+}
+
+// --- Bootstrap au chargement ---
+document.addEventListener("DOMContentLoaded", async function(){
+  try{
+    window.mettreAJourStatutReseau();
+    window.addEventListener("online",  window.mettreAJourStatutReseau);
+    window.addEventListener("offline", window.mettreAJourStatutReseau);
+
+    const token = localStorage.getItem("token");
+    if (token) {
+      await window.mettreAJourAffichage();
+    } else {
+      // Laissez la page de connexion visible; les formulaires appellent seConnecter/sInscrire
+      // Rien à faire de plus ici
+    }
+  }catch(e){
+    console.error("Init error:", e);
+  }
+});
+// ===== Fin correctifs =====
+</script>
 </body>
 </html>
