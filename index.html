@@ -4,8 +4,42 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestionnaire de Tontines Pro</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com">
+// === Gestion des tirages ===
+async function supprimerTirage(tirageId, tontineId) {
+    if (!confirm("Supprimer ce tirage ?")) return;
+
+    try {
+        await apiFetch(`/tirages/${tirageId}`, { method: "DELETE" });
+
+        alert("✅ Tirage supprimé !");
+        chargerTontineTirage();
+        mettreAJourAlertes();
+    } catch (e) {
+        console.error(e);
+        alert("❌ Erreur lors de la suppression du tirage");
+    }
+}
+
+</script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js">
+// === Gestion des tirages ===
+async function supprimerTirage(tirageId, tontineId) {
+    if (!confirm("Supprimer ce tirage ?")) return;
+
+    try {
+        await apiFetch(`/tirages/${tirageId}`, { method: "DELETE" });
+
+        alert("✅ Tirage supprimé !");
+        chargerTontineTirage();
+        mettreAJourAlertes();
+    } catch (e) {
+        console.error(e);
+        alert("❌ Erreur lors de la suppression du tirage");
+    }
+}
+
+</script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
@@ -3481,8 +3515,42 @@ function estEnRetardPeriode(membre, tontine) {
                 setTimeout(synchroniserDonnees, 1000);
             }
         }
-    </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+    
+// === Gestion des tirages ===
+async function supprimerTirage(tirageId, tontineId) {
+    if (!confirm("Supprimer ce tirage ?")) return;
+
+    try {
+        await apiFetch(`/tirages/${tirageId}`, { method: "DELETE" });
+
+        alert("✅ Tirage supprimé !");
+        chargerTontineTirage();
+        mettreAJourAlertes();
+    } catch (e) {
+        console.error(e);
+        alert("❌ Erreur lors de la suppression du tirage");
+    }
+}
+
+</script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+// === Gestion des tirages ===
+async function supprimerTirage(tirageId, tontineId) {
+    if (!confirm("Supprimer ce tirage ?")) return;
+
+    try {
+        await apiFetch(`/tirages/${tirageId}`, { method: "DELETE" });
+
+        alert("✅ Tirage supprimé !");
+        chargerTontineTirage();
+        mettreAJourAlertes();
+    } catch (e) {
+        console.error(e);
+        alert("❌ Erreur lors de la suppression du tirage");
+    }
+}
+
+</script>
 <script>
 // ================= API CONFIG =================
 const API_BASE = "https://ma-tontine-backend.onrender.com"; // ton backend Render
@@ -3525,6 +3593,381 @@ async function register(email, password) {
 async function sauvegarder() {
   // Désormais, les données se synchronisent via API
   mettreAJourAlertes();
+}
+
+// === Gestion des tirages ===
+async function supprimerTirage(tirageId, tontineId) {
+    if (!confirm("Supprimer ce tirage ?")) return;
+
+    try {
+        await apiFetch(`/tirages/${tirageId}`, { method: "DELETE" });
+
+        alert("✅ Tirage supprimé !");
+        chargerTontineTirage();
+        mettreAJourAlertes();
+    } catch (e) {
+        console.error(e);
+        alert("❌ Erreur lors de la suppression du tirage");
+    }
+}
+
+</script>
+
+
+<!-- ===== Backend Integration Overrides (v2) ===== -->
+<script>
+(function(){
+  // === Configuration ===
+  const API_BASE = localStorage.getItem('api_base') || 'https://YOUR-BACKEND.onrender.com';
+  const TOKEN_KEY = 'auth_token';
+
+  function setApiBase(url){
+    localStorage.setItem('api_base', url);
+    alert('API Base mis à jour: ' + url);
+  }
+  window.setApiBase = setApiBase;
+
+  function setToken(token){
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+  }
+  function getToken(){
+    return localStorage.getItem(TOKEN_KEY) || null;
+  }
+
+  async function apiFetch(path, { method='GET', headers={}, body=null } = {}){
+    const token = getToken();
+    const finalHeaders = Object.assign(
+      { 'Content-Type': 'application/json' },
+      token ? { 'Authorization': 'Bearer ' + token } : {},
+      headers
+    );
+    const res = await fetch(API_BASE + path, {
+      method,
+      headers: finalHeaders,
+      body: body ? JSON.stringify(body) : null
+    });
+    if (!res.ok){
+      let errText = '';
+      try { errText = (await res.json()).error || res.statusText; } catch(e){ errText = res.statusText; }
+      const err = new Error(errText);
+      err.status = res.status;
+      err.response = res;
+      throw err;
+    }
+    const ct = res.headers.get('content-type') || '';
+    return ct.includes('application/json') ? res.json() : res.text();
+  }
+
+  // === Auth helpers ===
+  async function register(email, password){
+    const data = await apiFetch('/auth/register', { method: 'POST', body: { email, password } });
+    setToken(data.token);
+    return data;
+  }
+  async function login(email, password){
+    const data = await apiFetch('/auth/login', { method: 'POST', body: { email, password } });
+    setToken(data.token);
+    return data;
+  }
+  window.apiAuth = { register, login, setToken, getToken };
+
+  // === Local composition state (to fit existing UI model) ===
+  // We won't break your design; we just adapt the data layer.
+  window.__apiState = {
+    tontinesMap: new Map(), // id -> { ...tontine, membres:[], cotisations:[], tirages:[] }
+  };
+
+  // Map backend tontine to UI shape
+  function mapTontineRow(row){
+    return {
+      id: row.id,
+      nom: row.nom,
+      type: row.type,
+      montant: Number(row.montant),
+      nombreMembresMax: row.membres_max || 0,
+      statut: row.statut,
+      description: row.description || '',
+      // UI collections we keep locally in sync
+      membres: [],
+      cotisations: [],
+      tirages: [],
+      gagnants: []
+    };
+  }
+
+  function ensureTontineInState(row){
+    let t = window.__apiState.tontinesMap.get(row.id);
+    if (!t){
+      t = mapTontineRow(row);
+      window.__apiState.tontinesMap.set(row.id, t);
+    }else{
+      // shallow update
+      Object.assign(t, mapTontineRow(row));
+      // preserve arrays already loaded
+    }
+    return t;
+  }
+
+  async function loadAllFromApi(){
+    // 1) Tontines
+    const tontinesRows = await apiFetch('/tontines');
+    const composed = [];
+    for (const row of tontinesRows){
+      const t = ensureTontineInState(row);
+
+      // 2) Membres for tontine
+      try{
+        const membres = await apiFetch('/membres/' + t.id);
+        t.membres = membres.map(m => ({
+          id: m.id,
+          nom: m.nom + (m.prenom ? (' ' + m.prenom) : ''),
+          dateAjout: m.created_at,
+          cotisationsPayees: [],
+          aGagne: false
+        }));
+      }catch(e){
+        console.warn('Membres load failed for tontine', t.id, e.message);
+        t.membres = [];
+      }
+
+      // 3) Paiements for tontine
+      try{
+        const pays = await apiFetch('/paiements/' + t.id);
+        t.cotisations = pays.map(p => ({
+          id: p.id,
+          membreId: p.membre_id,
+          date: p.periode,
+          montant: Number(p.montant)
+        }));
+        // fold into membres.cotisationsPayees
+        const byM = {};
+        for(const c of t.cotisations){
+          byM[c.membreId] = byM[c.membreId] || [];
+          byM[c.membreId].push({ id: c.id, date: c.date, montant: c.montant });
+        }
+        for (const m of t.membres){
+          m.cotisationsPayees = byM[m.id] || [];
+        }
+      }catch(e){
+        console.warn('Paiements load failed for tontine', t.id, e.message);
+        t.cotisations = [];
+        for (const m of t.membres){ m.cotisationsPayees = []; }
+      }
+
+      // 4) Tirages list — not provided on backend, so we keep local cache
+      t.tirages = t.tirages || [];
+      t.gagnants = t.gagnants || [];
+
+      composed.push(t);
+    }
+
+    // Replace global "tontines" used by your UI, keeping reference name intact
+    window.tontines = composed;
+    // Try to keep current active tontine if any
+    if (window.tontineActive){
+      const newActive = composed.find(x => x.id === window.tontineActive.id);
+      if (newActive) window.tontineActive = newActive;
+    }
+    // refresh UI hooks if they exist
+    try { if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage(); } catch(e){}
+    try { if (typeof afficherTontines === 'function') afficherTontines(); } catch(e){}
+  }
+  window.reloadFromApi = loadAllFromApi;
+
+  // === Override save (no local persistence, just refresh alerts/UI) ===
+  const originalSauvegarder = window.sauvegarder || function(){};
+  window.sauvegarder = function(){
+    try { if (typeof sauvegarderDonneesUtilisateur === 'function') sauvegarderDonneesUtilisateur(); } catch(e){}
+    window.donneesModifiees = true;
+    try { if (typeof mettreAJourStatutReseau === 'function') mettreAJourStatutReseau(); } catch(e){}
+    try { if (typeof mettreAJourAlertes === 'function') mettreAJourAlertes(); } catch(e){}
+    return true;
+  };
+
+  // === Override: ajouterMembreTontine -> POST /membres/:tontineId ===
+  window.ajouterMembreTontine = async function(){
+    if (!window.tontineActive){ alert('Aucune tontine active'); return; }
+    const nom = (document.getElementById('nouveauMembre')?.value || '').trim();
+    if (!nom){ alert('Veuillez entrer un nom'); return; }
+
+    // Capacity (soft check — real rules backend-side)
+    if (window.tontineActive.membres.length >= (window.tontineActive.nombreMembresMax || 999999)){
+      alert('Nombre maximum de membres atteint');
+      return;
+    }
+    try{
+      const created = await apiFetch('/membres/' + window.tontineActive.id, {
+        method: 'POST',
+        body: { nom }
+      });
+      // Update local state
+      window.tontineActive.membres.push({
+        id: created.id,
+        nom: created.nom,
+        dateAjout: created.created_at,
+        cotisationsPayees: [],
+        aGagne: false
+      });
+      document.getElementById('nouveauMembre').value = '';
+      if (typeof afficherMembresTontineGestion === 'function') afficherMembresTontineGestion();
+      if (typeof mettreAJourSelectMembres === 'function') mettreAJourSelectMembres();
+      if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage();
+      alert('✅ Membre ajouté.');
+    }catch(e){
+      alert('❌ Échec ajout membre: ' + e.message);
+    }
+  };
+
+  // === Override: enregistrerCotisationTontine -> POST /paiements ===
+  window.enregistrerCotisationTontine = async function(){
+    if (!window.tontineActive){ alert('Aucune tontine active'); return; }
+    const membreId = (document.getElementById('membreCotisationSelect')?.value || '').trim();
+    const date = document.getElementById('dateCotisation')?.value;
+    if (!membreId || !date){ alert('Veuillez sélectionner un membre et une date'); return; }
+
+    try{
+      const body = {
+        tontine_id: window.tontineActive.id,
+        membre_id: membreId,
+        montant: window.tontineActive.montant,
+        periode: date
+      };
+      const p = await apiFetch('/paiements', { method: 'POST', body });
+      // reflect in local model to keep UI consistent
+      const cotisation = { id: p.id, membreId, date: p.periode, montant: Number(p.montant) };
+      const membre = window.tontineActive.membres.find(m => m.id === membreId);
+      if (membre){
+        membre.cotisationsPayees = membre.cotisationsPayees || [];
+        membre.cotisationsPayees.push({ id: p.id, date: p.periode, montant: Number(p.montant) });
+      }
+      window.tontineActive.cotisations = window.tontineActive.cotisations || [];
+      window.tontineActive.cotisations.push(cotisation);
+
+      if (typeof afficherHistoriqueCotisations === 'function') afficherHistoriqueCotisations();
+      if (typeof afficherMembresTontineGestion === 'function') afficherMembresTontineGestion();
+      if (typeof mettreAJourAlertes === 'function') mettreAJourAlertes();
+      alert('✅ Cotisation enregistrée.');
+    }catch(e){
+      if (e.status === 409){
+        alert('⚠️ Paiement déjà enregistré pour cette période');
+      }else{
+        alert('❌ Échec enregistrement: ' + e.message);
+      }
+    }
+  };
+
+  // === Override: supprimerCotisation -> backend n’a pas (encore) d’endpoint DELETE ===
+  window.supprimerCotisation = async function(cotisationId, tontineId){
+    alert("Suppression de cotisation non supportée par l'API actuelle. Ajoutez un endpoint DELETE /paiements/:id côté backend pour l'activer.");
+  };
+
+  // === Override: retirerMembreTontine -> DELETE /membres/delete/:id ===
+  window.retirerMembreTontine = async function(membreId, tontineId){
+    const t = window.tontines?.find(x => x.id === tontineId) || window.tontineActive;
+    if (!t){ alert('Tontine introuvable'); return; }
+    const membre = t.membres.find(m => m.id === membreId);
+    if (!membre){ alert('Membre introuvable'); return; }
+
+    const ok = confirm(`Retirer ${membre.nom} de "${t.nom}" ? (Toutes ses cotisations liées resteront en base)`);
+    if (!ok) return;
+
+    try{
+      await apiFetch('/membres/delete/' + membreId, { method: 'DELETE' });
+      t.membres = t.membres.filter(m => m.id !== membreId);
+      // Purge les paiements locaux liés pour rester cohérent dans l’UI
+      t.cotisations = (t.cotisations || []).filter(c => c.membreId !== membreId);
+      if (typeof afficherMembresTontineGestion === 'function') afficherMembresTontineGestion();
+      if (typeof mettreAJourSelectMembres === 'function') mettreAJourSelectMembres();
+      if (typeof mettreAJourAlertes === 'function') mettreAJourAlertes();
+      alert('✅ Membre retiré.');
+    }catch(e){
+      alert('❌ Échec du retrait: ' + e.message);
+    }
+  };
+
+  // === Tirage: POST /tirages/run/:tontineId ===
+  async function effectuerTirage(tontineId){
+    const d = await apiFetch('/tirages/run/' + tontineId, { method: 'POST' });
+    return d; // { id, tontine_id, membre_id, ordre, ... }
+  }
+  window.effectuerTirage = effectuerTirage;
+
+  // Hook bouton "Effectuer le tirage" si votre UI l’appelle via allerAuTirage/ autres
+  window.executerTirageEtRafraichir = async function(){
+    if (!window.tontineActive){ alert('Aucune tontine active'); return; }
+    try{
+      const res = await effectuerTirage(window.tontineActive.id);
+      // MàJ locale: marquer gagnant, pousser dans tirages
+      const t = window.tontineActive;
+      t.tirages = t.tirages || [];
+      t.tirages.push({ id: res.id, gagnantId: res.membre_id, date: res.date_tirage || new Date().toISOString(), ordre: res.ordre });
+      const m = t.membres.find(mm => mm.id === res.membre_id);
+      if (m) m.aGagne = true;
+      if (typeof mettreAJourAlertes === 'function') mettreAJourAlertes();
+      alert('🎯 Tirage réussi ! Gagnant mis à jour.');
+    }catch(e){
+      alert('❌ Tirage impossible: ' + e.message);
+    }
+  };
+
+  // === Initial load: if token present, load data ===
+  document.addEventListener('DOMContentLoaded', () => {
+    if (getToken()){
+      loadAllFromApi().catch(err => console.warn('Initial load failed:', err.message));
+    }
+  });
+})();
+
+// === Gestion des tirages ===
+async function supprimerTirage(tirageId, tontineId) {
+    if (!confirm("Supprimer ce tirage ?")) return;
+
+    try {
+        await apiFetch(`/tirages/${tirageId}`, { method: "DELETE" });
+
+        alert("✅ Tirage supprimé !");
+        chargerTontineTirage();
+        mettreAJourAlertes();
+    } catch (e) {
+        console.error(e);
+        alert("❌ Erreur lors de la suppression du tirage");
+    }
+}
+
+</script>
+<!-- ===== End Backend Integration Overrides ===== -->
+
+
+<script>
+// --- PWA Installation ---
+let deferredPrompt;
+const installBtn = document.getElementById("installAppBtn");
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  installBtn.classList.remove("hidden"); // rendre visible le bouton
+});
+
+installBtn.addEventListener("click", async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      console.log("✅ L’utilisateur a installé l’app");
+    } else {
+      console.log("❌ Installation refusée");
+    }
+    deferredPrompt = null;
+    installBtn.classList.add("hidden");
+  }
+});
+
+// --- Enregistrement Service Worker ---
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/pwa/sw.js")
+    .then(() => console.log("Service Worker enregistré ✅"))
+    .catch(err => console.error("Service Worker échec ❌", err));
 }
 </script>
 
