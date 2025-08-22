@@ -21,6 +21,20 @@ async function supprimerTirage(tirageId, tontineId) {
     }
 }
 
+
+// --- Correction: ajout verifierAlertes connecté au backend ---
+async function verifierAlertes() {
+  try {
+    const r = await apiFetch("/alertes");
+    const data = await r.json();
+    afficherAlertes(data);
+    return data;
+  } catch (e) {
+    console.error("Erreur chargement alertes", e);
+    return [];
+  }
+}
+
 </script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js">
 // === Gestion des tirages ===
@@ -37,6 +51,20 @@ async function supprimerTirage(tirageId, tontineId) {
         console.error(e);
         alert("❌ Erreur lors de la suppression du tirage");
     }
+}
+
+
+// --- Correction: ajout verifierAlertes connecté au backend ---
+async function verifierAlertes() {
+  try {
+    const r = await apiFetch("/alertes");
+    const data = await r.json();
+    afficherAlertes(data);
+    return data;
+  } catch (e) {
+    console.error("Erreur chargement alertes", e);
+    return [];
+  }
 }
 
 </script>
@@ -526,6 +554,9 @@ label { font-size: 0.95rem; font-weight: 600; }
   </div>
 </div>
 <script>
+
+document.addEventListener("DOMContentLoaded", function(){
+
   const profileButton = document.getElementById('profileButton');
   const profileDropdown = document.getElementById('profileDropdown');
   if(profileButton){
@@ -545,6 +576,20 @@ label { font-size: 0.95rem; font-weight: 600; }
       location.reload();
     });
   }
+
+// --- Correction: ajout verifierAlertes connecté au backend ---
+async function verifierAlertes() {
+  try {
+    const r = await apiFetch("/alertes");
+    const data = await r.json();
+    afficherAlertes(data);
+    return data;
+  } catch (e) {
+    console.error("Erreur chargement alertes", e);
+    return [];
+  }
+}
+
 </script>
 
 </header>
@@ -1147,6 +1192,9 @@ label { font-size: 0.95rem; font-weight: 600; }
     </div>
 
     <script>
+
+document.addEventListener("DOMContentLoaded", function(){
+
         // Système d'authentification
         let utilisateurConnecte = JSON.parse(localStorage.getItem('utilisateur_connecte') || 'null');
         let utilisateurs = JSON.parse(localStorage.getItem('app_utilisateurs') || '[]');
@@ -3302,8 +3350,25 @@ async function supprimerTirage(tirageId, tontineId) {
     }
 }
 
+
+// --- Correction: ajout verifierAlertes connecté au backend ---
+async function verifierAlertes() {
+  try {
+    const r = await apiFetch("/alertes");
+    const data = await r.json();
+    afficherAlertes(data);
+    return data;
+  } catch (e) {
+    console.error("Erreur chargement alertes", e);
+    return [];
+  }
+}
+
 </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
+<script>
+
+document.addEventListener("DOMContentLoaded", function(){
+(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
 // === Gestion des tirages ===
 async function supprimerTirage(tirageId, tontineId) {
     if (!confirm("Supprimer ce tirage ?")) return;
@@ -3320,8 +3385,25 @@ async function supprimerTirage(tirageId, tontineId) {
     }
 }
 
+
+// --- Correction: ajout verifierAlertes connecté au backend ---
+async function verifierAlertes() {
+  try {
+    const r = await apiFetch("/alertes");
+    const data = await r.json();
+    afficherAlertes(data);
+    return data;
+  } catch (e) {
+    console.error("Erreur chargement alertes", e);
+    return [];
+  }
+}
+
 </script>
 <script>
+
+document.addEventListener("DOMContentLoaded", function(){
+
 // ================= API CONFIG =================
 const API_BASE = "https://ma-tontine-backend.onrender.com"; // ton backend Render
 
@@ -3381,11 +3463,28 @@ async function supprimerTirage(tirageId, tontineId) {
     }
 }
 
+
+// --- Correction: ajout verifierAlertes connecté au backend ---
+async function verifierAlertes() {
+  try {
+    const r = await apiFetch("/alertes");
+    const data = await r.json();
+    afficherAlertes(data);
+    return data;
+  } catch (e) {
+    console.error("Erreur chargement alertes", e);
+    return [];
+  }
+}
+
 </script>
 
 
 <!-- ===== Backend Integration Overrides (v2) ===== -->
 <script>
+
+document.addEventListener("DOMContentLoaded", function(){
+
 (function(){
   // === Configuration ===
   const API_BASE = localStorage.getItem('api_base') || 'https://YOUR-BACKEND.onrender.com';
@@ -3704,11 +3803,28 @@ async function supprimerTirage(tirageId, tontineId) {
     }
 }
 
+
+// --- Correction: ajout verifierAlertes connecté au backend ---
+async function verifierAlertes() {
+  try {
+    const r = await apiFetch("/alertes");
+    const data = await r.json();
+    afficherAlertes(data);
+    return data;
+  } catch (e) {
+    console.error("Erreur chargement alertes", e);
+    return [];
+  }
+}
+
 </script>
 <!-- ===== End Backend Integration Overrides ===== -->
 
 
 <script>
+
+document.addEventListener("DOMContentLoaded", function(){
+
 // --- PWA Installation ---
 let deferredPrompt;
 const installBtn = document.getElementById("installAppBtn");
@@ -3739,6 +3855,20 @@ if ("serviceWorker" in navigator) {
     .then(() => console.log("Service Worker enregistré ✅"))
     .catch(err => console.error("Service Worker échec ❌", err));
 }
+
+// --- Correction: ajout verifierAlertes connecté au backend ---
+async function verifierAlertes() {
+  try {
+    const r = await apiFetch("/alertes");
+    const data = await r.json();
+    afficherAlertes(data);
+    return data;
+  } catch (e) {
+    console.error("Erreur chargement alertes", e);
+    return [];
+  }
+}
+
 </script>
 
 </body>
