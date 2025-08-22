@@ -1162,9 +1162,13 @@ async function migrerComptesEnClair() {
   }));
   if (modif) localStorage.setItem('app_utilisateurs', JSON.stringify(utilisateurs));
 }
-
-  let estEnLigne = navigator.onLine;
   
+    // Variables pour la synchronisation
+
+  let donneesModifiees = false;
+  let derniereSynchronisation = null;
+  let estEnLigne = navigator.onLine;
+
 document.addEventListener('DOMContentLoaded', () => {
   migrerComptesEnClair(); 
 
@@ -1174,10 +1178,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let tontineActive = null;
   let pageActuelle = 'accueil';
   
-  // Variables pour la synchronisation
-
-  let donneesModifiees = false;
-  let derniereSynchronisation = null;
+  
 
   // Initialisation
   verifierAuthentification();
