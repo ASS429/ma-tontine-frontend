@@ -3730,14 +3730,16 @@ window.seConnecter = async function(e) {
     const data = await apiFetch("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
-    });
 
+    });
+    console.log("Réponse API:", data);
     localStorage.setItem("token", data.token);
     alert("✅ Connexion réussie !");
     initialiserApplication();
     ouvrirPage("accueil");
   } catch (err) {
     console.error(err);
+    console.error("Erreur API:", err);
     alert("❌ Connexion échouée : " + (err.message || "Erreur serveur"));
   }
 };
@@ -3761,6 +3763,7 @@ window.sInscrire = async function(e) {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
+    console.error("Erreur API:", err);
 
     // data contient déjà { token }
     localStorage.setItem("token", data.token);
@@ -3773,6 +3776,8 @@ window.sInscrire = async function(e) {
     ouvrirPage("accueil");
   } catch (err) {
     console.error(err);
+    console.error("Erreur API:", err);
+
     alert("❌ Échec de l'inscription : " + (err.message || "Erreur serveur"));
   }
 };
