@@ -3654,7 +3654,17 @@ async function supprimerTirage(tirageId, tontineId) {
 <script>
 // --- PWA Installation ---
 let deferredPrompt;
-const installBtn = document.getElementById("installAppBtn");
+const installBtn = document.getElementById("installAppBtn") 
+                 || document.getElementById("installAppBtnDropdown");
+if (installBtn) {
+  installBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.finally(() => deferredPrompt = null);
+    }
+  });
+}
 
 // ✅ Gestion de l'événement d'installation
 window.addEventListener("beforeinstallprompt", (e) => {
@@ -3753,28 +3763,42 @@ window.seDeconnecter = function(){
 };
 
 // --- Alertes ---
-window.verifierAlertes = async function(){
-  try{
+
+
+window.verifierAlertes = async function () {
+  if (!localStorage.getItem("token")) {
+    console.warn("Pas de token → pas de récupération des alertes");
+    const badge = document.getElementById("badgeAlertes");
+    if (badge) badge.classList.add("hidden");
+    return [];
+  }
+
+  try {
     const r = await apiFetch("/alertes");
-    if (!r.ok) throw new Error("HTTP "+r.status);
+    if (!r.ok) throw new Error("HTTP " + r.status);
     const data = await r.json();
+
     if (typeof window.afficherAlertes === "function") {
       window.afficherAlertes(data);
     }
+
     const badge = document.getElementById("badgeAlertes");
     if (badge) {
       const n = Array.isArray(data) ? data.length : (data?.count || 0);
       badge.textContent = n;
       badge.classList.toggle("hidden", !n);
     }
+
     return data;
-  }catch(err){
+  } catch (err) {
     console.warn("verifierAlertes:", err);
     const badge = document.getElementById("badgeAlertes");
     if (badge) badge.classList.add("hidden");
     return [];
   }
 };
+
+window.mettreAJourAlertes = window.verifierAlertes;
 
 // --- Tirages ---
 window.supprimerTirage = async function(tirageId, tontineId){
