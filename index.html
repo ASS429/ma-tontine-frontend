@@ -1089,7 +1089,27 @@ label { font-size: 0.95rem; font-weight: 600; }
         </div>
     </div>
 
+    <script>const API_BASE_URL = document
+  .querySelector('meta[name="api-base"]')
+  .getAttribute("content");
+ </script>
+
     <script>
+
+        async function chargerTontines() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/tontines`);
+    const data = await res.json();
+    console.log("Liste des tontines :", data);
+  } catch (err) {
+    console.error("Erreur API :", err);
+  }
+}
+
+// Appel au chargement
+chargerTontines();
+
+
         // Système d'authentification
         let utilisateurConnecte = JSON.parse(localStorage.getItem('utilisateur_connecte') || 'null');
         let utilisateurs = JSON.parse(localStorage.getItem('app_utilisateurs') || '[]');
