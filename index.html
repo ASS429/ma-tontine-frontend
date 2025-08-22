@@ -1163,41 +1163,45 @@ async function migrerComptesEnClair() {
   if (modif) localStorage.setItem('app_utilisateurs', JSON.stringify(utilisateurs));
 }
 
+  let estEnLigne = navigator.onLine;
+  
 document.addEventListener('DOMContentLoaded', () => {
-    migrerComptesEnClair(); 
+  migrerComptesEnClair(); 
 
-    // Données de l'application (spécifiques à l'utilisateur connecté)
-    let tontines = [];
-    let alertes = [];
-    let tontineActive = null;
-    let pageActuelle = 'accueil';
-    
-    // Variables pour la synchronisation
-    let estEnLigne = navigator.onLine;
-    let donneesModifiees = false;
-    let derniereSynchronisation = null;
+  // Données de l'application (spécifiques à l'utilisateur connecté)
+  let tontines = [];
+  let alertes = [];
+  let tontineActive = null;
+  let pageActuelle = 'accueil';
+  
+  // Variables pour la synchronisation
 
-    // Initialisation
-    verifierAuthentification();
-    configurerEvenementsReseau();
-    
-    // Vérifier les alertes toutes les 5 minutes
-    setInterval(mettreAJourAlertes, 5 * 60 * 1000);
-    
-    // Vérifier la synchronisation toutes les 30 secondes
-    setInterval(verifierSynchronisation, 30 * 1000);
+  let donneesModifiees = false;
+  let derniereSynchronisation = null;
 
-    // Système d'authentification
-    function verifierAuthentification() {
-        if (utilisateurConnecte) {
-            chargerDonneesUtilisateur();
-            initialiserApplication();
-            afficherInterfaceConnectee();
-        } else {
-            afficherPageConnexion();
-        }
+  // Initialisation
+  verifierAuthentification();
+  configurerEvenementsReseau();
+  
+  // Vérifier les alertes toutes les 5 minutes
+  setInterval(() => verifierAlertes(), 5 * 60 * 1000);
+  
+  // Vérifier la synchronisation toutes les 30 secondes
+  setInterval(verifierSynchronisation, 30 * 1000);
+
+  // Système d'authentification
+  function verifierAuthentification() {
+    const token = localStorage.getItem("token");
+    if (token) {
+      chargerDonneesUtilisateur();
+      initialiserApplication();
+      afficherInterfaceConnectee();
+    } else {
+      afficherPageConnexion();
     }
+  }
 });
+
 
         async function seConnecter(event) {
   event.preventDefault();
