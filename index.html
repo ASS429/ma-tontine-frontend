@@ -1799,22 +1799,21 @@ function chargerSelectsTontines() {
 }
 
 
+function chargerTontineGestion() {
+    const id = document.getElementById('selectTontineGestion').value; // <-- pas de parseInt
+    if (!id) {
+        document.getElementById('panneauGestion').classList.add('hidden');
+        return;
+    }
 
-        function chargerTontineGestion() {
-            const id = parseInt(document.getElementById('selectTontineGestion').value);
-            if (!id) {
-                document.getElementById('panneauGestion').classList.add('hidden');
-                return;
-            }
-
-            tontineActive = tontines.find(t => t.id === id);
-            document.getElementById('panneauGestion').classList.remove('hidden');
-            
-            afficherInfosTontine();
-            afficherMembresTontineGestion();
-            mettreAJourSelectMembres();
-            afficherHistoriqueCotisations();
-        }
+    tontineActive = tontines.find(t => t.id === id);
+    document.getElementById('panneauGestion').classList.remove('hidden');
+    
+    afficherInfosTontine();
+    afficherMembresTontineGestion();
+    mettreAJourSelectMembres();
+    afficherHistoriqueCotisations();
+}
 
         function afficherInfosTontine() {
             const tontine = tontineActive;
@@ -2253,20 +2252,20 @@ function supprimerCotisation(cotisationId, tontineId) {
 }
 
         // Système de tirage
-        function chargerTontineTirage() {
-            const id = parseInt(document.getElementById('selectTontineTirage').value);
-            if (!id) {
-                document.getElementById('panneauTirage').classList.add('hidden');
-                return;
-            }
+function chargerTontineTirage() {
+    const id = document.getElementById('selectTontineTirage').value; // <-- pas de parseInt
+    if (!id) {
+        document.getElementById('panneauTirage').classList.add('hidden');
+        return;
+    }
 
-            tontineActive = tontines.find(t => t.id === id);
-            document.getElementById('panneauTirage').classList.remove('hidden');
-            
-            afficherMembresEligibles();
-            afficherHistoriqueGagnants();
-            afficherInfosTirage();
-        }
+    tontineActive = tontines.find(t => t.id === id);
+    document.getElementById('panneauTirage').classList.remove('hidden');
+    
+    afficherMembresEligibles();
+    afficherHistoriqueGagnants();
+    afficherInfosTirage();
+}
 
  function afficherMembresEligibles() {
     const liste = document.getElementById('membresEligibles');
