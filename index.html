@@ -3387,18 +3387,19 @@ function estEnRetardPeriode(membre, tontine) {
 
 <script src="https://unpkg.com/@supabase/supabase-js"></script>
 <script>
-
-  // 🔹 CONFIG SUPABASE (uniquement pour l'auth)
+  // ============================
+  // 🔹 CONFIG SUPABASE (auth)
+  // ============================
   const supabaseUrl = "https://fcefsbpqyymxgjaijbka.supabase.co"; 
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZWZzYnBxeXlteGdqYWlqYmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MjQ2NTQsImV4cCI6MjA3MTQwMDY1NH0.B_Ys0FuZv5FPkFs8LkX_hNxW-MrXcKvI36owIE-eO8M"; 
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; 
   const { createClient } = supabase;
   const sb = createClient(supabaseUrl, supabaseKey);
 
   const API_BASE = "https://ma-tontine-backend.onrender.com/api"; // 👉 ton backend Render
 
-  // -----------------------------
+  // ============================
   // 🔔 NOTIFICATIONS
-  // -----------------------------
+  // ============================
   function showNotification(message, type = "info") {
     const container = document.getElementById("notifications");
     const notif = document.createElement("div");
@@ -3423,9 +3424,9 @@ function estEnRetardPeriode(membre, tontine) {
     }, 3000);
   }
 
-  // -----------------------------
+  // ============================
   // 🔑 HELPERS
-  // -----------------------------
+  // ============================
   async function authHeaders() {
     const { data } = await sb.auth.getSession();
     const token = data.session?.access_token;
@@ -3451,9 +3452,22 @@ function estEnRetardPeriode(membre, tontine) {
     return data;
   }
 
-  // -----------------------------
+  // ============================
+  // 👤 INFOS UTILISATEUR
+  // ============================
+  async function getUserNom() {
+    try {
+      const user = await apiFetch("/auth/me");
+      document.getElementById("nomUtilisateur").innerText =
+        user.nom_complet || user.email || "Utilisateur";
+    } catch {
+      document.getElementById("nomUtilisateur").innerText = "";
+    }
+  }
+
+  // ============================
   // 🔐 AUTHENTIFICATION
-  // -----------------------------
+  // ============================
   async function sInscrire(e) {
     e.preventDefault();
     const nom = document.getElementById("nomInscription").value;
@@ -3479,13 +3493,12 @@ function estEnRetardPeriode(membre, tontine) {
     const email = document.getElementById("emailConnexion").value;
     const password = document.getElementById("motPasseConnexion").value;
 
-    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    const { error } = await sb.auth.signInWithPassword({ email, password });
     if (error) {
       showNotification("Erreur: " + error.message, "error");
     } else {
-      document.getElementById("nomUtilisateur").innerText =
-        data.user.user_metadata.nom_complet || data.user.email;
       showNotification("Connexion réussie 👋", "success");
+      await getUserNom();   // ⬅️ on affiche directement le nom/email via /auth/me
       ouvrirPage("accueil");
       chargerTontines();
     }
@@ -3497,9 +3510,9 @@ function estEnRetardPeriode(membre, tontine) {
     ouvrirPageConnexion();
   }
 
-  // -----------------------------
+  // ============================
   // 🟣 TONTINES
-  // -----------------------------
+  // ============================
   async function creerTontine() {
     try {
       const body = {
@@ -3527,7 +3540,6 @@ function estEnRetardPeriode(membre, tontine) {
   async function chargerTontines() {
     try {
       const tontines = await apiFetch("/tontines");
-
       const liste = document.getElementById("listeTontines");
       liste.innerHTML = "";
 
@@ -3551,9 +3563,9 @@ function estEnRetardPeriode(membre, tontine) {
     } catch {}
   }
 
-  // -----------------------------
+  // ============================
   // 👥 MEMBRES
-  // -----------------------------
+  // ============================
   async function ajouterMembreTontine() {
     const tontineId = document.getElementById("selectTontineGestion").value;
     const nom = document.getElementById("nouveauMembre").value;
@@ -3573,7 +3585,6 @@ function estEnRetardPeriode(membre, tontine) {
   async function chargerMembresTontine(tontineId) {
     try {
       const membres = await apiFetch(`/membres/${tontineId}`);
-
       const liste = document.getElementById("listeMembresTontineGestion");
       liste.innerHTML = "";
       membres.forEach(m => {
@@ -3591,9 +3602,9 @@ function estEnRetardPeriode(membre, tontine) {
     } catch {}
   }
 
-  // -----------------------------
+  // ============================
   // 💵 COTISATIONS
-  // -----------------------------
+  // ============================
   async function enregistrerCotisationTontine() {
     const tontineId = document.getElementById("selectTontineGestion").value;
     const membreId = document.getElementById("membreCotisationSelect").value;
@@ -3615,7 +3626,6 @@ function estEnRetardPeriode(membre, tontine) {
   async function chargerCotisations(tontineId) {
     try {
       const cotisations = await apiFetch(`/cotisations/${tontineId}`);
-
       const historique = document.getElementById("historiqueCotisations");
       historique.innerHTML = "";
 
@@ -3665,6 +3675,8 @@ function estEnRetardPeriode(membre, tontine) {
       historique.appendChild(table);
     } catch {}
   }
+</script>
+
 </script>
 
 
