@@ -1595,23 +1595,34 @@ async function creerTontine() {
   if (!validerEtape(4)) return;
 
   try {
-    await apiFetch("/tontines", {
+    // Lecture des champs
+    const nom = document.getElementById("nomTontine").value.trim();
+    const typeInput = document.getElementById("typeTontine").value;
+    const montant = parseFloat(document.getElementById("montantCotisation").value);
+    const membresMax = parseInt(document.getElementById("nombreMembres").value);
+
+    // Normalisation du type selon ce que Postgres accepte
+    let type = "autre"; 
+    if (["hebdomadaire", "mensuelle"].includes(typeInput.toLowerCase())) {
+      type = typeInput.toLowerCase();
+    }
+
+    // Construction de l’objet
+    const newTontine = await apiFetch("/tontines", {
       method: "POST",
       body: JSON.stringify({
-        nom: document.getElementById("nomTontine").value.trim(),
-        type: document.getElementById("typeTontine").value,
-        montant: parseFloat(document.getElementById("montantCotisation").value),
-        membres_max: parseInt(document.getElementById("nombreMembres").value),
+        nom,
+        type,
+        montant,
+        membres_max: isNaN(membresMax) ? null : membresMax,
         statut: "active"
       }),
     });
 
-    // 🔁 Recharge toute la liste depuis le backend
-    tontines = await apiFetch("/tontines");
-    afficherTontines();
-    chargerSelectsTontines();
+    // Ajout en mémoire
+    tontines.push(newTontine);
 
-    // Reset wizard
+    // Réinitialiser le wizard
     document.querySelectorAll(".etape").forEach(e => e.classList.add("hidden"));
     etape = 1;
     document.getElementById("etape-1").classList.remove("hidden");
@@ -1621,20 +1632,19 @@ async function creerTontine() {
     document.getElementById("btnCreate").classList.add("hidden");
 
     // Nettoyer les champs
-    ["nomTontine","montantCotisation","nombreMembres","descriptionTontine"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.value = "";
-    });
+    document.getElementById("nomTontine").value = "";
+    document.getElementById("montantCotisation").value = "";
+    document.getElementById("nombreMembres").value = "";
+    document.getElementById("descriptionTontine").value = "";
 
     alert("✅ Tontine créée avec succès !");
     ouvrirPage("accueil");
-
+    afficherTontines(); // recharge l’affichage
   } catch (err) {
     console.error(err);
     alert("❌ Erreur lors de la création de la tontine");
   }
 }
-
         // Affichage des tontines
      function afficherTontines() {
     const liste = document.getElementById('listeTontines');
