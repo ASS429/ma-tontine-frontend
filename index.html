@@ -4,24 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestionnaire de Tontines Pro</title>
-    <script src="https://cdn.tailwindcss.com">
-// === Gestion des tirages ===
-async function supprimerTirage(tirageId, tontineId) {
-    if (!confirm("Supprimer ce tirage ?")) return;
-
-    try {
-        await apiFetch(`/tirages/${tirageId}`, { method: "DELETE" });
-        alert("✅ Tirage supprimé !");
-        chargerTontineTirage();
-        mettreAJourAlertes();
-    } catch (e) {
-        console.error(e);
-        alert("❌ Erreur lors de la suppression du tirage");
-    }
-}
-
-</script>
-
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
         
@@ -496,50 +480,7 @@ label { font-size: 0.95rem; font-weight: 600; }
                 </div>
             </div>
         </div>
-    
-<!-- Dropdown Profil -->
-<div class="relative inline-block text-left" id="profileMenu">
-  <button id="profileButton" class="flex items-center text-gray-700 hover:text-blue-600 font-medium focus:outline-none">
-    👤
-  </button>
-  <div id="profileDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg py-2 z-50">
-    <button id="installAppBtnDropdown" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">📲 Installer l’application</button>
-    <button id="logoutBtnDropdown" class="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100">🚪 Déconnexion</button>
-  </div>
-</div>
-<script>
-// === Global DOMContentLoaded wrapper ===
-document.addEventListener("DOMContentLoaded", function() {
-
-  const profileButton = document.getElementById('profileButton');
-  const profileDropdown = document.getElementById('profileDropdown');
-
-  if (profileButton) {
-    profileButton.addEventListener('click', () => {
-      profileDropdown.classList.toggle('hidden');
-    });
-
-    // Cacher le menu si on clique ailleurs
-    document.addEventListener('click', (e) => {
-      if (!profileButton.contains(e.target) && !profileDropdown.contains(e.target)) {
-        profileDropdown.classList.add('hidden');
-      }
-    });
-  }
-
-  const logoutBtnDropdown = document.getElementById('logoutBtnDropdown');
-  if (logoutBtnDropdown) {
-    logoutBtnDropdown.addEventListener('click', () => {
-      localStorage.removeItem('token');
-      location.reload();
-    });
-  }
-
-});
-
-</script>
-
-</header>
+    </header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <!-- PAGE CONNEXION -->
@@ -698,7 +639,7 @@ document.addEventListener("DOMContentLoaded", function() {
       <div>
         <label class="block font-semibold mb-2">Type de Tontine</label>
         <select id="typeTontine" class="form-input w-full">
-          <option value="argent">💰 Argent</option> 
+          <option value="argent">💰 Argent</option>
           <option value="electronique">📱 Électronique</option>
           <option value="cosmetique">💄 Cosmétiques</option>
           <option value="autre">🎁 Autre</option>
@@ -1162,47 +1103,43 @@ async function migrerComptesEnClair() {
   }));
   if (modif) localStorage.setItem('app_utilisateurs', JSON.stringify(utilisateurs));
 }
-  
-    // Variables pour la synchronisation
 
-  let donneesModifiees = false;
-  let derniereSynchronisation = null;
-  let estEnLigne = navigator.onLine;
+document.addEventListener('DOMContentLoaded', () => { migrerComptesEnClair(); });
 
-   // Données de l'application (spécifiques à l'utilisateur connecté)
-  let tontines = [];
-  let alertes = [];
-  let tontineActive = null;
 
-document.addEventListener('DOMContentLoaded', () => {
-  migrerComptesEnClair(); 
-  let pageActuelle = 'accueil';
-  
-  
+        // Données de l'application (spécifiques à l'utilisateur connecté)
+        let tontines = [];
+        let alertes = [];
+        let tontineActive = null;
+        let pageActuelle = 'accueil';
+        
+        // Variables pour la synchronisation
+        let estEnLigne = navigator.onLine;
+        let donneesModifiees = false;
+        let derniereSynchronisation = null;
 
-  // Initialisation
-  verifierAuthentification();
-  configurerEvenementsReseau();
-  
-  // Vérifier les alertes toutes les 5 minutes
-  setInterval(() => verifierAlertes(), 5 * 60 * 1000);
-  
-  // Vérifier la synchronisation toutes les 30 secondes
-  setInterval(verifierSynchronisation, 30 * 1000);
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            verifierAuthentification();
+            configurerEvenementsReseau();
+            
+            // Vérifier les alertes toutes les 5 minutes
+            setInterval(mettreAJourAlertes, 5 * 60 * 1000);
+            
+            // Vérifier la synchronisation toutes les 30 secondes
+            setInterval(verifierSynchronisation, 30 * 1000);
+        });
 
-  // Système d'authentification
-  function verifierAuthentification() {
-    const token = localStorage.getItem("token");
-    if (token) {
-      chargerDonneesUtilisateur();
-      initialiserApplication();
-      afficherInterfaceConnectee();
-    } else {
-      afficherPageConnexion();
-    }
-  }
-});
-
+        // Système d'authentification
+        function verifierAuthentification() {
+            if (utilisateurConnecte) {
+                chargerDonneesUtilisateur();
+                initialiserApplication();
+                afficherInterfaceConnectee();
+            } else {
+                afficherPageConnexion();
+            }
+        }
 
         async function seConnecter(event) {
   event.preventDefault();
@@ -1357,119 +1294,107 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Initialisation de l'application
-        async function initialiserApplication() {
-  try {
-    // Charger les tontines depuis l’API (avec leurs UUID)
-    tontines = await apiFetch("/tontines");
-     
-    console.log("Tontines chargées:", tontines);   // 🔍 Debug
-
-    // Remplir les selects avec les tontines du backend
-    chargerSelectsTontines();
-
-    // Mettre à jour le statut réseau + affichage + alertes
-    mettreAJourStatutReseau();
-    mettreAJourAffichage();
-    await mettreAJourAlertes();
-
-    // Initialiser la date de cotisation si l'élément existe
-    const dateCotisation = document.getElementById("dateCotisation");
-    if (dateCotisation) {
-      dateCotisation.value = new Date().toISOString().split("T")[0];
-    }
-
-    // Afficher la dernière synchronisation si disponible
-    if (derniereSynchronisation) {
-      const dateDerniere = new Date(derniereSynchronisation);
-      console.log(`Dernière synchronisation: ${dateDerniere.toLocaleString("fr-FR")}`);
-    }
-  } catch (err) {
-    console.error("Erreur init:", err);
-    alert("❌ Impossible de charger vos tontines");
-  }
-}
+        function initialiserApplication() {
+            mettreAJourStatutReseau();
+            mettreAJourAffichage();
+            mettreAJourAlertes();
+            
+            // Initialiser la date de cotisation si l'élément existe
+            const dateCotisation = document.getElementById('dateCotisation');
+            if (dateCotisation) {
+                dateCotisation.value = new Date().toISOString().split('T')[0];
+            }
+            
+            // Afficher la dernière synchronisation si disponible
+            if (derniereSynchronisation) {
+                const dateDerniere = new Date(derniereSynchronisation);
+                console.log(`Dernière synchronisation: ${dateDerniere.toLocaleString('fr-FR')}`);
+            }
+        }
 
         // Configuration des événements réseau
         function configurerEvenementsReseau() {
-    window.addEventListener('online', function() {
-        estEnLigne = true;
-        mettreAJourStatutReseau();
-        synchroniserDonnees();
-    });
+            window.addEventListener('online', function() {
+                estEnLigne = true;
+                mettreAJourStatutReseau();
+                synchroniserDonnees();
+            });
 
-    window.addEventListener('offline', function() {
-        estEnLigne = false;
-        mettreAJourStatutReseau();
-    });
-}
-
-// Mise à jour du statut réseau
-function mettreAJourStatutReseau() {
-    const banniere = document.getElementById('banniereReseau');
-    
-    if (!estEnLigne) {
-        banniere.classList.remove('hidden');
-        banniere.innerHTML = '📡 Mode hors ligne - Données locales utilisées';
-        banniere.className = 'fixed top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm font-medium z-50';
-    } else {
-        if (donneesModifiees) {
-            banniere.classList.remove('hidden');
-            banniere.innerHTML = '🔄 Synchronisation en cours...';
-            banniere.className = 'fixed top-0 left-0 right-0 bg-blue-500 text-white text-center py-2 text-sm font-medium z-50';
-        } else {
-            banniere.classList.add('hidden');
+            window.addEventListener('offline', function() {
+                estEnLigne = false;
+                mettreAJourStatutReseau();
+            });
         }
-    }
-}
 
-// Synchronisation des données
-function synchroniserDonnees() {
-    if (!estEnLigne || !donneesModifiees || !utilisateurConnecte) return;
-    
-    try {
-        // Simulation de synchronisation avec un serveur
-        setTimeout(() => {
-            // Marquer comme synchronisé
-            donneesModifiees = false;
-            derniereSynchronisation = new Date().toISOString();
+        // Mise à jour du statut réseau
+        function mettreAJourStatutReseau() {
+            const banniere = document.getElementById('banniereReseau');
             
-            // Sauvegarder la date de synchronisation pour l'utilisateur
-            const cleUtilisateur = `user_${utilisateurConnecte.id}`;
-            localStorage.setItem(`${cleUtilisateur}_derniere_sync`, derniereSynchronisation);
-            
-            // Mettre à jour l'interface
-            mettreAJourStatutReseau();
-            
-            // Afficher une notification de succès
-            afficherNotificationSync('✅ Données synchronisées avec succès');
-            
-            console.log('Synchronisation terminée:', new Date().toLocaleString('fr-FR'));
-        }, 2000); // Simulation d'un délai de synchronisation
-    } catch (error) {
-        console.error('Erreur de synchronisation:', error);
-        afficherNotificationSync('❌ Erreur de synchronisation');
-    }
-}
+            if (!estEnLigne) {
+                banniere.classList.remove('hidden');
+                banniere.innerHTML = '📡 Mode hors ligne - Données locales utilisées';
+                banniere.className = 'fixed top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm font-medium z-50';
+            } else {
+                if (donneesModifiees) {
+                    banniere.classList.remove('hidden');
+                    banniere.innerHTML = '🔄 Synchronisation en cours...';
+                    banniere.className = 'fixed top-0 left-0 right-0 bg-blue-500 text-white text-center py-2 text-sm font-medium z-50';
+                } else {
+                    banniere.classList.add('hidden');
+                }
+            }
+        }
 
-// Vérification périodique de la synchronisation
-function verifierSynchronisation() {
-    if (estEnLigne && donneesModifiees) {
-        synchroniserDonnees();
-    }
-}
+        // Synchronisation des données
+        function synchroniserDonnees() {
+            if (!estEnLigne || !donneesModifiees || !utilisateurConnecte) return;
+            
+            try {
+                // Simulation de synchronisation avec un serveur
+                // Dans une vraie application, ici on enverrait les données au serveur
+                
+                setTimeout(() => {
+                    // Marquer comme synchronisé
+                    donneesModifiees = false;
+                    derniereSynchronisation = new Date().toISOString();
+                    
+                    // Sauvegarder la date de synchronisation pour l'utilisateur
+                    const cleUtilisateur = `user_${utilisateurConnecte.id}`;
+                    localStorage.setItem(`${cleUtilisateur}_derniere_sync`, derniereSynchronisation);
+                    
+                    // Mettre à jour l'interface
+                    mettreAJourStatutReseau();
+                    
+                    // Afficher une notification de succès
+                    afficherNotificationSync('✅ Données synchronisées avec succès');
+                    
+                    console.log('Synchronisation terminée:', new Date().toLocaleString('fr-FR'));
+                }, 2000); // Simulation d'un délai de synchronisation
+                
+            } catch (error) {
+                console.error('Erreur de synchronisation:', error);
+                afficherNotificationSync('❌ Erreur de synchronisation');
+            }
+        }
 
-// Affichage des notifications de synchronisation
-function afficherNotificationSync(message) {
-    const banniere = document.getElementById('banniereReseau');
-    banniere.classList.remove('hidden');
-    banniere.innerHTML = message;
-    banniere.className = 'fixed top-0 left-0 right-0 bg-green-500 text-white text-center py-2 text-sm font-medium z-50';
-    
-    setTimeout(() => {
-        banniere.classList.add('hidden');
-    }, 3000);
-}
+        // Vérification périodique de la synchronisation
+        function verifierSynchronisation() {
+            if (estEnLigne && donneesModifiees) {
+                synchroniserDonnees();
+            }
+        }
 
+        // Affichage des notifications de synchronisation
+        function afficherNotificationSync(message) {
+            const banniere = document.getElementById('banniereReseau');
+            banniere.classList.remove('hidden');
+            banniere.innerHTML = message;
+            banniere.className = 'fixed top-0 left-0 right-0 bg-green-500 text-white text-center py-2 text-sm font-medium z-50';
+            
+            setTimeout(() => {
+                banniere.classList.add('hidden');
+            }, 3000);
+        }
 
         // Navigation entre pages
         function ouvrirPage(page) {
@@ -1591,62 +1516,52 @@ function afficherErreur(msg) {
 }
 
 // Création finale (uniquement à l’étape 4)
-async function creerTontine() {
+function creerTontine() {
   if (!validerEtape(4)) return;
 
-  try {
-    // Lecture des champs
-    const nom = document.getElementById("nomTontine").value.trim();
-    const typeInput = document.getElementById("typeTontine").value;
-    const montant = parseFloat(document.getElementById("montantCotisation").value);
-    const membresMax = parseInt(document.getElementById("nombreMembres").value);
+  const tontine = {
+    id: Date.now(),
+    nom: document.getElementById('nomTontine').value.trim(),
+    type: document.getElementById('typeTontine').value,
+    montant: parseFloat(document.getElementById('montantCotisation').value),
+    frequenceCotisation: document.getElementById('frequenceCotisation').value,
+    jourCotisation: document.getElementById('jourCotisation').value,
+    frequenceTirage: document.getElementById('frequenceTirage').value,
+    nombreMembresMax: parseInt(document.getElementById('nombreMembres').value),
+    description: document.getElementById('descriptionTontine').value.trim(),
+    dateCreation: new Date().toISOString(),
+    statut: 'active',
+    membres: [],
+    cotisations: [],
+    tirages: [],
+    gagnants: []
+  };
 
-    // Normalisation du type selon ce que Postgres accepte
-    let type = "autre"; 
-    if (["hebdomadaire", "mensuelle"].includes(typeInput.toLowerCase())) {
-      type = typeInput.toLowerCase();
-    }
+  tontines.push(tontine);
+  sauvegarder();
 
-    // Construction de l’objet
-    const newTontine = await apiFetch("/tontines", {
-      method: "POST",
-      body: JSON.stringify({
-        nom,
-        type,
-        montant,
-        membres_max: isNaN(membresMax) ? null : membresMax,
-        statut: "active"
-      }),
-    });
+  // Réinitialiser le wizard
+  document.querySelectorAll(".etape").forEach(e => e.classList.add("hidden"));
+  etape = 1;
+  document.getElementById("etape-1").classList.remove("hidden");
+  document.getElementById("etapeNum").innerText = etape;
+  document.getElementById("btnPrev").classList.add("hidden");
+  document.getElementById("btnNext").classList.remove("hidden");
+  document.getElementById("btnCreate").classList.add("hidden");
 
-    // Ajout en mémoire
-    tontines.push(newTontine);
+  // Nettoyer les champs
+  document.getElementById('nomTontine').value = '';
+  document.getElementById('montantCotisation').value = '';
+  document.getElementById('nombreMembres').value = '';
+  document.getElementById('descriptionTontine').value = '';
 
-    // Réinitialiser le wizard
-    document.querySelectorAll(".etape").forEach(e => e.classList.add("hidden"));
-    etape = 1;
-    document.getElementById("etape-1").classList.remove("hidden");
-    document.getElementById("etapeNum").innerText = etape;
-    document.getElementById("btnPrev").classList.add("hidden");
-    document.getElementById("btnNext").classList.remove("hidden");
-    document.getElementById("btnCreate").classList.add("hidden");
-
-    // Nettoyer les champs
-    document.getElementById("nomTontine").value = "";
-    document.getElementById("montantCotisation").value = "";
-    document.getElementById("nombreMembres").value = "";
-    document.getElementById("descriptionTontine").value = "";
-
-    alert("✅ Tontine créée avec succès !");
-    ouvrirPage("accueil");
-    afficherTontines(); // recharge l’affichage
-  } catch (err) {
-    console.error(err);
-    alert("❌ Erreur lors de la création de la tontine");
-  }
+  // Message succès
+  alert('✅ Tontine créée avec succès !');
+  ouvrirPage('accueil');
 }
+
         // Affichage des tontines
-     function afficherTontines() {
+       function afficherTontines() {
     const liste = document.getElementById('listeTontines');
     liste.innerHTML = '';
 
@@ -1708,151 +1623,128 @@ async function creerTontine() {
         div.className = 'tontine-card p-8 fade-in-up';
         div.style.animationDelay = `${index * 0.1}s`;
         div.innerHTML = `
-            <div class="flex justify-between items-start mb-6">
-                <div class="flex items-center space-x-4">
-                    <div class="text-5xl floating-animation">${typeIcon[tontine.type]}</div>
-                    <div>
-                        <h3 class="font-bold text-xl text-gray-800">${tontine.nom}</h3>
-                        <p class="text-gray-600 font-medium">${frequenceText[tontine.frequenceCotisation]} - ${tontine.montant.toLocaleString()} FCFA</p>
+                    <div class="flex justify-between items-start mb-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-5xl floating-animation">${typeIcon[tontine.type]}</div>
+                            <div>
+                                <h3 class="font-bold text-xl text-gray-800">${tontine.nom}</h3>
+                                <p class="text-gray-600 font-medium">${frequenceText[tontine.frequenceCotisation]} - ${tontine.montant.toLocaleString()} FCFA</p>
+                            </div>
+                        </div>
+                        <span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full text-sm font-semibold">
+                            ${tontine.statut}
+                        </span>
                     </div>
-                </div>
-                <span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full text-sm font-semibold">
-                    ${tontine.statut}
-                </span>
-            </div>
-            
-            <div class="mb-6">
-                <div class="flex justify-between text-sm text-gray-600 mb-2 font-medium">
-                    <span>Membres: ${tontine.membres.length}/${tontine.nombreMembresMax}</span>
-                    <span>${Math.round(progression)}%</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-3">
-                    <div class="progress-bar h-3 rounded-full" style="width: ${progression}%"></div>
-                </div>
-            </div>
-            
-            ${eligibles.length === 0 ? `
-                <div class="bg-gradient-to-r from-gray-400 to-gray-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
-                    🏁 Tontine terminée
-                </div>
-            ` : tontine.membres.length === 0 ? `
-                <div class="bg-gradient-to-r from-blue-400 to-blue-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
-                    👥 En attente de membres
-                </div>
-            ` : tontine.cotisations.length === 0 ? `
-                <div class="bg-gradient-to-r from-purple-400 to-purple-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
-                    💰 En attente de cotisations
-                </div>
-            ` : (cotisationsCompletes && tiragePossible) ? `
-                <div class="alert-notification text-center px-4 py-3 mb-6 text-white font-semibold">
-                    ${tontine.tirages.length === 0 ? '🎯 Premier tirage disponible !' : '🎲 Tirage disponible !'}
-                </div>
-            ` : cotisationsCompletes && !tiragePossible ? `
-                <div class="bg-gradient-to-r from-orange-400 to-orange-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
-                    ⏳ Prochain tirage dans ${obtenirJoursRestantsAvantTirage(tontine)} jour(s)
-                </div>
-            ` : !cotisationsCompletes ? `
-                <div class="bg-gradient-to-r from-red-400 to-red-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
-                    ❌ Cotisations incomplètes (${tontine.membres.filter(m => {
-                        const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
-                        return !m.cotisationsPayees.some(c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle);
-                    }).length} membre(s) en retard)
-                </div>
-            ` : ''}
-            
-            <div class="grid grid-cols-2 gap-3 mb-4">
-                <button onclick="gererTontine(${tontine.id})" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium">
-                    ⚙️ Gérer
-                </button>
-                <button onclick="voirMembres(${tontine.id})" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium" style="background: var(--secondary-gradient)">
-                    👥 Membres
-                </button>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <button onclick="editerTontineAccueil(${tontine.id})" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium" style="background: var(--warning-gradient)">
-                    ✏️ Éditer
-                </button>
-                <button onclick="supprimerTontine(${tontine.id})" class="btn-gradient btn-danger text-sm py-3 px-4 rounded-xl font-medium">
-                    🗑️ Supprimer
-                </button>
-            </div>
-        `;
+                    
+                    <div class="mb-6">
+                        <div class="flex justify-between text-sm text-gray-600 mb-2 font-medium">
+                            <span>Membres: ${tontine.membres.length}/${tontine.nombreMembresMax}</span>
+                            <span>${Math.round(progression)}%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-3">
+                            <div class="progress-bar h-3 rounded-full" style="width: ${progression}%"></div>
+                        </div>
+                    </div>
+                    
+                    ${eligibles.length === 0 ? `
+                        <div class="bg-gradient-to-r from-gray-400 to-gray-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
+                            🏁 Tontine terminée
+                        </div>
+                    ` : tontine.membres.length === 0 ? `
+                        <div class="bg-gradient-to-r from-blue-400 to-blue-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
+                            👥 En attente de membres
+                        </div>
+                    ` : tontine.cotisations.length === 0 ? `
+                        <div class="bg-gradient-to-r from-purple-400 to-purple-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
+                            💰 En attente de cotisations
+                        </div>
+                    ` : (cotisationsCompletes && tiragePossible) ? `
+                        <div class="alert-notification text-center px-4 py-3 mb-6 text-white font-semibold">
+                            ${tontine.tirages.length === 0 ? '🎯 Premier tirage disponible !' : '🎲 Tirage disponible !'}
+                        </div>
+                    ` : cotisationsCompletes && !tiragePossible ? `
+                        <div class="bg-gradient-to-r from-orange-400 to-orange-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
+                            ⏳ Prochain tirage dans ${obtenirJoursRestantsAvantTirage(tontine)} jour(s)
+                        </div>
+                    ` : !cotisationsCompletes ? `
+                        <div class="bg-gradient-to-r from-red-400 to-red-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
+                            ❌ Cotisations incomplètes (${tontine.membres.filter(m => {
+                                const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
+                                return !m.cotisationsPayees.some(c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle);
+                            }).length} membre(s) en retard)
+                        </div>
+                    ` : ''}
+                    
+                    <div class="grid grid-cols-2 gap-3 mb-4">
+                        <button onclick="gererTontine(${tontine.id})" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium">
+                            ⚙️ Gérer
+                        </button>
+                        <button onclick="voirMembres(${tontine.id})" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium" style="background: var(--secondary-gradient)">
+                            👥 Membres
+                        </button>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="editerTontineAccueil(${tontine.id})" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium" style="background: var(--warning-gradient)">
+                            ✏️ Éditer
+                        </button>
+                        <button onclick="supprimerTontine(${tontine.id})" class="btn-gradient btn-danger text-sm py-3 px-4 rounded-xl font-medium">
+                            🗑️ Supprimer
+                        </button>
+                    </div>
+                `;
         liste.appendChild(div);
-    }); // <-- fermeture du forEach
-} // <-- fermeture de la fonction afficherTontines
-
-
-// ------------------------------
-// Fonctions complémentaires
-// ------------------------------
+    });
+}
 
 function masquerGuide() {
     localStorage.setItem('guideMasque', 'true'); // Sauvegarde le choix
     afficherTontines(); // Recharge la page d’accueil sans le guide
 }
 
-// Gestion des tontines
-function gererTontine(id) {
-    ouvrirPage('gestion');
-    document.getElementById('selectTontineGestion').value = id;
-    chargerTontineGestion();
-}
+        // Gestion des tontines
+        function gererTontine(id) {
+            ouvrirPage('gestion');
+            document.getElementById('selectTontineGestion').value = id;
+            chargerTontineGestion();
+        }
 
-function voirMembres(id) {
-    ouvrirPage('membres');
-    document.getElementById('selectTontineMembres').value = id;
-    afficherMembresTontine();
-}
+        function voirMembres(id) {
+            ouvrirPage('membres');
+            document.getElementById('selectTontineMembres').value = id;
+            afficherMembresTontine();
+        }
 
-function chargerSelectsTontines() {
-    const selects = ['selectTontineGestion', 'selectTontineMembres', 'selectTontineTirage'];
-    
-    selects.forEach(selectId => {
-        const select = document.getElementById(selectId);
-        if (select) {
-            select.innerHTML = '<option value="">Choisir une tontine...</option>';
-            
-            tontines.forEach(tontine => {
-                const option = document.createElement('option');
-                option.value = tontine.id;
-                option.textContent = tontine.nom;
-                select.appendChild(option);
+        function chargerSelectsTontines() {
+            const selects = ['selectTontineGestion', 'selectTontineMembres', 'selectTontineTirage'];
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    select.innerHTML = '<option value="">Choisir une tontine...</option>';
+                    tontines.forEach(tontine => {
+                        const option = document.createElement('option');
+                        option.value = tontine.id;
+                        option.textContent = tontine.nom;
+                        select.appendChild(option);
+                    });
+                }
             });
         }
-    });
-}
 
+        function chargerTontineGestion() {
+            const id = parseInt(document.getElementById('selectTontineGestion').value);
+            if (!id) {
+                document.getElementById('panneauGestion').classList.add('hidden');
+                return;
+            }
 
-async function chargerTontineGestion() {
-  const id = document.getElementById('selectTontineGestion').value; // garder en string
-  if (!id) {
-    document.getElementById('panneauGestion').classList.add('hidden');
-    return;
-  }
-
-  // 1. récupérer la tontine
-  tontineActive = tontines.find(t => String(t.id) === String(id));
-  if (!tontineActive) {
-    console.error("Tontine non trouvée (id:", id, ")");
-    return;
-  }
-
-  // 2. récupérer ses membres depuis l’API
-  try {
-    const membres = await apiFetch(`/membres/${id}`);
-    tontineActive.membres = membres;
-  } catch (err) {
-    console.error("Erreur chargement membres:", err);
-    tontineActive.membres = [];
-  }
-
-  document.getElementById('panneauGestion').classList.remove('hidden');
-  
-  afficherInfosTontine();
-  afficherMembresTontineGestion();
-  mettreAJourSelectMembres();
-  afficherHistoriqueCotisations();
-}
+            tontineActive = tontines.find(t => t.id === id);
+            document.getElementById('panneauGestion').classList.remove('hidden');
+            
+            afficherInfosTontine();
+            afficherMembresTontineGestion();
+            mettreAJourSelectMembres();
+            afficherHistoriqueCotisations();
+        }
 
         function afficherInfosTontine() {
             const tontine = tontineActive;
@@ -1900,587 +1792,549 @@ async function chargerTontineGestion() {
 
         // Affichage des membres par tontine
         function afficherMembresTontine() {
-    const id = parseInt(document.getElementById('selectTontineMembres').value);
-    if (!id) {
-        document.getElementById('panneauMembres').classList.add('hidden');
-        return;
-    }
+            const id = parseInt(document.getElementById('selectTontineMembres').value);
+            if (!id) {
+                document.getElementById('panneauMembres').classList.add('hidden');
+                return;
+            }
 
-    const tontine = tontines.find(t => t.id === id);
-    document.getElementById('panneauMembres').classList.remove('hidden');
-    
-    const cartes = document.getElementById('cartesMembres');
-    cartes.innerHTML = '';
-
-    if (tontine.membres.length === 0) {
-        cartes.innerHTML = `
-            <div class="col-span-full text-center py-12">
-                <div class="text-6xl mb-6 floating-animation">👥</div>
-                <h3 class="text-xl font-bold text-gray-700">Aucun membre</h3>
-                <p class="text-gray-600">Cette tontine n'a pas encore de membres</p>
-            </div>
-        `;
-        return;
-    }
-
-    tontine.membres.forEach((membre, index) => {
-        const cotisationsCount = membre.cotisationsPayees.length;
-        const totalCotise = cotisationsCount * tontine.montant;
-        const statut = membre.aGagne ? 'Gagnant' : 'Actif';
-        const couleurStatut = membre.aGagne 
-            ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' 
-            : 'bg-gradient-to-r from-green-400 to-green-500 text-white';
-        
-        // Calculer le statut de paiement pour la période actuelle
-        const tousOntGagne = tontine.membres.every(m => m.aGagne);
-        let statutPaiement;
-        
-        if (tousOntGagne) {
-            statutPaiement = '<span class="text-blue-600 font-semibold">🏁 Tontine terminée</span>';
-        } else {
-            const periodeActuelle = obtenirPeriodeCotisation(
-                new Date().toISOString().split('T')[0], 
-                tontine.frequenceCotisation
-            );
+            const tontine = tontines.find(t => t.id === id);
+            document.getElementById('panneauMembres').classList.remove('hidden');
             
-            const aCotisePeriodeActuelle = membre.cotisationsPayees.some(c => {
-                const periodeCotisation = obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation);
-                return periodeCotisation === periodeActuelle;
+            const cartes = document.getElementById('cartesMembres');
+            cartes.innerHTML = '';
+
+            if (tontine.membres.length === 0) {
+                cartes.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <div class="text-6xl mb-6 floating-animation">👥</div>
+                        <h3 class="text-xl font-bold text-gray-700">Aucun membre</h3>
+                        <p class="text-gray-600">Cette tontine n'a pas encore de membres</p>
+                    </div>
+                `;
+                return;
+            }
+
+            tontine.membres.forEach((membre, index) => {
+                const cotisationsCount = membre.cotisationsPayees.length;
+                const totalCotise = cotisationsCount * tontine.montant;
+                const statut = membre.aGagne ? 'Gagnant' : 'Actif';
+                const couleurStatut = membre.aGagne ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' : 'bg-gradient-to-r from-green-400 to-green-500 text-white';
+                
+                // Calculer le statut de paiement pour la période actuelle
+                const tousOntGagne = tontine.membres.every(m => m.aGagne);
+                let statutPaiement;
+                
+                if (tousOntGagne) {
+                    statutPaiement = '<span class="text-blue-600 font-semibold">🏁 Tontine terminée</span>';
+                } else {
+                    const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
+                    const aCotisePeriodeActuelle = membre.cotisationsPayees.some(c => {
+                        const periodeCotisation = obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation);
+                        return periodeCotisation === periodeActuelle;
+                    });
+                    
+                    statutPaiement = aCotisePeriodeActuelle ? 
+                        '<span class="text-green-600 font-semibold">✅ À jour</span>' : 
+                        '<span class="text-red-600 font-semibold">⚠️ En retard</span>';
+                }
+                
+                const div = document.createElement('div');
+                div.className = 'member-card p-8 fade-in-up';
+                div.style.animationDelay = `${index * 0.1}s`;
+                div.innerHTML = `
+                    <div class="text-center mb-6">
+                        <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 floating-animation">
+                            <span class="text-white text-3xl">${membre.aGagne ? '🏆' : '👤'}</span>
+                        </div>
+                        <h3 class="font-bold text-xl text-gray-800 mb-2">${membre.nom}</h3>
+                        <span class="px-4 py-2 ${couleurStatut} rounded-full text-sm font-semibold">${statut}</span>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600 font-medium">Cotisations:</span>
+                            <span class="font-bold text-lg">${cotisationsCount}</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600 font-medium">Total cotisé:</span>
+                            <span class="font-bold text-lg text-green-600">${totalCotise.toLocaleString()} FCFA</span>
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600 font-medium">Statut paiement:</span>
+                            ${statutPaiement}
+                        </div>
+                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                            <span class="text-gray-600 font-medium">Membre depuis:</span>
+                            <span class="font-bold">${new Date(membre.dateAjout).toLocaleDateString('fr-FR')}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 pt-4 border-t">
+                        <div class="text-sm text-gray-600 font-medium mb-3">Historique des paiements:</div>
+                        <div class="space-y-2 max-h-40 overflow-y-auto">
+                            ${membre.cotisationsPayees.slice(-5).reverse().map(c => 
+                                `<div class="flex justify-between items-center text-xs bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg">
+                                    <div>
+                                        <div class="font-medium">${new Date(c.date).toLocaleDateString('fr-FR')}</div>
+                                        <div class="text-gray-500">${c.montant.toLocaleString()} FCFA</div>
+                                        ${c.montant > tontine.montant ? `<div class="text-green-600 font-semibold text-xs">📊 ${Math.round(c.montant / tontine.montant)} cotisations</div>` : ''}
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <button onclick="editerCotisation('${c.id}', ${tontine.id})" class="text-blue-500 hover:text-blue-700 text-sm" title="Éditer">✏️</button>
+                                        <button onclick="supprimerCotisation('${c.id}', ${tontine.id})" class="text-red-500 hover:text-red-700 text-sm" title="Supprimer">❌</button>
+                                    </div>
+                                </div>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-3 mt-6 pt-4 border-t">
+                        <button onclick="ouvrirModaleEditionMembre(${membre.id})" class="flex-1 btn-gradient px-4 py-3 rounded-xl font-medium" style="background: var(--warning-gradient)">
+                            ✏️ Éditer
+                        </button>
+                        <button onclick="retirerMembreTontine(${membre.id}, ${tontine.id})" class="flex-1 btn-gradient btn-danger py-3 rounded-xl font-medium">
+                            🗑️ Retirer
+                        </button>
+                    </div>
+                `;
+                cartes.appendChild(div);
             });
-
-            statutPaiement = aCotisePeriodeActuelle 
-                ? '<span class="text-green-600 font-semibold">✅ À jour</span>' 
-                : '<span class="text-red-600 font-semibold">⚠️ En retard</span>';
         }
-        
-        const div = document.createElement('div');
-        div.className = 'member-card p-8 fade-in-up';
-        div.style.animationDelay = `${index * 0.1}s`;
-        div.innerHTML = `
-            <div class="text-center mb-6">
-                <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 floating-animation">
-                    <span class="text-white text-3xl">${membre.aGagne ? '🏆' : '👤'}</span>
-                </div>
-                <h3 class="font-bold text-xl text-gray-800 mb-2">${membre.nom}</h3>
-                <span class="px-4 py-2 ${couleurStatut} rounded-full text-sm font-semibold">${statut}</span>
-            </div>
-            
-            <div class="space-y-4">
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span class="text-gray-600 font-medium">Cotisations:</span>
-                    <span class="font-bold text-lg">${cotisationsCount}</span>
-                </div>
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span class="text-gray-600 font-medium">Total cotisé:</span>
-                    <span class="font-bold text-lg text-green-600">${totalCotise.toLocaleString()} FCFA</span>
-                </div>
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span class="text-gray-600 font-medium">Statut paiement:</span>
-                    ${statutPaiement}
-                </div>
-                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                    <span class="text-gray-600 font-medium">Membre depuis:</span>
-                    <span class="font-bold">${new Date(membre.dateAjout).toLocaleDateString('fr-FR')}</span>
-                </div>
-            </div>
-            
-            <div class="mt-6 pt-4 border-t">
-                <div class="text-sm text-gray-600 font-medium mb-3">Historique des paiements:</div>
-                <div class="space-y-2 max-h-40 overflow-y-auto">
-                    ${membre.cotisationsPayees.slice(-5).reverse().map(c => 
-                        `<div class="flex justify-between items-center text-xs bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg">
-                            <div>
-                                <div class="font-medium">${new Date(c.date).toLocaleDateString('fr-FR')}</div>
-                                <div class="text-gray-500">${c.montant.toLocaleString()} FCFA</div>
-                                ${c.montant > tontine.montant 
-                                    ? `<div class="text-green-600 font-semibold text-xs">📊 ${Math.round(c.montant / tontine.montant)} cotisations</div>` 
-                                    : ''
-                                }
-                            </div>
-                            <div class="flex gap-1">
-                                <button onclick="editerCotisation('${c.id}', ${tontine.id})" class="text-blue-500 hover:text-blue-700 text-sm" title="Éditer">✏️</button>
-                                <button onclick="supprimerCotisation('${c.id}', ${tontine.id})" class="text-red-500 hover:text-red-700 text-sm" title="Supprimer">❌</button>
-                            </div>
-                        </div>`
-                    ).join('')}
-                </div>
-            </div>
-            
-            <div class="flex gap-3 mt-6 pt-4 border-t">
-                <button onclick="ouvrirModaleEditionMembre(${membre.id})" class="flex-1 btn-gradient px-4 py-3 rounded-xl font-medium" style="background: var(--warning-gradient)">
-                    ✏️ Éditer
-                </button>
-                <button onclick="retirerMembreTontine(${membre.id}, ${tontine.id})" class="flex-1 btn-gradient btn-danger py-3 rounded-xl font-medium">
-                    🗑️ Retirer
-                </button>
-            </div>
-        `;
-        cartes.appendChild(div);
-    });
-}
-
 
         // Gestion des membres
-      async function ajouterMembreTontine() {
-  const nom = document.getElementById("nouveauMembre").value.trim();
-  if (!nom) {
-    alert("Veuillez entrer un nom");
-    return;
-  }
+        function ajouterMembreTontine() {
+            const nom = document.getElementById('nouveauMembre').value.trim();
+            if (!nom) {
+                alert('Veuillez entrer un nom');
+                return;
+            }
 
-  if (!tontineActive) {
-    alert("❌ Aucune tontine active");
-    return;
-  }
+            if (tontineActive.membres.length >= tontineActive.nombreMembresMax) {
+                alert('Nombre maximum de membres atteint');
+                return;
+            }
 
-  try {
-    const newMembre = await apiFetch(`/membres/${tontineActive.id}`, {
-      method: "POST",
-      body: JSON.stringify({ nom })
-    });
+            const membre = {
+                id: Date.now(),
+                nom: nom,
+                dateAjout: new Date().toISOString(),
+                cotisationsPayees: [],
+                aGagne: false
+            };
 
-    // Mettre à jour en local
-    tontineActive.membres = tontineActive.membres || [];
-    tontineActive.membres.push(newMembre);
-
-    document.getElementById("nouveauMembre").value = "";
-    afficherMembresTontineGestion();
-    mettreAJourSelectMembres();
-    mettreAJourAffichage();
-
-    alert(`✅ Membre "${nom}" ajouté avec succès !`);
-  } catch (err) {
-    console.error("Erreur ajout membre:", err);
-    alert("❌ Impossible d’ajouter le membre");
-  }
-}
-
-        function afficherMembresTontineGestion() {
-    const liste = document.getElementById('listeMembresTontineGestion');
-    liste.innerHTML = '';
-
-    if (tontineActive.membres.length === 0) {
-        liste.innerHTML = `
-            <div class="col-span-full text-center py-12">
-                <div class="text-6xl mb-6 floating-animation">👥</div>
-                <h3 class="text-xl font-bold text-gray-700">Aucun membre</h3>
-                <p class="text-gray-600">Cette tontine n'a pas encore de membres</p>
-            </div>
-        `;
-        return;
-    }
-
-    tontineActive.membres.forEach((membre, index) => {
-        const cotisationsCount = membre.cotisationsPayees.length;
-        const totalCotise = cotisationsCount * tontineActive.montant;
-        const statut = membre.aGagne ? 'Gagnant' : 'Actif';
-        const couleurStatut = membre.aGagne 
-            ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' 
-            : 'bg-gradient-to-r from-green-400 to-green-500 text-white';
-        
-        const div = document.createElement('div');
-        div.className = 'member-card p-4 bg-gradient-to-r from-blue-50 to-purple-50 fade-in-up';
-        div.style.animationDelay = `${index * 0.1}s`;
-        div.innerHTML = `
-            <div class="flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                        <span class="text-white text-lg">${membre.aGagne ? '🏆' : '👤'}</span>
-                    </div>
-                    <div>
-                        <div class="font-bold text-gray-800">${membre.nom}</div>
-                        <span class="px-2 py-1 ${couleurStatut} rounded-full text-xs font-semibold">${statut}</span>
-                    </div>
-                </div>
-                <div class="text-right">
-                    <div class="font-bold text-lg text-green-600">${totalCotise.toLocaleString()} FCFA</div>
-                    <div class="text-sm text-gray-600">${cotisationsCount} cotisations</div>
-                </div>
-            </div>
-        `;
-        liste.appendChild(div);
-    });
-} // <-- il manquait cette accolade fermante
-
-
-function supprimerMembreTontine(membreId) {
-    if (confirm('Supprimer ce membre ?')) {
-        tontineActive.membres = tontineActive.membres.filter(m => m.id !== membreId);
-        sauvegarder();
-        afficherMembresTontineGestion();
-        mettreAJourSelectMembres();
-        mettreAJourAffichage();
-    }
-}
-
-function editerTontineAccueil(id) {
-    const tontine = tontines.find(t => t.id === id);
-    if (!tontine) return;
-    
-    tontineActive = tontine;
-    ouvrirModaleEditionTontine();
-}
-
-function mettreAJourSelectMembres() {
-    const select = document.getElementById('membreCotisationSelect');
-    select.innerHTML = '<option value="">Choisir un membre</option>';
-    
-    tontineActive.membres.forEach(membre => {
-        const option = document.createElement('option');
-        option.value = membre.id;
-        option.textContent = membre.nom;
-        select.appendChild(option);
-    });
-} // <-- il manquait cette accolade fermante
-
-
-// Gestion des cotisations
-function enregistrerCotisationTontine() {
-    const membreId = parseInt(document.getElementById('membreCotisationSelect').value);
-    const date = document.getElementById('dateCotisation').value;
-    
-    if (!membreId || !date) {
-        alert('Veuillez sélectionner un membre et une date');
-        return;
-    }
-
-    const membre = tontineActive.membres.find(m => m.id === membreId);
-
-    const cotisation = {
-        id: Date.now(),
-        membreId: membreId,
-        date: date,
-        montant: tontineActive.montant
-    };
-
-    membre.cotisationsPayees.push(cotisation);
-    tontineActive.cotisations.push(cotisation);
-    
-    sauvegarder();
-    afficherHistoriqueCotisations();
-    afficherMembresTontineGestion();
-    mettreAJourAlertes();
-    
-    alert('✅ Cotisation enregistrée.');
-}
-
-
-       function afficherHistoriqueCotisations() {
-    const liste = document.getElementById('historiqueCotisations');
-    liste.innerHTML = '';
-    
-    if (tontineActive.cotisations.length === 0) {
-        liste.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
-                <div class="text-4xl mb-3">💰</div>
-                <p>Aucune cotisation enregistrée</p>
-            </div>
-        `;
-        return;
-    }
-    
-    const cotisationsRecentes = tontineActive.cotisations.slice(-10).reverse();
-    
-    cotisationsRecentes.forEach((cotisation, index) => {
-        const membre = tontineActive.membres.find(m => m.id === cotisation.membreId);
-        const div = document.createElement('div');
-        div.className = 'member-card p-4 bg-gradient-to-r from-green-50 to-green-100 fade-in-up';
-        div.style.animationDelay = `${index * 0.1}s`;
-        div.innerHTML = `
-            <div class="flex justify-between items-center">
-                <div class="flex-1">
-                    <div class="flex items-center gap-3">
-                        <span class="font-semibold text-gray-800">${membre ? membre.nom : 'Membre supprimé'}</span>
-                        <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">${new Date(cotisation.date).toLocaleDateString('fr-FR')}</span>
-                    </div>
-                </div>
-                <div class="flex items-center gap-3">
-                    <span class="font-bold text-green-600 text-lg">+${cotisation.montant.toLocaleString()} FCFA</span>
-                    <button onclick="supprimerCotisation('${cotisation.id}', ${tontineActive.id})" 
-                            class="text-red-500 hover:text-red-700 text-lg transition-colors" 
-                            title="Supprimer cette cotisation">
-                        ❌
-                    </button>
-                </div>
-            </div>
-        `;
-        liste.appendChild(div);
-    });
-} // <-- manquait cette accolade fermante
-
-
-// Fonctions de gestion des cotisations et membres
-function retirerMembreTontine(membreId, tontineId) {
-    const tontine = tontines.find(t => t.id === tontineId);
-    if (!tontine) return;
-    
-    const membre = tontine.membres.find(m => m.id === membreId);
-    if (!membre) return;
-    
-    const cotisationsCount = membre.cotisationsPayees.length;
-    const totalCotise = cotisationsCount * tontine.montant;
-    const cotisationsTontine = tontine.cotisations.filter(c => c.membreId === membreId).length;
-    
-    const message = `⚠️ RETRAIT DE MEMBRE ⚠️\n\n` +
-                  `Membre: "${membre.nom}"\n` +
-                  `Tontine: "${tontine.nom}"\n` +
-                  `Statut: ${membre.aGagne ? '🏆 Gagnant' : '👤 Actif'}\n` +
-                  `Membre depuis: ${new Date(membre.dateAjout).toLocaleDateString('fr-FR')}\n\n` +
-                  `💰 IMPACT FINANCIER:\n` +
-                  `• Cotisations payées: ${cotisationsCount}\n` +
-                  `• Montant total cotisé: ${totalCotise.toLocaleString()} FCFA\n` +
-                  `• Cotisations dans l'historique: ${cotisationsTontine}\n\n` +
-                  `⚠️ CONSÉQUENCES:\n` +
-                  `• Toutes ses cotisations seront supprimées\n` +
-                  `• Son historique sera effacé définitivement\n` +
-                  `${membre.aGagne ? '• Son statut de gagnant sera perdu\n' : ''}\n` +
-                  `Confirmer le retrait ?`;
-    
-    if (confirm(message)) {
-        // Supprimer le membre et ses cotisations
-        tontine.membres = tontine.membres.filter(m => m.id !== membreId);
-        tontine.cotisations = tontine.cotisations.filter(c => c.membreId !== membreId);
-        
-        // Supprimer des gagnants si applicable
-        if (membre.aGagne) {
-            tontine.gagnants = tontine.gagnants.filter(g => g.gagnantId !== membreId);
-            tontine.tirages = tontine.tirages.filter(t => t.gagnantId !== membreId);
-        }
-        
-        sauvegarder();
-        
-        if (pageActuelle === 'gestion') {
+            tontineActive.membres.push(membre);
+            sauvegarder();
+            
+            document.getElementById('nouveauMembre').value = '';
             afficherMembresTontineGestion();
             mettreAJourSelectMembres();
-        } else if (pageActuelle === 'membres') {
-            afficherMembresTontine();
+            mettreAJourAffichage();
         }
-        
-        mettreAJourAlertes();
-        
-        alert(`✅ Membre "${membre.nom}" retiré avec succès !\n\n` +
-              `📊 Résumé du retrait:\n` +
-              `• ${cotisationsCount} cotisations supprimées\n` +
-              `• ${totalCotise.toLocaleString()} FCFA retirés de l'historique\n` +
-              `${membre.aGagne ? '• Statut de gagnant annulé\n' : ''}` +
-              `• Membre retiré de "${tontine.nom}"`);
-    }
-}
 
-function supprimerCotisation(cotisationId, tontineId) {
-    if (confirm('Supprimer cette cotisation ?')) {
-        const tontine = tontines.find(t => t.id === tontineId);
-        if (!tontine) return;
-        
-        const cotisation = tontine.cotisations.find(c => c.id == cotisationId);
-        if (!cotisation) return;
-        
-        tontine.cotisations = tontine.cotisations.filter(c => c.id != cotisationId);
-        
-        const membre = tontine.membres.find(m => m.id === cotisation.membreId);
-        if (membre) {
-            membre.cotisationsPayees = membre.cotisationsPayees.filter(c => c.id != cotisationId);
+        function afficherMembresTontineGestion() {
+            const liste = document.getElementById('listeMembresTontineGestion');
+            liste.innerHTML = '';
+
+            if (tontineActive.membres.length === 0) {
+                liste.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <div class="text-6xl mb-6 floating-animation">👥</div>
+                        <h3 class="text-xl font-bold text-gray-700">Aucun membre</h3>
+                        <p class="text-gray-600">Cette tontine n'a pas encore de membres</p>
+                    </div>
+                `;
+                return;
+            }
+
+            tontineActive.membres.forEach((membre, index) => {
+                const cotisationsCount = membre.cotisationsPayees.length;
+                const totalCotise = cotisationsCount * tontineActive.montant;
+                const statut = membre.aGagne ? 'Gagnant' : 'Actif';
+                const couleurStatut = membre.aGagne ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' : 'bg-gradient-to-r from-green-400 to-green-500 text-white';
+                
+                const div = document.createElement('div');
+                div.className = 'member-card p-4 bg-gradient-to-r from-blue-50 to-purple-50 fade-in-up';
+                div.style.animationDelay = `${index * 0.1}s`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-lg">${membre.aGagne ? '🏆' : '👤'}</span>
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-800">${membre.nom}</div>
+                                <span class="px-2 py-1 ${couleurStatut} rounded-full text-xs font-semibold">${statut}</span>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-bold text-lg text-green-600">${totalCotise.toLocaleString()} FCFA</div>
+                            <div class="text-sm text-gray-600">${cotisationsCount} cotisations</div>
+                        </div>
+                    </div>
+                `;
+                liste.appendChild(div);
+            });
         }
-        
-        sauvegarder();
-        
-        if (pageActuelle === 'gestion') {
+
+        function supprimerMembreTontine(membreId) {
+            if (confirm('Supprimer ce membre ?')) {
+                tontineActive.membres = tontineActive.membres.filter(m => m.id !== membreId);
+                sauvegarder();
+                afficherMembresTontineGestion();
+                mettreAJourSelectMembres();
+                mettreAJourAffichage();
+            }
+        }
+
+        function editerTontineAccueil(id) {
+            const tontine = tontines.find(t => t.id === id);
+            if (!tontine) return;
+            
+            tontineActive = tontine;
+            ouvrirModaleEditionTontine();
+        }
+
+        function mettreAJourSelectMembres() {
+            const select = document.getElementById('membreCotisationSelect');
+            select.innerHTML = '<option value="">Choisir un membre</option>';
+            
+            tontineActive.membres.forEach(membre => {
+                const option = document.createElement('option');
+                option.value = membre.id;
+                option.textContent = membre.nom;
+                select.appendChild(option);
+            });
+        }
+
+        // Gestion des cotisations
+        function enregistrerCotisationTontine() {
+            const membreId = parseInt(document.getElementById('membreCotisationSelect').value);
+            const date = document.getElementById('dateCotisation').value;
+            
+            if (!membreId || !date) {
+                alert('Veuillez sélectionner un membre et une date');
+                return;
+            }
+
+            const membre = tontineActive.membres.find(m => m.id === membreId);
+
+            const cotisation = {
+                id: Date.now(),
+                membreId: membreId,
+                date: date,
+                montant: tontineActive.montant
+            };
+
+            membre.cotisationsPayees.push(cotisation);
+            tontineActive.cotisations.push(cotisation);
+            
+            sauvegarder();
             afficherHistoriqueCotisations();
-        } else if (pageActuelle === 'membres') {
-            afficherMembresTontine();
+            afficherMembresTontineGestion();
+            mettreAJourAlertes();
+            
+            alert('✅ Cotisation enregistrée.');
+        }
+
+        function afficherHistoriqueCotisations() {
+            const liste = document.getElementById('historiqueCotisations');
+            liste.innerHTML = '';
+            
+            if (tontineActive.cotisations.length === 0) {
+                liste.innerHTML = `
+                    <div class="text-center py-8 text-gray-500">
+                        <div class="text-4xl mb-3">💰</div>
+                        <p>Aucune cotisation enregistrée</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const cotisationsRecentes = tontineActive.cotisations.slice(-10).reverse();
+            
+            cotisationsRecentes.forEach((cotisation, index) => {
+                const membre = tontineActive.membres.find(m => m.id === cotisation.membreId);
+                const div = document.createElement('div');
+                div.className = 'member-card p-4 bg-gradient-to-r from-green-50 to-green-100 fade-in-up';
+                div.style.animationDelay = `${index * 0.1}s`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-3">
+                                <span class="font-semibold text-gray-800">${membre ? membre.nom : 'Membre supprimé'}</span>
+                                <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">${new Date(cotisation.date).toLocaleDateString('fr-FR')}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-bold text-green-600 text-lg">+${cotisation.montant.toLocaleString()} FCFA</span>
+                            <button onclick="supprimerCotisation('${cotisation.id}', ${tontineActive.id})" 
+                                    class="text-red-500 hover:text-red-700 text-lg transition-colors" 
+                                    title="Supprimer cette cotisation">
+                                ❌
+                            </button>
+                        </div>
+                    </div>
+                `;
+                liste.appendChild(div);
+            });
+        }
+
+        // Fonctions de gestion des cotisations et membres
+        function retirerMembreTontine(membreId, tontineId) {
+            const tontine = tontines.find(t => t.id === tontineId);
+            if (!tontine) return;
+            
+            const membre = tontine.membres.find(m => m.id === membreId);
+            if (!membre) return;
+            
+            const cotisationsCount = membre.cotisationsPayees.length;
+            const totalCotise = cotisationsCount * tontine.montant;
+            const cotisationsTontine = tontine.cotisations.filter(c => c.membreId === membreId).length;
+            
+            const message = `⚠️ RETRAIT DE MEMBRE ⚠️\n\n` +
+                          `Membre: "${membre.nom}"\n` +
+                          `Tontine: "${tontine.nom}"\n` +
+                          `Statut: ${membre.aGagne ? '🏆 Gagnant' : '👤 Actif'}\n` +
+                          `Membre depuis: ${new Date(membre.dateAjout).toLocaleDateString('fr-FR')}\n\n` +
+                          `💰 IMPACT FINANCIER:\n` +
+                          `• Cotisations payées: ${cotisationsCount}\n` +
+                          `• Montant total cotisé: ${totalCotise.toLocaleString()} FCFA\n` +
+                          `• Cotisations dans l'historique: ${cotisationsTontine}\n\n` +
+                          `⚠️ CONSÉQUENCES:\n` +
+                          `• Toutes ses cotisations seront supprimées\n` +
+                          `• Son historique sera effacé définitivement\n` +
+                          `${membre.aGagne ? '• Son statut de gagnant sera perdu\n' : ''}\n` +
+                          `Confirmer le retrait ?`;
+            
+            if (confirm(message)) {
+                // Supprimer le membre et ses cotisations
+                tontine.membres = tontine.membres.filter(m => m.id !== membreId);
+                tontine.cotisations = tontine.cotisations.filter(c => c.membreId !== membreId);
+                
+                // Supprimer des gagnants si applicable
+                if (membre.aGagne) {
+                    tontine.gagnants = tontine.gagnants.filter(g => g.gagnantId !== membreId);
+                    tontine.tirages = tontine.tirages.filter(t => t.gagnantId !== membreId);
+                }
+                
+                sauvegarder();
+                
+                if (pageActuelle === 'gestion') {
+                    afficherMembresTontineGestion();
+                    mettreAJourSelectMembres();
+                } else if (pageActuelle === 'membres') {
+                    afficherMembresTontine();
+                }
+                
+                mettreAJourAlertes();
+                
+                alert(`✅ Membre "${membre.nom}" retiré avec succès !\n\n` +
+                      `📊 Résumé du retrait:\n` +
+                      `• ${cotisationsCount} cotisations supprimées\n` +
+                      `• ${totalCotise.toLocaleString()} FCFA retirés de l'historique\n` +
+                      `${membre.aGagne ? '• Statut de gagnant annulé\n' : ''}` +
+                      `• Membre retiré de "${tontine.nom}"`);
+            }
         }
         
-        mettreAJourAlertes();
-        alert('✅ Cotisation supprimée !');
-    }
-}
+        function supprimerCotisation(cotisationId, tontineId) {
+            if (confirm('Supprimer cette cotisation ?')) {
+                const tontine = tontines.find(t => t.id === tontineId);
+                if (!tontine) return;
+                
+                const cotisation = tontine.cotisations.find(c => c.id == cotisationId);
+                if (!cotisation) return;
+                
+                tontine.cotisations = tontine.cotisations.filter(c => c.id != cotisationId);
+                
+                const membre = tontine.membres.find(m => m.id === cotisation.membreId);
+                if (membre) {
+                    membre.cotisationsPayees = membre.cotisationsPayees.filter(c => c.id != cotisationId);
+                }
+                
+                sauvegarder();
+                
+                if (pageActuelle === 'gestion') {
+                    afficherHistoriqueCotisations();
+                } else if (pageActuelle === 'membres') {
+                    afficherMembresTontine();
+                }
+                
+                mettreAJourAlertes();
+                alert('✅ Cotisation supprimée !');
+            }
+        }
 
         // Système de tirage
-async function chargerTontineTirage() {
-  const id = document.getElementById('selectTontineTirage').value;
-  if (!id) {
-    document.getElementById('panneauTirage').classList.add('hidden');
-    return;
-  }
+        function chargerTontineTirage() {
+            const id = parseInt(document.getElementById('selectTontineTirage').value);
+            if (!id) {
+                document.getElementById('panneauTirage').classList.add('hidden');
+                return;
+            }
 
-  tontineActive = tontines.find(t => t.id === id);
-  if (!tontineActive) {
-    console.warn("Tontine non trouvée");
-    return;
-  }
+            tontineActive = tontines.find(t => t.id === id);
+            document.getElementById('panneauTirage').classList.remove('hidden');
+            
+            afficherMembresEligibles();
+            afficherHistoriqueGagnants();
+            afficherInfosTirage();
+        }
 
-  try {
-    const membres = await apiFetch(`/membres/${id}`);
-    tontineActive.membres = membres;
-  } catch (err) {
-    console.error("Erreur chargement membres:", err);
-    tontineActive.membres = [];
-  }
+        function afficherMembresEligibles() {
+            const liste = document.getElementById('membresEligibles');
+            liste.innerHTML = '';
+            
+            const eligibles = tontineActive.membres.filter(m => !m.aGagne);
+            
+            if (eligibles.length === 0) {
+                liste.innerHTML = '<p class="text-gray-600 text-center py-4">Aucun membre éligible</p>';
+                return;
+            }
 
-  document.getElementById('panneauTirage').classList.remove('hidden');
-  afficherMembresEligibles();
-  afficherHistoriqueGagnants();
-  afficherInfosTirage();
-}
+            eligibles.forEach((membre, index) => {
+                const div = document.createElement('div');
+                div.className = 'member-card p-4 bg-gradient-to-r from-blue-50 to-purple-50 fade-in-up';
+                div.style.animationDelay = `${index * 0.1}s`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-gray-800">${membre.nom}</span>
+                        <span class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">${membre.cotisationsPayees.length} cotisations</span>
+                    </div>
+                `;
+                liste.appendChild(div);
+            });
+        }
 
- function afficherMembresEligibles() {
-    const liste = document.getElementById('membresEligibles');
-    liste.innerHTML = '';
-    
-    const eligibles = tontineActive.membres.filter(m => !m.aGagne);
-    
-    if (eligibles.length === 0) {
-        liste.innerHTML = '<p class="text-gray-600 text-center py-4">Aucun membre éligible</p>';
-        return;
-    }
+        function afficherHistoriqueGagnants() {
+            const liste = document.getElementById('historiqueGagnants');
+            liste.innerHTML = '';
+            
+            tontineActive.gagnants.forEach((gagnant, index) => {
+                const div = document.createElement('div');
+                div.className = 'member-card p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 fade-in-up';
+                div.style.animationDelay = `${index * 0.1}s`;
+                div.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <span class="font-semibold text-gray-800">🏆 ${gagnant.nom}</span>
+                        <span class="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-medium">${new Date(gagnant.date).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                `;
+                liste.appendChild(div);
+            });
+        }
 
-    eligibles.forEach((membre, index) => {
-        const div = document.createElement('div');
-        div.className = 'member-card p-4 bg-gradient-to-r from-blue-50 to-purple-50 fade-in-up';
-        div.style.animationDelay = `${index * 0.1}s`;
-        div.innerHTML = `
-            <div class="flex justify-between items-center">
-                <span class="font-semibold text-gray-800">${membre.nom}</span>
-                <span class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
-                    ${membre.cotisationsPayees.length} cotisations
-                </span>
-            </div>
-        `;
-        liste.appendChild(div);
-    });
-}
+        function afficherInfosTirage() {
+            const infoDiv = document.getElementById('infoTirage');
+            const btnTirage = document.getElementById('btnTirage');
+            
+            const eligibles = tontineActive.membres.filter(m => !m.aGagne);
+            
+            // 🔴 GRIS - Tontine terminée
+            if (eligibles.length === 0) {
+                infoDiv.innerHTML = `
+                    <div class="bg-gradient-to-r from-gray-400 to-gray-500 p-6 rounded-xl text-white">
+                        <div class="text-xl font-bold mb-2">🏁 Tontine Terminée</div>
+                        <div class="text-sm opacity-90">Tous les membres ont déjà gagné</div>
+                        <div class="text-sm opacity-75 mt-2">Aucun tirage possible</div>
+                    </div>
+                `;
+                btnTirage.style.display = 'none';
+                return;
+            }
+            
+            const cotisationsCompletes = verifierCotisationsCompletes(tontineActive);
+            const tiragePossible = verifierDateTiragePossible(tontineActive);
+           const membresEnRetard = tontineActive.membres.filter(m => 
+    !m.aGagne && estEnRetardPeriode(m, tontineActive)
+);
 
-function afficherHistoriqueGagnants() {
-    const liste = document.getElementById('historiqueGagnants');
-    liste.innerHTML = '';
-    
-    tontineActive.gagnants.forEach((gagnant, index) => {
-        const div = document.createElement('div');
-        div.className = 'member-card p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 fade-in-up';
-        div.style.animationDelay = `${index * 0.1}s`;
-        div.innerHTML = `
-            <div class="flex justify-between items-center">
-                <span class="font-semibold text-gray-800">🏆 ${gagnant.nom}</span>
-                <span class="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-medium">
-                    ${new Date(gagnant.date).toLocaleDateString('fr-FR')}
-                </span>
-            </div>
-        `;
-        liste.appendChild(div);
-    });
-}
-
-function afficherInfosTirage() {
-    const infoDiv = document.getElementById('infoTirage');
-    const btnTirage = document.getElementById('btnTirage');
-    
-    const eligibles = tontineActive.membres.filter(m => !m.aGagne);
-    
-    // 🔴 GRIS - Tontine terminée
-    if (eligibles.length === 0) {
-        infoDiv.innerHTML = `
-            <div class="bg-gradient-to-r from-gray-400 to-gray-500 p-6 rounded-xl text-white">
-                <div class="text-xl font-bold mb-2">🏁 Tontine Terminée</div>
-                <div class="text-sm opacity-90">Tous les membres ont déjà gagné</div>
-                <div class="text-sm opacity-75 mt-2">Aucun tirage possible</div>
-            </div>
-        `;
-        btnTirage.style.display = 'none';
-        return;
-    }
-    
-    const cotisationsCompletes = verifierCotisationsCompletes(tontineActive);
-    const tiragePossible = verifierDateTiragePossible(tontineActive);
-    const membresEnRetard = tontineActive.membres.filter(m => 
-        !m.aGagne && estEnRetardPeriode(m, tontineActive)
-    );
-
-    // 🔴 ROUGE - Cotisations incomplètes
-    if (!cotisationsCompletes) {
-        infoDiv.innerHTML = `
-            <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-xl text-white">
-                <div class="text-xl font-bold mb-2">❌ Tirage Impossible</div>
-                <div class="text-sm opacity-90 mb-3">Cotisations incomplètes</div>
-                <div class="bg-red-600 bg-opacity-50 p-3 rounded-lg text-sm">
-                    <div class="font-semibold mb-1">📋 Membres en retard:</div>
-                    ${membresEnRetard.map(m => `• ${m.nom}`).join('<br>')}
+            // 🔴 ROUGE - Cotisations incomplètes
+            if (!cotisationsCompletes) {
+                infoDiv.innerHTML = `
+                    <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-xl text-white">
+                        <div class="text-xl font-bold mb-2">❌ Tirage Impossible</div>
+                        <div class="text-sm opacity-90 mb-3">Cotisations incomplètes</div>
+                        <div class="bg-red-600 bg-opacity-50 p-3 rounded-lg text-sm">
+                            <div class="font-semibold mb-1">📋 Membres en retard:</div>
+                            ${membresEnRetard.map(m => `• ${m.nom}`).join('<br>')}
+                        </div>
+                        <div class="text-xs opacity-75 mt-3">Tous les membres éligibles doivent cotiser</div>
+                    </div>
+                `;
+                btnTirage.disabled = true;
+                btnTirage.style.opacity = '0.3';
+                btnTirage.style.background = 'linear-gradient(135deg, #9ca3af, #6b7280)';
+                btnTirage.style.cursor = 'not-allowed';
+                btnTirage.style.display = 'inline-block';
+                return;
+            }
+            
+            // 🟠 ORANGE - Intervalle non respecté
+            if (!tiragePossible) {
+                const joursRestants = obtenirJoursRestantsAvantTirage(tontineActive);
+                const prochaineTirage = obtenirProchaineDateTirage(tontineActive);
+                const intervalles = {
+                    'hebdomadaire': '7 jours',
+                    'mensuel': '30 jours',
+                    'trimestriel': '90 jours'
+                };
+                
+                const couleurOrange = joursRestants <= 3 ? 'from-yellow-500 to-orange-500' : 'from-orange-500 to-orange-600';
+                
+                infoDiv.innerHTML = `
+                    <div class="bg-gradient-to-r ${couleurOrange} p-6 rounded-xl text-white">
+                        <div class="text-xl font-bold mb-2">⏳ Tirage en Attente</div>
+                        <div class="text-sm opacity-90 mb-3">Intervalle de temps non respecté</div>
+                        <div class="bg-orange-600 bg-opacity-50 p-3 rounded-lg text-sm space-y-1">
+                            <div><span class="font-semibold">Fréquence:</span> ${intervalles[tontineActive.frequenceTirage] || '30 jours'}</div>
+                            <div><span class="font-semibold">Temps restant:</span> ${joursRestants} jour(s)</div>
+                            <div><span class="font-semibold">Disponible le:</span> ${prochaineTirage.toLocaleDateString('fr-FR')}</div>
+                        </div>
+                        <div class="text-xs opacity-75 mt-3">
+                            ${joursRestants <= 3 ? '🔥 Bientôt disponible !' : 'Patience requise pour respecter l\'intervalle'}
+                        </div>
+                    </div>
+                `;
+                btnTirage.disabled = true;
+                btnTirage.style.opacity = '0.6';
+                btnTirage.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+                btnTirage.style.cursor = 'not-allowed';
+                btnTirage.style.display = 'inline-block';
+                btnTirage.innerHTML = `⏳ Disponible dans ${joursRestants}j`;
+                return;
+            }
+            
+            // 🟢 VERT - Tirage possible
+            const estPremierTirage = tontineActive.tirages.length === 0;
+            const montantTotal = tontineActive.montant * tontineActive.membres.length;
+            
+            infoDiv.innerHTML = `
+                <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white">
+                    <div class="text-xl font-bold mb-2">
+                        ${estPremierTirage ? '🎯 Premier Tirage Disponible !' : '✅ Nouveau Tirage Disponible !'}
+                    </div>
+                    <div class="text-sm opacity-90 mb-3">Toutes les conditions sont remplies</div>
+                    <div class="bg-green-600 bg-opacity-50 p-3 rounded-lg text-sm space-y-1">
+                        <div><span class="font-semibold">Membres éligibles:</span> ${eligibles.length}</div>
+                        <div><span class="font-semibold">Montant à gagner:</span> ${montantTotal.toLocaleString()} FCFA</div>
+                        <div><span class="font-semibold">Cotisations:</span> ✅ Toutes complètes</div>
+                        ${estPremierTirage ? 
+                            '<div class="font-semibold text-yellow-200">🎉 Premier tirage de cette tontine !</div>' : 
+                            '<div><span class="font-semibold">Intervalle:</span> ✅ Respecté</div>'
+                        }
+                    </div>
                 </div>
-                <div class="text-xs opacity-75 mt-3">Tous les membres éligibles doivent cotiser</div>
-            </div>
-        `;
-        btnTirage.disabled = true;
-        btnTirage.style.opacity = '0.3';
-        btnTirage.style.background = 'linear-gradient(135deg, #9ca3af, #6b7280)';
-        btnTirage.style.cursor = 'not-allowed';
-        btnTirage.style.display = 'inline-block';
-        return;
-    }
-    
-    // 🟠 ORANGE - Intervalle non respecté
-    if (!tiragePossible) {
-        const joursRestants = obtenirJoursRestantsAvantTirage(tontineActive);
-        const prochaineTirage = obtenirProchaineDateTirage(tontineActive);
-        const intervalles = {
-            'hebdomadaire': '7 jours',
-            'mensuel': '30 jours',
-            'trimestriel': '90 jours'
-        };
-        
-        const couleurOrange = joursRestants <= 3 ? 'from-yellow-500 to-orange-500' : 'from-orange-500 to-orange-600';
-        
-        infoDiv.innerHTML = `
-            <div class="bg-gradient-to-r ${couleurOrange} p-6 rounded-xl text-white">
-                <div class="text-xl font-bold mb-2">⏳ Tirage en Attente</div>
-                <div class="text-sm opacity-90 mb-3">Intervalle de temps non respecté</div>
-                <div class="bg-orange-600 bg-opacity-50 p-3 rounded-lg text-sm space-y-1">
-                    <div><span class="font-semibold">Fréquence:</span> ${intervalles[tontineActive.frequenceTirage] || '30 jours'}</div>
-                    <div><span class="font-semibold">Temps restant:</span> ${joursRestants} jour(s)</div>
-                    <div><span class="font-semibold">Disponible le:</span> ${prochaineTirage.toLocaleDateString('fr-FR')}</div>
-                </div>
-                <div class="text-xs opacity-75 mt-3">
-                    ${joursRestants <= 3 ? '🔥 Bientôt disponible !' : 'Patience requise pour respecter l\'intervalle'}
-                </div>
-            </div>
-        `;
-        btnTirage.disabled = true;
-        btnTirage.style.opacity = '0.6';
-        btnTirage.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-        btnTirage.style.cursor = 'not-allowed';
-        btnTirage.style.display = 'inline-block';
-        btnTirage.innerHTML = `⏳ Disponible dans ${joursRestants}j`;
-        return;
-    }
-    
-    // 🟢 VERT - Tirage possible
-    const estPremierTirage = tontineActive.tirages.length === 0;
-    const montantTotal = tontineActive.montant * tontineActive.membres.length;
-    
-    infoDiv.innerHTML = `
-        <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white">
-            <div class="text-xl font-bold mb-2">
-                ${estPremierTirage ? '🎯 Premier Tirage Disponible !' : '✅ Nouveau Tirage Disponible !'}
-            </div>
-            <div class="text-sm opacity-90 mb-3">Toutes les conditions sont remplies</div>
-            <div class="bg-green-600 bg-opacity-50 p-3 rounded-lg text-sm space-y-1">
-                <div><span class="font-semibold">Membres éligibles:</span> ${eligibles.length}</div>
-                <div><span class="font-semibold">Montant à gagner:</span> ${montantTotal.toLocaleString()} FCFA</div>
-                <div><span class="font-semibold">Cotisations:</span> ✅ Toutes complètes</div>
-                ${estPremierTirage ? 
-                    '<div class="font-semibold text-yellow-200">🎉 Premier tirage de cette tontine !</div>' : 
-                    '<div><span class="font-semibold">Intervalle:</span> ✅ Respecté</div>'
-                }
-            </div>
-        </div>
-    `;
-    
-    btnTirage.disabled = false;
-    btnTirage.style.opacity = '1';
-    btnTirage.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-    btnTirage.style.cursor = 'pointer';
-    btnTirage.style.display = 'inline-block';
-    btnTirage.innerHTML = '🎲 Effectuer le Tirage';
-}
-
+            `;
+            
+            btnTirage.disabled = false;
+            btnTirage.style.opacity = '1';
+            btnTirage.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            btnTirage.style.cursor = 'pointer';
+            btnTirage.style.display = 'inline-block';
+            btnTirage.innerHTML = '🎲 Effectuer le Tirage';
+        }
 
         function effectuerTirage() {
             const eligibles = tontineActive.membres.filter(m => !m.aGagne);
@@ -2574,352 +2428,704 @@ function afficherInfosTirage() {
             remplirTableauPerformance();
         }
 
-       function calculerMetriques() {
-    const alertesActuelles = mettreAJourAlertes();
-    
-    const totalTontines = tontines.filter(t => t.statut === 'active').length;
-    const totalMembres = tontines.reduce((sum, t) => sum + t.membres.length, 0);
-    const totalCotisations = tontines.reduce((sum, t) => 
-        sum + t.cotisations.reduce((s, c) => s + c.montant, 0), 0);
-    const totalTirages = tontines.reduce((sum, t) => sum + t.tirages.length, 0);
-    
-    // Calculer les nouvelles métriques d'alertes
-    const retards = alertesActuelles.filter(a => a.type === 'retard').length;
+        function calculerMetriques() {
+            const alertesActuelles = mettreAJourAlertes();
+            
+            const totalTontines = tontines.filter(t => t.statut === 'active').length;
+            const totalMembres = tontines.reduce((sum, t) => sum + t.membres.length, 0);
+            const totalCotisations = tontines.reduce((sum, t) => 
+                sum + t.cotisations.reduce((s, c) => s + c.montant, 0), 0);
+            const totalTirages = tontines.reduce((sum, t) => sum + t.tirages.length, 0);
+            
+            // Calculer les nouvelles métriques d'alertes
+            const retards = alertesActuelles.filter(a => a.type === 'retard').length;
+            const cyclesRetard = tontines.filter(t => {
+                const eligibles = t.membres.filter(m => !m.aGagne);
+                return eligibles.length > 0 && !verifierDateTiragePossible(t) && verifierCotisationsCompletes(t);
+            }).length;
+            const paiementsAttente = tontines.reduce((sum, t) => {
+                const tousOntGagne = t.membres.every(m => m.aGagne);
+                if (tousOntGagne) return sum;
+                
+                const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], t.frequenceCotisation);
+                return sum + t.membres.filter(m => {
+                    return !m.cotisationsPayees.some(c => {
+                        const periodeCotisation = obtenirPeriodeCotisation(c.date, t.frequenceCotisation);
+                        return periodeCotisation === periodeActuelle;
+                    });
+                }).length;
+            }, 0);
+            const tiragesDisponibles = alertesActuelles.filter(a => a.type === 'tirage').length;
 
-    const cyclesRetard = tontines.filter(t => {
-        const eligibles = t.membres.filter(m => !m.aGagne);
-        return eligibles.length > 0 
-            && !verifierDateTiragePossible(t) 
-            && verifierCotisationsCompletes(t);
-    }).length;
+            document.getElementById('statTotalTontines').textContent = totalTontines;
+            document.getElementById('statTotalMembres').textContent = totalMembres;
+            document.getElementById('statTotalCotisations').textContent = totalCotisations.toLocaleString();
+            document.getElementById('statTotalTirages').textContent = totalTirages;
+            document.getElementById('statRetards').textContent = retards;
+            document.getElementById('statCyclesRetard').textContent = cyclesRetard;
+            document.getElementById('statPaiementsAttente').textContent = paiementsAttente;
+            document.getElementById('statTiragesDisponibles').textContent = tiragesDisponibles;
+        }
 
-    const paiementsAttente = tontines.reduce((sum, t) => {
-        const tousOntGagne = t.membres.every(m => m.aGagne);
-        if (tousOntGagne) return sum;
+        function creerGraphiques() {
+            // Graphique des types de tontines
+            const typesData = {};
+            tontines.forEach(t => {
+                typesData[t.type] = (typesData[t.type] || 0) + 1;
+            });
+
+            const ctxTypes = document.getElementById('graphiqueTypes').getContext('2d');
+            new Chart(ctxTypes, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(typesData).map(type => {
+                        const icons = {'argent': '💰', 'electronique': '📱', 'cosmetique': '💄', 'autre': '🎁'};
+                        return icons[type] + ' ' + type.charAt(0).toUpperCase() + type.slice(1);
+                    }),
+                    datasets: [{
+                        data: Object.values(typesData),
+                        backgroundColor: [
+                            'rgba(102, 126, 234, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)',
+                            'rgba(239, 68, 68, 0.8)'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: {
+                                    size: 12,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: 10
+                    }
+                }
+            });
+
+            // Graphique des cotisations par mois
+            const cotisationsParMois = {};
+            tontines.forEach(tontine => {
+                tontine.cotisations.forEach(cotisation => {
+                    const mois = new Date(cotisation.date).toLocaleDateString('fr-FR', {year: 'numeric', month: 'short'});
+                    cotisationsParMois[mois] = (cotisationsParMois[mois] || 0) + cotisation.montant;
+                });
+            });
+
+            const ctxCotisations = document.getElementById('graphiqueCotisations').getContext('2d');
+            new Chart(ctxCotisations, {
+                type: 'line',
+                data: {
+                    labels: Object.keys(cotisationsParMois).slice(-6),
+                    datasets: [{
+                        label: 'Cotisations (FCFA)',
+                        data: Object.values(cotisationsParMois).slice(-6),
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.1)'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 11
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: {
+                                    weight: 'bold',
+                                    size: 12
+                                }
+                            }
+                        }
+                    },
+                    layout: {
+                        padding: 10
+                    }
+                }
+            });
+        }
+
+        function remplirTableauPerformance() {
+            const tableau = document.getElementById('tableauPerformance');
+            tableau.innerHTML = '';
+
+            tontines.forEach((tontine, index) => {
+                const typeIcons = {'argent': '💰', 'electronique': '📱', 'cosmetique': '💄', 'autre': '🎁'};
+                const totalCotisations = tontine.cotisations.reduce((sum, c) => sum + c.montant, 0);
+                
+                // Progression des membres
+                const progressionMembres = (tontine.membres.length / tontine.nombreMembresMax) * 100;
+                
+                // Progression des tirages
+                const eligibles = tontine.membres.filter(m => !m.aGagne);
+                const progressionTirages = tontine.membres.length > 0 ? 
+                    ((tontine.membres.length - eligibles.length) / tontine.membres.length) * 100 : 0;
+                
+                const tr = document.createElement('tr');
+                tr.className = 'border-b hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all fade-in-up';
+                tr.style.animationDelay = `${index * 0.1}s`;
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold">${typeIcons[tontine.type]} ${tontine.nom}</td>
+                    <td class="p-3 capitalize">${tontine.type}</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style="width: ${progressionMembres}%"></div>
+                                </div>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-600">${tontine.membres.length}/${tontine.nombreMembresMax}</span>
+                        </div>
+                    </td>
+                    <td class="p-3 font-semibold text-green-600">${totalCotisations.toLocaleString()} FCFA</td>
+                    <td class="p-3">
+                        <div class="flex items-center gap-2">
+                            <div class="flex-1">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full" style="width: ${progressionTirages}%"></div>
+                                </div>
+                            </div>
+                            <span class="text-xs font-semibold text-gray-600">${tontine.tirages.length}/${tontine.membres.length}</span>
+                        </div>
+                    </td>
+                    <td class="p-3">
+                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${
+                            tontine.statut === 'active' ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' : 
+                            tontine.statut === 'terminee' ? 'bg-gradient-to-r from-gray-400 to-gray-500 text-white' :
+                            'bg-gray-100 text-gray-800'
+                        }">
+                            ${tontine.statut === 'active' ? '🟢 Active' : 
+                              tontine.statut === 'terminee' ? '🏁 Terminée' : tontine.statut}
+                        </span>
+                    </td>
+                `;
+                tableau.appendChild(tr);
+            });
+            
+            // Générer le résumé des alertes
+            genererResumeAlertes();
+        }
         
-        const periodeActuelle = obtenirPeriodeCotisation(
-            new Date().toISOString().split('T')[0],
-            t.frequenceCotisation
-        );
+        function genererResumeAlertes() {
+            const alertesActuelles = mettreAJourAlertes();
+            const resume = document.getElementById('resumeAlertes');
+            
+            const retards = alertesActuelles.filter(a => a.type === 'retard');
+            const tirages = alertesActuelles.filter(a => a.type === 'tirage');
+            
+            const cyclesRetard = tontines.filter(t => {
+                const eligibles = t.membres.filter(m => !m.aGagne);
+                return eligibles.length > 0 && !verifierDateTiragePossible(t) && verifierCotisationsCompletes(t);
+            }).length;
+            
+            const paiementsAttente = tontines.reduce((sum, t) => {
+                const tousOntGagne = t.membres.every(m => m.aGagne);
+                if (tousOntGagne) return sum;
+                
+                const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], t.frequenceCotisation);
+                return sum + t.membres.filter(m => {
+                    return !m.cotisationsPayees.some(c => {
+                        const periodeCotisation = obtenirPeriodeCotisation(c.date, t.frequenceCotisation);
+                        return periodeCotisation === periodeActuelle;
+                    });
+                }).length;
+            }, 0);
+            
+            resume.innerHTML = `
+                <div class="bg-gradient-to-r from-red-100 to-red-200 p-4 rounded-xl text-center">
+                    <div class="text-2xl font-bold text-red-600">${retards.length}</div>
+                    <div class="text-sm text-red-700 font-medium">⚠️ Retards de paiement</div>
+                    <div class="text-xs text-red-600 mt-1">${retards.filter(r => r.urgence === 'haute').length} urgents</div>
+                </div>
+                <div class="bg-gradient-to-r from-yellow-100 to-yellow-200 p-4 rounded-xl text-center">
+                    <div class="text-2xl font-bold text-yellow-600">${cyclesRetard}</div>
+                    <div class="text-sm text-yellow-700 font-medium">⏳ Cycles en retard</div>
+                    <div class="text-xs text-yellow-600 mt-1">Tirages en attente</div>
+                </div>
+                <div class="bg-gradient-to-r from-blue-100 to-blue-200 p-4 rounded-xl text-center">
+                    <div class="text-2xl font-bold text-blue-600">${paiementsAttente}</div>
+                    <div class="text-sm text-blue-700 font-medium">💳 Paiements en attente</div>
+                    <div class="text-xs text-blue-600 mt-1">Membres à jour</div>
+                </div>
+                <div class="bg-gradient-to-r from-green-100 to-green-200 p-4 rounded-xl text-center">
+                    <div class="text-2xl font-bold text-green-600">${tirages.length}</div>
+                    <div class="text-sm text-green-700 font-medium">🎲 Tirages disponibles</div>
+                    <div class="text-xs text-green-600 mt-1">${tirages.filter(t => t.estPremierTirage).length} premiers tirages</div>
+                </div>
+            `;
+        }
 
-        const nbAttente = t.membres.filter(m => {
-            // Vérifie si le membre n’a pas payé pour la période actuelle
-            return !m.cotisationsPayees.some(c => {
-                const periodeCotisation = obtenirPeriodeCotisation(c.date, t.frequenceCotisation);
-                return periodeCotisation === periodeActuelle;
+        // Système d'alertes intelligentes automatiques
+        function mettreAJourAlertes() {
+            // Nettoyer les alertes obsolètes
+            alertes = alertes.filter(alerte => {
+                const tontine = tontines.find(t => t.id === alerte.tontineId);
+                if (!tontine || tontine.statut !== 'active') return false;
+                
+                // Supprimer les alertes de tirage qui ne sont plus valides
+                if (alerte.type === 'tirage') {
+                    const eligibles = tontine.membres.filter(m => !m.aGagne);
+                    const cotisationsCompletes = verifierCotisationsCompletes(tontine);
+                    const tiragePossible = verifierDateTiragePossible(tontine);
+                    return eligibles.length > 0 && cotisationsCompletes && tiragePossible;
+                }
+                
+                // Supprimer les alertes de retard pour les membres qui ont payé pour la période actuelle
+                if (alerte.type === 'retard') {
+                    const membre = tontine.membres.find(m => m.id === alerte.membreId);
+                    if (!membre) return false;
+                    
+                    // Si tous les membres ont gagné, supprimer toutes les alertes de retard
+                    const tousOntGagne = tontine.membres.every(m => m.aGagne);
+                    if (tousOntGagne) return false;
+                    
+                    // Vérifier si le membre a cotisé pour la période actuelle
+                    const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
+                    const aCotisePeriodeActuelle = membre.cotisationsPayees.some(c => {
+                        const periodeCotisation = obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation);
+                        return periodeCotisation === periodeActuelle;
+                    });
+                    
+                    return !aCotisePeriodeActuelle; // Garder l'alerte si pas encore cotisé
+                }
+                
+                // Nettoyer les autres types d'alertes
+                if (alerte.type === 'cycle_retard') {
+                    const eligibles = tontine.membres.filter(m => !m.aGagne);
+                    const cotisationsCompletes = verifierCotisationsCompletes(tontine);
+                    const tiragePossible = verifierDateTiragePossible(tontine);
+                    return eligibles.length > 0 && cotisationsCompletes && !tiragePossible;
+                }
+                
+                return true;
             });
-        }).length;
+            
+            // Générer de nouvelles alertes
+            const nouvellesAlertes = [];
+            
+            tontines.forEach(tontine => {
+                if (tontine.statut !== 'active') return;
+                
+                // Vérifier les cotisations en retard (TOUS les membres, même les gagnants)
+                // Exception : si tous les membres ont gagné (tontine terminée)
+                const tousOntGagne = tontine.membres.every(m => m.aGagne);
+                if (!tousOntGagne) {
+                    tontine.membres.forEach(membre => {
+                        const dejaAlerte = alertes.some(a => 
+                            a.type === 'retard' && a.tontineId === tontine.id && a.membreId === membre.id
+                        );
+                        
+                        // Vérifier si le membre a cotisé pour la période actuelle
+                        const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
+                        const aCotisePeriodeActuelle = membre.cotisationsPayees.some(c => {
+                            const periodeCotisation = obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation);
+                            return periodeCotisation === periodeActuelle;
+                        });
+                        
+                        if (!dejaAlerte && !aCotisePeriodeActuelle) {
+                            const joursRetard = membre.cotisationsPayees.length === 0 ? 
+                                Math.floor((new Date() - new Date(membre.dateAjout)) / (1000 * 60 * 60 * 24)) :
+                                Math.floor((new Date() - new Date(membre.cotisationsPayees[membre.cotisationsPayees.length - 1].date)) / (1000 * 60 * 60 * 24));
+                            
+                            nouvellesAlertes.push({
+                                id: Date.now() + Math.random(),
+                                type: 'retard',
+                                tontineId: tontine.id,
+                                membreId: membre.id,
+                                message: `${membre.nom} ${membre.aGagne ? '(gagnant)' : ''} est en retard de ${joursRetard} jour(s) pour "${tontine.nom}"`,
+                                tontine: tontine.nom,
+                                membre: membre.nom,
+                                joursRetard: joursRetard,
+                                estGagnant: membre.aGagne,
+                                urgence: joursRetard > 7 ? 'haute' : 'moyenne',
+                                dateCreation: new Date().toISOString()
+                            });
+                        }
+                    });
+                }
+                
+                // Vérifier les tirages possibles avec validation complète
+                const eligibles = tontine.membres.filter(m => !m.aGagne);
+                if (eligibles.length > 0) {
+                    const cotisationsCompletes = verifierCotisationsCompletes(tontine);
+                    const tiragePossible = verifierDateTiragePossible(tontine);
+                    
+                    // Alerte tirage disponible
+                    const dejaAlerteTirage = alertes.some(a => 
+                        a.type === 'tirage' && a.tontineId === tontine.id
+                    );
+                    
+                    if (!dejaAlerteTirage && cotisationsCompletes && tiragePossible) {
+                        const estPremierTirage = tontine.tirages.length === 0;
+                        const montantTotal = tontine.montant * tontine.membres.length;
+                        
+                        nouvellesAlertes.push({
+                            id: Date.now() + Math.random(),
+                            type: 'tirage',
+                            tontineId: tontine.id,
+                            message: estPremierTirage ? 
+                                `🎯 Premier tirage disponible pour "${tontine.nom}" - ${montantTotal.toLocaleString()} FCFA` : 
+                                `🎲 Nouveau tirage disponible pour "${tontine.nom}" - ${montantTotal.toLocaleString()} FCFA`,
+                            tontine: tontine.nom,
+                            eligibles: eligibles.length,
+                            montantTotal: montantTotal,
+                            estPremierTirage: estPremierTirage,
+                            urgence: estPremierTirage ? 'haute' : 'moyenne',
+                            dateCreation: new Date().toISOString()
+                        });
+                    }
+                    
+                    // Alerte cycle en retard
+                    const dejaAlerteCycle = alertes.some(a => 
+                        a.type === 'cycle_retard' && a.tontineId === tontine.id
+                    );
+                    
+                    if (!dejaAlerteCycle && cotisationsCompletes && !tiragePossible) {
+                        const joursRestants = obtenirJoursRestantsAvantTirage(tontine);
+                        const prochaineTirage = obtenirProchaineDateTirage(tontine);
+                        
+                        nouvellesAlertes.push({
+                            id: Date.now() + Math.random(),
+                            type: 'cycle_retard',
+                            tontineId: tontine.id,
+                            message: `⏳ Cycle en attente pour "${tontine.nom}" - Tirage dans ${joursRestants} jour(s)`,
+                            tontine: tontine.nom,
+                            joursRestants: joursRestants,
+                            prochaineTirage: prochaineTirage.toLocaleDateString('fr-FR'),
+                            urgence: joursRestants <= 3 ? 'moyenne' : 'basse',
+                            dateCreation: new Date().toISOString()
+                        });
+                    }
+                }
+            });
+            
+            // Ajouter les nouvelles alertes
+            alertes = [...alertes, ...nouvellesAlertes];
+            
+            localStorage.setItem('app_alertes', JSON.stringify(alertes));
+            mettreAJourBadgeAlertes();
+            return alertes;
+        }
+        
+        function mettreAJourBadgeAlertes() {
+            const badge = document.getElementById('badgeAlertes');
+            if (alertes.length > 0) {
+                badge.textContent = alertes.length;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+        }
+        
+        function verifierAlertes() {
+            return mettreAJourAlertes();
+        }
 
-        return sum + nbAttente;
-    }, 0);
-
-    const tiragesDisponibles = alertesActuelles.filter(a => a.type === 'tirage').length;
-
-    // Mise à jour du DOM
-    document.getElementById('statTotalTontines').textContent = totalTontines;
-    document.getElementById('statTotalMembres').textContent = totalMembres;
-    document.getElementById('statTotalCotisations').textContent = totalCotisations.toLocaleString();
-    document.getElementById('statTotalTirages').textContent = totalTirages;
-    document.getElementById('statRetards').textContent = retards;
-    document.getElementById('statCyclesRetard').textContent = cyclesRetard;
-    document.getElementById('statPaiementsAttente').textContent = paiementsAttente;
-    document.getElementById('statTiragesDisponibles').textContent = tiragesDisponibles;
-}
-
-
-// ✅ Tableau des performances
-function remplirTableauPerformance() {
-    const tableau = document.getElementById('tableauPerformance');
-    tableau.innerHTML = '';
-
-    tontines.forEach((tontine, index) => {
-        const typeIcons = { 'argent': '💰', 'electronique': '📱', 'cosmetique': '💄', 'autre': '🎁' };
-        const totalCotisations = tontine.cotisations.reduce((sum, c) => sum + c.montant, 0);
-
-        // Progression des membres
-        const progressionMembres = (tontine.membres.length / tontine.nombreMembresMax) * 100;
-
-        // Progression des tirages
-        const eligibles = tontine.membres.filter(m => !m.aGagne);
-        const progressionTirages = tontine.membres.length > 0 ?
-            ((tontine.membres.length - eligibles.length) / tontine.membres.length) * 100 : 0;
-
-        const tr = document.createElement('tr');
-        tr.className = 'border-b hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all fade-in-up';
-        tr.style.animationDelay = `${index * 0.1}s`;
-        tr.innerHTML = `
-            <td class="p-3 font-semibold">${typeIcons[tontine.type]} ${tontine.nom}</td>
-            <td class="p-3 capitalize">${tontine.type}</td>
-            <td class="p-3">
-                <div class="flex items-center gap-2">
-                    <div class="flex-1">
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style="width: ${progressionMembres}%"></div>
+        function afficherAlertes() {
+            const alertesActuelles = mettreAJourAlertes();
+            const liste = document.getElementById('listeAlertes');
+            liste.innerHTML = '';
+            
+            if (alertesActuelles.length === 0) {
+                liste.innerHTML = `
+                    <div class="text-center py-16">
+                        <div class="text-8xl mb-6 floating-animation">✅</div>
+                        <h3 class="text-3xl font-bold text-gray-700 mb-4">Aucune alerte active</h3>
+                        <p class="text-gray-600 text-lg mb-4">Toutes les tontines sont bien gérées !</p>
+                        <div class="bg-gradient-to-r from-green-100 to-blue-100 p-6 rounded-xl max-w-md mx-auto">
+                            <div class="text-sm text-gray-700">
+                                <div class="font-semibold mb-2">🎯 Système d'alertes intelligent :</div>
+                                <div class="space-y-1 text-left">
+                                    <div>• Validation automatique des tirages</div>
+                                    <div>• Nettoyage des alertes obsolètes</div>
+                                    <div>• Suivi des membres éligibles uniquement</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <span class="text-xs font-semibold text-gray-600">${tontine.membres.length}/${tontine.nombreMembresMax}</span>
-                </div>
-            </td>
-            <td class="p-3 font-semibold text-green-600">${totalCotisations.toLocaleString()} FCFA</td>
-            <td class="p-3">
-                <div class="flex items-center gap-2">
-                    <div class="flex-1">
-                        <div class="w-full bg-gray-200 rounded-full h-2">
-                            <div class="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full" style="width: ${progressionTirages}%"></div>
+                `;
+                return;
+            }
+            
+            // Trier les alertes par urgence et type
+            const alertesTriees = alertesActuelles.sort((a, b) => {
+                const urgenceOrder = { 'haute': 4, 'moyenne': 3, 'basse': 2 };
+                const typeOrder = { 'tirage': 4, 'retard': 3, 'cycle_retard': 2, 'paiement_attente': 1 };
+                
+                if (urgenceOrder[a.urgence] !== urgenceOrder[b.urgence]) {
+                    return urgenceOrder[b.urgence] - urgenceOrder[a.urgence];
+                }
+                return typeOrder[b.type] - typeOrder[a.type];
+            });
+            
+            alertesTriees.forEach((alerte, index) => {
+                let couleur, icone, details = '';
+                
+                if (alerte.type === 'retard') {
+                    couleur = alerte.urgence === 'haute' ? 'from-red-600 to-red-700' : 'from-orange-500 to-red-500';
+                    icone = alerte.urgence === 'haute' ? '🚨' : '⚠️';
+                    details = `
+                        <div class="text-sm opacity-90 mt-2">
+                            <div>👤 Membre: ${alerte.membre} ${alerte.estGagnant ? '🏆' : ''}</div>
+                            <div>⏰ Retard: ${alerte.joursRetard} jour(s)</div>
+                            <div>🎯 Urgence: ${alerte.urgence === 'haute' ? 'ÉLEVÉE' : 'Modérée'}</div>
+                            ${alerte.estGagnant ? '<div class="text-yellow-200 font-semibold">⚠️ Ce membre a déjà gagné mais doit continuer à cotiser</div>' : ''}
+                        </div>
+                    `;
+                } else if (alerte.type === 'tirage') {
+                    couleur = alerte.estPremierTirage ? 'from-green-500 to-emerald-600' : 'from-blue-500 to-green-500';
+                    icone = alerte.estPremierTirage ? '🎯' : '🎲';
+                    details = `
+                        <div class="text-sm opacity-90 mt-2">
+                            <div>👥 Éligibles: ${alerte.eligibles} membre(s)</div>
+                            <div>💰 Montant: ${alerte.montantTotal.toLocaleString()} FCFA</div>
+                            <div>🎉 ${alerte.estPremierTirage ? 'Premier tirage de cette tontine !' : 'Nouveau tirage disponible'}</div>
+                        </div>
+                    `;
+                } else if (alerte.type === 'cycle_retard') {
+                    couleur = alerte.urgence === 'moyenne' ? 'from-yellow-500 to-orange-500' : 'from-yellow-400 to-yellow-500';
+                    icone = '⏳';
+                    details = `
+                        <div class="text-sm opacity-90 mt-2">
+                            <div>⏰ Temps restant: ${alerte.joursRestants} jour(s)</div>
+                            <div>📅 Prochain tirage: ${alerte.prochaineTirage}</div>
+                            <div>✅ Cotisations complètes, en attente d'intervalle</div>
+                        </div>
+                    `;
+                }
+                
+                const div = document.createElement('div');
+                div.className = `bg-gradient-to-r ${couleur} p-6 rounded-2xl text-white fade-in-up mb-6 shadow-lg`;
+                div.style.animationDelay = `${index * 0.1}s`;
+                div.innerHTML = `
+                    <div class="flex items-start justify-between">
+                        <div class="flex items-start flex-1">
+                            <span class="text-4xl mr-4 floating-animation" style="animation-delay: ${index * 0.2}s">${icone}</span>
+                            <div class="flex-1">
+                                <div class="font-bold text-xl mb-1">${alerte.message}</div>
+                                <div class="text-sm opacity-75 mb-2">📋 Tontine: ${alerte.tontine}</div>
+                                ${details}
+                                <div class="text-xs opacity-60 mt-3">
+                                    🕒 Créée le ${new Date(alerte.dateCreation).toLocaleDateString('fr-FR')} à ${new Date(alerte.dateCreation).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-2 ml-4">
+                            ${alerte.type === 'tirage' ? 
+                                `<button onclick="allerAuTirage(${alerte.tontineId})" 
+                                        class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
+                                    🎯 Effectuer le tirage
+                                </button>` : 
+                              alerte.type === 'cycle_retard' ?
+                                `<button onclick="allerAuTirage(${alerte.tontineId})" 
+                                        class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
+                                    📊 Voir les tirages
+                                </button>` :
+                                `<button onclick="allerAuTirage(${alerte.tontineId})" 
+                                        class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
+                                    ⚙️ Gérer la tontine
+                                </button>`
+                            }
+                            <button onclick="supprimerAlerte('${alerte.id}')" 
+                                    class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
+                                ❌ Ignorer
+                            </button>
                         </div>
                     </div>
-                    <span class="text-xs font-semibold text-gray-600">${tontine.tirages.length}/${tontine.membres.length}</span>
-                </div>
-            </td>
-            <td class="p-3">
-                <span class="px-3 py-1 rounded-full text-xs font-semibold ${
-                    tontine.statut === 'active' ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' : 
-                    tontine.statut === 'terminee' ? 'bg-gradient-to-r from-gray-400 to-gray-500 text-white' :
-                    'bg-gray-100 text-gray-800'
-                }">
-                    ${tontine.statut === 'active' ? '🟢 Active' : 
-                      tontine.statut === 'terminee' ? '🏁 Terminée' : tontine.statut}
-                </span>
-            </td>
-        `;
-        tableau.appendChild(tr);
-    });
-
-    // Générer le résumé des alertes
-    genererResumeAlertes();
-}
-
-function genererResumeAlertes() {
-    const alertesActuelles = mettreAJourAlertes();
-    const resume = document.getElementById('resumeAlertes');
-
-    const retards = alertesActuelles.filter(a => a.type === 'retard');
-    const tirages = alertesActuelles.filter(a => a.type === 'tirage');
-
-    const cyclesRetard = tontines.filter(t => {
-        const eligibles = t.membres.filter(m => !m.aGagne);
-        return eligibles.length > 0 && !verifierDateTiragePossible(t) && verifierCotisationsCompletes(t);
-    }).length;
-
-    const paiementsAttente = tontines.reduce((sum, t) => {
-        const tousOntGagne = t.membres.every(m => m.aGagne);
-        if (tousOntGagne) return sum;
-
-        const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], t.frequenceCotisation);
-        return sum + t.membres.filter(m => {
-            return !m.cotisationsPayees.some(c => {
-                const periodeCotisation = obtenirPeriodeCotisation(c.date, t.frequenceCotisation);
-                return periodeCotisation === periodeActuelle;
+                `;
+                liste.appendChild(div);
             });
-        }).length;
-    }, 0);
+            
+            // Ajouter un résumé en bas
+            const resume = document.createElement('div');
+            resume.className = 'bg-gradient-to-r from-gray-100 to-gray-200 p-6 rounded-xl mt-8';
+            resume.innerHTML = `
+                <div class="text-center text-gray-700">
+                    <div class="font-bold text-lg mb-4">📊 Résumé des Alertes</div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div class="bg-white p-3 rounded-lg border-l-4 border-red-500">
+                            <div class="font-semibold text-red-600 text-xl">${alertesActuelles.filter(a => a.type === 'retard').length}</div>
+                            <div class="text-gray-600">⚠️ Retards</div>
+                            <div class="text-xs text-red-500 mt-1">${alertesActuelles.filter(a => a.type === 'retard' && a.urgence === 'haute').length} urgents</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg border-l-4 border-yellow-500">
+                            <div class="font-semibold text-yellow-600 text-xl">${alertesActuelles.filter(a => a.type === 'cycle_retard').length}</div>
+                            <div class="text-gray-600">⏳ Cycles retard</div>
+                            <div class="text-xs text-yellow-500 mt-1">En attente</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg border-l-4 border-blue-500">
+                            <div class="font-semibold text-blue-600 text-xl">${tontines.reduce((sum, t) => {
+                                const tousOntGagne = t.membres.every(m => m.aGagne);
+                                if (tousOntGagne) return sum;
+                                const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], t.frequenceCotisation);
+                                return sum + t.membres.filter(m => !m.cotisationsPayees.some(c => obtenirPeriodeCotisation(c.date, t.frequenceCotisation) === periodeActuelle)).length;
+                            }, 0)}</div>
+                            <div class="text-gray-600">💳 Paiements</div>
+                            <div class="text-xs text-blue-500 mt-1">En attente</div>
+                        </div>
+                        <div class="bg-white p-3 rounded-lg border-l-4 border-green-500">
+                            <div class="font-semibold text-green-600 text-xl">${alertesActuelles.filter(a => a.type === 'tirage').length}</div>
+                            <div class="text-gray-600">🎲 Tirages</div>
+                            <div class="text-xs text-green-500 mt-1">${alertesActuelles.filter(a => a.type === 'tirage' && a.estPremierTirage).length} premiers</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-xs text-gray-500">
+                        🔄 Mise à jour automatique • Nettoyage intelligent des alertes obsolètes
+                    </div>
+                </div>
+            `;
+            liste.appendChild(resume);
+        }
+        
+        function allerAuTirage(tontineId) {
+            ouvrirPage('tirages');
+            document.getElementById('selectTontineTirage').value = tontineId;
+            chargerTontineTirage();
+        }
+        
+        function supprimerAlerte(alerteId) {
+            alertes = alertes.filter(a => a.id != alerteId);
+            localStorage.setItem('app_alertes', JSON.stringify(alertes));
+            mettreAJourBadgeAlertes();
+            afficherAlertes();
+        }
 
-    resume.innerHTML = `
-        <div class="bg-gradient-to-r from-red-100 to-red-200 p-4 rounded-xl text-center">
-            <div class="text-2xl font-bold text-red-600">${retards.length}</div>
-            <div class="text-sm text-red-700 font-medium">⚠️ Retards de paiement</div>
-            <div class="text-xs text-red-600 mt-1">${retards.filter(r => r.urgence === 'haute').length} urgents</div>
-        </div>
-        <div class="bg-gradient-to-r from-yellow-100 to-yellow-200 p-4 rounded-xl text-center">
-            <div class="text-2xl font-bold text-yellow-600">${cyclesRetard}</div>
-            <div class="text-sm text-yellow-700 font-medium">⏳ Cycles en retard</div>
-            <div class="text-xs text-yellow-600 mt-1">Tirages en attente</div>
-        </div>
-        <div class="bg-gradient-to-r from-blue-100 to-blue-200 p-4 rounded-xl text-center">
-            <div class="text-2xl font-bold text-blue-600">${paiementsAttente}</div>
-            <div class="text-sm text-blue-700 font-medium">💳 Paiements en attente</div>
-            <div class="text-xs text-blue-600 mt-1">Membres à jour</div>
-        </div>
-        <div class="bg-gradient-to-r from-green-100 to-green-200 p-4 rounded-xl text-center">
-            <div class="text-2xl font-bold text-green-600">${tirages.length}</div>
-            <div class="text-sm text-green-700 font-medium">🎲 Tirages disponibles</div>
-            <div class="text-xs text-green-600 mt-1">${tirages.filter(t => t.estPremierTirage).length} premiers tirages</div>
-        </div>
-    `;
-}
 
-        // Nouvelle gestion des alertes connectée à l'API backend
-// Charger les alertes depuis l'API
-async function chargerAlertes() {
-  try {
-    const res = await fetch(`${API_BASE}/alertes`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-    });
 
-    if (!res.ok) throw new Error("Erreur récupération alertes");
-
-    alertes = await res.json();
-    mettreAJourBadgeAlertes();
-    afficherAlertes();
-  } catch (err) {
-    console.error("Erreur alertes:", err);
-  }
-}
-
-// Met à jour le badge d’alertes
-function mettreAJourBadgeAlertes() {
-  const badge = document.getElementById("badgeAlertes");
-  if (!badge) return;
-
-  if (alertes.length > 0) {
-    badge.textContent = alertes.length;
-    badge.classList.remove("hidden");
-  } else {
-    badge.classList.add("hidden");
-  }
-}
-
-// Affiche les alertes
-function afficherAlertes() {
-  const liste = document.getElementById("listeAlertes");
-  liste.innerHTML = "";
-
-  if (!alertes || alertes.length === 0) {
-    liste.innerHTML = `
-      <div class="text-center py-16">
-        <div class="text-8xl mb-6 floating-animation">✅</div>
-        <h3 class="text-3xl font-bold text-gray-700 mb-4">Aucune alerte active</h3>
-        <p class="text-gray-600 text-lg mb-4">Toutes les tontines sont bien gérées !</p>
-      </div>
-    `;
-    return;
-  }
-
-  alertes.forEach((alerte, index) => {
-    const div = document.createElement("div");
-    div.className = "bg-gradient-to-r from-indigo-500 to-purple-600 p-6 rounded-2xl text-white fade-in-up mb-6 shadow-lg";
-    div.style.animationDelay = `${index * 0.1}s`;
-    div.innerHTML = `
-      <div class="flex items-start justify-between">
-        <div class="flex items-start flex-1">
-          <span class="text-4xl mr-4 floating-animation">${alerte.icone || "⚠️"}</span>
-          <div class="flex-1">
-            <div class="font-bold text-xl mb-1">${alerte.message}</div>
-            <div class="text-sm opacity-75 mb-2">📋 Tontine: ${alerte.tontine}</div>
-          </div>
-        </div>
-      </div>
-    `;
-    liste.appendChild(div);
-  });
-}
-
-// Aller au tirage d’une tontine
-function allerAuTirage(tontineId) {
-  ouvrirPage('tirages');
-  document.getElementById('selectTontineTirage').value = tontineId;
-  chargerTontineTirage();
-}
-
-// Supprimer une alerte
-function supprimerAlerte(alerteId) {
-  alertes = alertes.filter(a => a.id != alerteId);
-  localStorage.setItem('app_alertes', JSON.stringify(alertes));
-  mettreAJourBadgeAlertes();
-  afficherAlertes();
-}
-
-// Fonction pour calculer le cycle actuel
-function obtenirCycleActuel(tontine) {
-  if (tontine.membres.length === 0) return 1;
-
-  // Le cycle actuel est basé sur le nombre de tirages effectués + 1
-  // Si aucun tirage n'a été effectué, on est au cycle 1
-  return tontine.tirages.length + 1;
-}
-
+        // Fonction pour calculer le cycle actuel
+        function obtenirCycleActuel(tontine) {
+            if (tontine.membres.length === 0) return 1;
+            
+            // Le cycle actuel est basé sur le nombre de tirages effectués + 1
+            // Si aucun tirage n'a été effectué, on est au cycle 1
+            // Si 1 tirage effectué, on est au cycle 2, etc.
+            return tontine.tirages.length + 1;
+        }
 
         // Fonctions utilitaires
-function verifierCotisationsCompletes(tontine) {
-    if (tontine.membres.length === 0) return false;
-    
-    // Tous les membres doivent cotiser, même ceux qui ont déjà gagné
-    // Seule exception : si tous les membres ont gagné (tontine terminée)
-    const tousOntGagne = tontine.membres.every(m => m.aGagne);
-    if (tousOntGagne) return true;
-    
-    // Vérifier que tous les membres ont cotisé pour la période actuelle
-    const periodeActuelle = obtenirPeriodeCotisation(
-        new Date().toISOString().split('T')[0], 
-        tontine.frequenceCotisation
-    );
-    
-    return tontine.membres.every(membre => {
-        return membre.cotisationsPayees.some(c => {
-            const periodeCotisation = obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation);
-            return periodeCotisation === periodeActuelle;
-        });
-    });
-}
+        function verifierCotisationsCompletes(tontine) {
+            if (tontine.membres.length === 0) return false;
+            
+            // Tous les membres doivent cotiser, même ceux qui ont déjà gagné
+            // Seule exception : si tous les membres ont gagné (tontine terminée)
+            const tousOntGagne = tontine.membres.every(m => m.aGagne);
+            if (tousOntGagne) return true;
+            
+            // Vérifier que tous les membres ont cotisé pour la période actuelle
+            const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
+            
+            return tontine.membres.every(membre => {
+                return membre.cotisationsPayees.some(c => {
+                    const periodeCotisation = obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation);
+                    return periodeCotisation === periodeActuelle;
+                });
+            });
+        }
 
-function verifierDateTiragePossible(tontine) {
-    if (!verifierCotisationsCompletes(tontine)) return false;
-    
-    const eligibles = tontine.membres.filter(m => !m.aGagne);
-    if (eligibles.length === 0) return false;
-    
-    // Premier tirage : disponible dès que toutes les cotisations sont complètes
-    if (tontine.tirages.length === 0) return true;
-    
-    // Tirages suivants : vérifier l'intervalle de temps
-    const dernierTirage = tontine.tirages[tontine.tirages.length - 1];
-    const dateDernierTirage = new Date(dernierTirage.date);
-    const maintenant = new Date();
-    const diffJours = (maintenant - dateDernierTirage) / (1000 * 60 * 60 * 24);
-    
-    // Intervalles selon la fréquence
-    const intervalles = {
-        'hebdomadaire': 7,
-        'mensuel': 30,
-        'trimestriel': 90
-    };
-    
-    const intervalleRequis = intervalles[tontine.frequenceTirage] || 30;
-    return diffJours >= intervalleRequis;
-}
+        function verifierDateTiragePossible(tontine) {
+            if (!verifierCotisationsCompletes(tontine)) return false;
+            
+            const eligibles = tontine.membres.filter(m => !m.aGagne);
+            if (eligibles.length === 0) return false;
+            
+            // Premier tirage : disponible dès que toutes les cotisations sont complètes
+            if (tontine.tirages.length === 0) return true;
+            
+            // Tirages suivants : vérifier l'intervalle de temps
+            const dernierTirage = tontine.tirages[tontine.tirages.length - 1];
+            const dateDernierTirage = new Date(dernierTirage.date);
+            const maintenant = new Date();
+            const diffJours = (maintenant - dateDernierTirage) / (1000 * 60 * 60 * 24);
+            
+            // Intervalles selon la fréquence
+            const intervalles = {
+                'hebdomadaire': 7,
+                'mensuel': 30,
+                'trimestriel': 90
+            };
+            
+            const intervalleRequis = intervalles[tontine.frequenceTirage] || 30;
+            return diffJours >= intervalleRequis;
+        }
 
-function obtenirProchaineDateTirage(tontine) {
-    if (tontine.tirages.length === 0) {
-        return new Date();
-    }
-    
-    const dernierTirage = new Date(tontine.tirages[tontine.tirages.length - 1].date);
-    const intervalles = {
-        'hebdomadaire': 7,
-        'mensuel': 30,
-        'trimestriel': 90
-    };
-    
-    const intervalle = intervalles[tontine.frequenceTirage] || 30;
-    const prochaineTirage = new Date(dernierTirage);
-    prochaineTirage.setDate(dernierTirage.getDate() + intervalle);
-    
-    return prochaineTirage;
-}
+        function obtenirProchaineDateTirage(tontine) {
+            if (tontine.tirages.length === 0) {
+                return new Date();
+            }
+            
+            const dernierTirage = new Date(tontine.tirages[tontine.tirages.length - 1].date);
+            const intervalles = {
+                'hebdomadaire': 7,
+                'mensuel': 30,
+                'trimestriel': 90
+            };
+            
+            const intervalle = intervalles[tontine.frequenceTirage] || 30;
+            const prochaineTirage = new Date(dernierTirage);
+            prochaineTirage.setDate(dernierTirage.getDate() + intervalle);
+            
+            return prochaineTirage;
+        }
 
-function obtenirJoursRestantsAvantTirage(tontine) {
-    if (tontine.tirages.length === 0) return 0;
-    
-    const prochaineTirage = obtenirProchaineDateTirage(tontine);
-    const maintenant = new Date();
-    const diffJours = Math.ceil((prochaineTirage - maintenant) / (1000 * 60 * 60 * 24));
-    
-    return Math.max(0, diffJours);
-}
+        function obtenirJoursRestantsAvantTirage(tontine) {
+            if (tontine.tirages.length === 0) return 0;
+            
+            const prochaineTirage = obtenirProchaineDateTirage(tontine);
+            const maintenant = new Date();
+            const diffJours = Math.ceil((prochaineTirage - maintenant) / (1000 * 60 * 60 * 24));
+            
+            return Math.max(0, diffJours);
+        }
 
-function estEnRetard(derniereCotisation, frequence) {
-    const aujourd_hui = new Date();
-    const dateCotisation = new Date(derniereCotisation);
-    const diffJours = (aujourd_hui - dateCotisation) / (1000 * 60 * 60 * 24);
-    
-    switch (frequence) {
-        case 'quotidien': return diffJours > 1;
-        case 'hebdomadaire': return diffJours > 7;
-        case 'mensuel': return diffJours > 30;
-        case 'annuel': return diffJours > 365;
-        default: return false;
-    }
-}
+        function estEnRetard(derniereCotisation, frequence) {
+            const aujourd_hui = new Date();
+            const dateCotisation = new Date(derniereCotisation);
+            const diffJours = (aujourd_hui - dateCotisation) / (1000 * 60 * 60 * 24);
+            
+            switch (frequence) {
+                case 'quotidien': return diffJours > 1;
+                case 'hebdomadaire': return diffJours > 7;
+                case 'mensuel': return diffJours > 30;
+                case 'annuel': return diffJours > 365;
+                default: return false;
+            }
+        }
 
         function obtenirPeriodeCotisation(date, frequence) {
             const dateObj = new Date(date);
@@ -3275,712 +3481,269 @@ function estEnRetardPeriode(membre, tontine) {
                 setTimeout(synchroniserDonnees, 1000);
             }
         }
-    
-</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();
-// === Gestion des tirages ===
-async function supprimerTirage(tirageId, tontineId) {
-    if (!confirm("Supprimer ce tirage ?")) return;
-
-    try {
-        await apiFetch(`/tirages/${tirageId}`, { method: "DELETE" });
-        alert("✅ Tirage supprimé !");
-        chargerTontineTirage();
-        mettreAJourAlertes();
-    } catch (e) {
-        console.error(e);
-        alert("❌ Erreur lors de la suppression du tirage");
-    }
-}
-</script>
+    </script>
+    <script src="https://unpkg.com/@supabase/supabase-js"></script>
 <script>
-// ================= API CONFIG =================
-const API_BASE = "https://ma-tontine-backend.onrender.com"; // ton backend Render
-
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-async function apiFetch(endpoint, options = {}) {
-  const headers = options.headers || {};
-  headers["Content-Type"] = "application/json";
-  const token = getToken();
-  if (token) headers["Authorization"] = "Bearer " + token;
-
-  const res = await fetch(API_BASE + endpoint, { ...options, headers });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: res.statusText }));
-    throw new Error(err.error || "Erreur API");
-  }
-  return res.json();
-}
-
-// Auth helpers
-async function login(email, password) {
-  const r = await apiFetch("/auth/login", {
-    method: "POST",
-    body: JSON.stringify({ email, password })
-  });
-  localStorage.setItem("token", r.token);
-}
-
-async function register(email, password) {
-  const r = await apiFetch("/auth/register", {
-    method: "POST",
-    body: JSON.stringify({ email, password })
-  });
-  localStorage.setItem("token", r.token);
-}
-
-// Example usage in place of sauvegarder()
-async function sauvegarder() {
-  // Désormais, les données se synchronisent via API
-  mettreAJourAlertes();
-}
-
+  
 </script>
 
-
-<!-- ===== Backend Integration Overrides (v2) ===== -->
+<script src="https://unpkg.com/@supabase/supabase-js"></script>
 <script>
-(function(){
-  // === Configuration ===
-  const API_BASE = localStorage.getItem('api_base') || 'https://ma-tontine-backend.onrender.com';
-  const TOKEN_KEY = 'auth_token';
+  // 🔹 CONFIG SUPABASE
+    const supabaseUrl = "https://fcefsbpqyymxgjaijbka.supabase.co"; // ton projet Supabase
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZWZzYnBxeXlteGdqYWlqYmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MjQ2NTQsImV4cCI6MjA3MTQwMDY1NH0.B_Ys0FuZv5FPkFs8LkX_hNxW-MrXcKvI36owIE-eO8M";         // depuis Supabase > Settings > API
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-  function setApiBase(url){
-    localStorage.setItem('api_base', url);
-    alert('API Base mis à jour: ' + url);
-  }
-  window.setApiBase = setApiBase;
-
-  function setToken(token){
-    if (token) localStorage.setItem(TOKEN_KEY, token);
-  }
-  function getToken(){
-    return localStorage.getItem(TOKEN_KEY) || null;
-  }
-
-  async function apiFetch(path, { method='GET', headers={}, body=null } = {}){
-    const token = getToken();
-    const finalHeaders = Object.assign(
-      { 'Content-Type': 'application/json' },
-      token ? { 'Authorization': 'Bearer ' + token } : {},
-      headers
-    );
-    const res = await fetch(API_BASE + path, {
-      method,
-      headers: finalHeaders,
-      body: body ? JSON.stringify(body) : null
-    });
-
-    if (!res.ok){
-      let errText = '';
-      try { 
-        errText = (await res.json()).error || res.statusText; 
-      } catch(e){ 
-        errText = res.statusText; 
-      }
-      const err = new Error(errText);
-      err.status = res.status;
-      err.response = res;
-      throw err;
-    }
-
-    const ct = res.headers.get('content-type') || '';
-    return ct.includes('application/json') ? res.json() : res.text();
-  }
-
-  // === Auth helpers ===
-  async function register(email, password){
-    const data = await apiFetch('/auth/register', { 
-      method: 'POST', 
-      body: { email, password } 
-    });
-    setToken(data.token);
-    return data;
-  }
-
-  async function login(email, password){
-    const data = await apiFetch('/auth/login', { 
-      method: 'POST', 
-      body: { email, password } 
-    });
-    setToken(data.token);
-    return data;
-  }
-
-  window.apiAuth = { register, login, setToken, getToken };
-
-  // === Local composition state (to fit existing UI model) ===
-  window.__apiState = {
-    tontinesMap: new Map(), // id -> { ...tontine, membres:[], cotisations:[], tirages:[] }
-  };
-})();
-
-
-  // Map backend tontine to UI shape
-  function mapTontineRow(row){
-    return {
-      id: row.id,
-      nom: row.nom,
-      type: row.type,
-      montant: Number(row.montant),
-      nombreMembresMax: row.membres_max || 0,
-      statut: row.statut,
-      description: row.description || '',
-      // UI collections we keep locally in sync
-      membres: [],
-      cotisations: [],
-      tirages: [],
-      gagnants: []
-    };
-  }
-
-  function ensureTontineInState(row){
-    let t = window.__apiState.tontinesMap.get(row.id);
-    if (!t){
-      t = mapTontineRow(row);
-      window.__apiState.tontinesMap.set(row.id, t);
-    }else{
-      // shallow update
-      Object.assign(t, mapTontineRow(row));
-      // preserve arrays already loaded
-    }
-    return t;
-  }
-
-  async function loadAllFromApi(){
-  // 1) Tontines
-  const tontinesRows = await apiFetch('/tontines');
-  const composed = [];
-  for (const row of tontinesRows){
-    const t = ensureTontineInState(row);
-
-    // 2) Membres for tontine
-    try{
-      const membres = await apiFetch('/membres/' + t.id);
-      t.membres = membres.map(m => ({
-        id: m.id,
-        nom: m.nom + (m.prenom ? (' ' + m.prenom) : ''),
-        dateAjout: m.created_at,
-        cotisationsPayees: [],
-        aGagne: false
-      }));
-    }catch(e){
-      console.warn('Membres load failed for tontine', t.id, e.message);
-      t.membres = [];
-    }
-
-    // 3) Paiements for tontine
-    try{
-      const pays = await apiFetch('/paiements/' + t.id);
-      t.cotisations = pays.map(p => ({
-        id: p.id,
-        membreId: p.membre_id,
-        date: p.periode,
-        montant: Number(p.montant)
-      }));
-      // fold into membres.cotisationsPayees
-      const byM = {};
-      for(const c of t.cotisations){
-        byM[c.membreId] = byM[c.membreId] || [];
-        byM[c.membreId].push({ id: c.id, date: c.date, montant: c.montant });
-      }
-      for (const m of t.membres){
-        m.cotisationsPayees = byM[m.id] || [];
-      }
-    }catch(e){
-      console.warn('Paiements load failed for tontine', t.id, e.message);
-      t.cotisations = [];
-      for (const m of t.membres){ m.cotisationsPayees = []; }
-    }
-
-    // 4) Tirages list — not provided on backend, so we keep local cache
-    t.tirages = t.tirages || [];
-    t.gagnants = t.gagnants || [];
-
-    composed.push(t);
-  }
-
-  // Replace global "tontines" used by your UI, keeping reference name intact
-  window.tontines = composed;
-  // Try to keep current active tontine if any
-  if (window.tontineActive){
-    const newActive = composed.find(x => x.id === window.tontineActive.id);
-    if (newActive) window.tontineActive = newActive;
-  }
-  // refresh UI hooks if they exist
-  try { if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage(); } catch(e){}
-  try { if (typeof afficherTontines === 'function') afficherTontines(); } catch(e){}
-}
-window.reloadFromApi = loadAllFromApi;
-
-// === Override save (no local persistence, just refresh alerts/UI) ===
-const originalSauvegarder = window.sauvegarder || function(){};
-window.sauvegarder = function(){
-  try { if (typeof sauvegarderDonneesUtilisateur === 'function') sauvegarderDonneesUtilisateur(); } catch(e){}
-  window.donneesModifiees = true;
-  try { if (typeof mettreAJourStatutReseau === 'function') mettreAJourStatutReseau(); } catch(e){}
-  try { if (typeof mettreAJourAlertes === 'function') mettreAJourAlertes(); } catch(e){}
-  return true;
-};
-
-// === Override: ajouterMembreTontine -> POST /membres/:tontineId ===
-window.ajouterMembreTontine = async function(){
-  if (!window.tontineActive){ alert('Aucune tontine active'); return; }
-  const nom = (document.getElementById('nouveauMembre')?.value || '').trim();
-  if (!nom){ alert('Veuillez entrer un nom'); return; }
-
-  // Capacity (soft check — real rules backend-side)
-  if (window.tontineActive.membres.length >= (window.tontineActive.nombreMembresMax || 999999)){
-    alert('Nombre maximum de membres atteint');
-    return;
-  }
-  try{
-    const created = await apiFetch('/membres/' + window.tontineActive.id, {
-      method: 'POST',
-      body: { nom }
-    });
-    // Update local state
-    window.tontineActive.membres.push({
-      id: created.id,
-      nom: created.nom,
-      dateAjout: created.created_at,
-      cotisationsPayees: [],
-      aGagne: false
-    });
-    document.getElementById('nouveauMembre').value = '';
-    if (typeof afficherMembresTontineGestion === 'function') afficherMembresTontineGestion();
-    if (typeof mettreAJourSelectMembres === 'function') mettreAJourSelectMembres();
-    if (typeof mettreAJourAffichage === 'function') mettreAJourAffichage();
-    alert('✅ Membre ajouté.');
-  }catch(e){
-    alert('❌ Échec ajout membre: ' + e.message);
-  }
-};
-
-
-  // === Override: enregistrerCotisationTontine -> POST /paiements ===
-  // === Enregistrer une cotisation ===
-window.enregistrerCotisationTontine = async function() {
-  if (!window.tontineActive) {
-    alert('Aucune tontine active');
-    return;
-  }
-
-  const membreId = (document.getElementById('membreCotisationSelect')?.value || '').trim();
-  const date = document.getElementById('dateCotisation')?.value;
-  if (!membreId || !date) {
-    alert('Veuillez sélectionner un membre et une date');
-    return;
-  }
-
-  try {
-    const body = {
-      tontine_id: window.tontineActive.id,
-      membre_id: membreId,
-      montant: window.tontineActive.montant,
-      periode: date
-    };
-
-    const p = await apiFetch('/paiements', { 
-      method: 'POST', 
-      body 
-    });
-
-    // reflect in local model to keep UI consistent
-    const cotisation = { 
-      id: p.id, 
-      membreId, 
-      date: p.periode, 
-      montant: Number(p.montant) 
-    };
-
-    const membre = window.tontineActive.membres.find(m => m.id === membreId);
-    if (membre) {
-      membre.cotisationsPayees = membre.cotisationsPayees || [];
-      membre.cotisationsPayees.push({ 
-        id: p.id, 
-        date: p.periode, 
-        montant: Number(p.montant) 
-      });
-    }
-
-    window.tontineActive.cotisations = window.tontineActive.cotisations || [];
-    window.tontineActive.cotisations.push(cotisation);
-
-    if (typeof afficherHistoriqueCotisations === 'function') afficherHistoriqueCotisations();
-    if (typeof afficherMembresTontineGestion === 'function') afficherMembresTontineGestion();
-    if (typeof mettreAJourAlertes === 'function') mettreAJourAlertes();
-
-    alert('✅ Cotisation enregistrée.');
-  } catch (e) {
-    if (e.status === 409) {
-      alert('⚠️ Paiement déjà enregistré pour cette période');
-    } else {
-      alert('❌ Échec enregistrement: ' + e.message);
-    }
-  }
-};
-
-// === Override: supprimerCotisation -> backend n’a pas (encore) d’endpoint DELETE ===
-window.supprimerCotisation = async function(cotisationId, tontineId) {
-  alert("Suppression de cotisation non supportée par l'API actuelle. Ajoutez un endpoint DELETE /paiements/:id côté backend pour l'activer.");
-};
-
-
-// === Override: retirerMembreTontine -> DELETE /membres/delete/:id ===
-window.retirerMembreTontine = async function (membreId, tontineId) {
-  const t = window.tontines?.find(x => x.id === tontineId) || window.tontineActive;
-  if (!t) { alert('Tontine introuvable'); return; }
-  const membre = t.membres.find(m => m.id === membreId);
-  if (!membre) { alert('Membre introuvable'); return; }
-
-  const ok = confirm(`Retirer ${membre.nom} de "${t.nom}" ? (Toutes ses cotisations liées resteront en base)`);
-  if (!ok) return;
-
-  try {
-    await apiFetch('/membres/delete/' + membreId, { method: 'DELETE' });
-    t.membres = t.membres.filter(m => m.id !== membreId);
-    // Purge les paiements locaux liés pour rester cohérent dans l’UI
-    t.cotisations = (t.cotisations || []).filter(c => c.membreId !== membreId);
-    if (typeof afficherMembresTontineGestion === 'function') afficherMembresTontineGestion();
-    if (typeof mettreAJourSelectMembres === 'function') mettreAJourSelectMembres();
-    if (typeof mettreAJourAlertes === 'function') mettreAJourAlertes();
-    alert('✅ Membre retiré.');
-  } catch (e) {
-    alert('❌ Échec du retrait: ' + e.message);
-  }
-};
-
-// === Tirage: POST /tirages/run/:tontineId ===
-async function effectuerTirage(tontineId) {
-  const d = await apiFetch('/tirages/run/' + tontineId, { method: 'POST' });
-  return d; // { id, tontine_id, membre_id, ordre, ... }
-}
-window.effectuerTirage = effectuerTirage;
-
-// Hook bouton "Effectuer le tirage" si votre UI l’appelle via allerAuTirage/ autres
-window.executerTirageEtRafraichir = async function () {
-  if (!window.tontineActive) { alert('Aucune tontine active'); return; }
-  try {
-    const res = await effectuerTirage(window.tontineActive.id);
-    // MàJ locale: marquer gagnant, pousser dans tirages
-    const t = window.tontineActive;
-    t.tirages = t.tirages || [];
-    t.tirages.push({
-      id: res.id,
-      gagnantId: res.membre_id,
-      date: res.date_tirage || new Date().toISOString(),
-      ordre: res.ordre
-    });
-    const m = t.membres.find(mm => mm.id === res.membre_id);
-    if (m) m.aGagne = true;
-    if (typeof mettreAJourAlertes === 'function') mettreAJourAlertes();
-    alert('🎯 Tirage réussi ! Gagnant mis à jour.');
-  } catch (e) {
-    alert('❌ Tirage impossible: ' + e.message);
-  }
-};
-
-// === Initial load: if token present, load data ===
-document.addEventListener('DOMContentLoaded', () => {
-  if (getToken()) {
-    loadAllFromApi().catch(err => console.warn('Initial load failed:', err.message));
-  }
-});
-
-// === Gestion des tirages ===
-async function supprimerTirage(tirageId, tontineId) {
-  if (!confirm("Supprimer ce tirage ?")) return;
-
-  try {
-    await apiFetch(`/tirages/${tirageId}`, { method: "DELETE" });
-    alert("✅ Tirage supprimé !");
-    chargerTontineTirage();
-    mettreAJourAlertes();
-  } catch (e) {
-    console.error(e);
-    alert("❌ Erreur lors de la suppression du tirage");
-  }
-}
-
-</script>
-<!-- ===== End Backend Integration Overrides ===== -->
-
-
-<script>
-// --- PWA Installation ---
-let deferredPrompt;
-const installBtn = document.getElementById("installAppBtn") 
-                 || document.getElementById("installAppBtnDropdown");
-if (installBtn) {
-  installBtn.addEventListener("click", (e) => {
+  /* -----------------------
+     🔐 AUTHENTIFICATION
+  ------------------------*/
+  async function sInscrire(e) {
     e.preventDefault();
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.finally(() => deferredPrompt = null);
-    }
-  });
-}
+    const nom = document.getElementById("nomInscription").value;
+    const email = document.getElementById("emailInscription").value;
+    const password = document.getElementById("motPasseInscription").value;
 
-// ✅ Gestion de l'événement d'installation
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredPrompt = e;
-  installBtn.classList.remove("hidden"); // rendre visible le bouton
-});
-
-installBtn.addEventListener("click", async () => {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === "accepted") {
-      console.log("✅ L’utilisateur a installé l’app");
-    } else {
-      console.log("❌ Installation refusée");
-    }
-    deferredPrompt = null;
-    installBtn.classList.add("hidden");
-  }
-});
-
-// ✅ Enregistrement du Service Worker
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/pwa/sw.js")
-    .then(() => console.log("Service Worker enregistré ✅"))
-    .catch(err => console.error("Service Worker échec ❌", err));
-}
-
-</script>
-<script>
-// ===== Correctifs d'intégration backend & PWA (version stable) =====
-
-// --- Base URL & helper fetch ---
-if (typeof window.API_BASE === "undefined") {
-  window.API_BASE = "https://ma-tontine-backend.onrender.com";
-}
-if (typeof window.apiFetch === "undefined") {
-  window.apiFetch = function(path, options = {}) {
-    const token = localStorage.getItem("token");
-    const headers = Object.assign({}, options.headers || {});
-    if (!headers["Content-Type"] && !(options.body instanceof FormData)) {
-      headers["Content-Type"] = "application/json";
-    }
-    if (token) headers["Authorization"] = "Bearer " + token;
-    return fetch(window.API_BASE + path, Object.assign({}, options, { headers }));
-  };
-}
-
-// --- Auth ---
-window.seConnecter = async function(e) {
-  e.preventDefault();
-
-  const email = document.getElementById("emailConnexion").value.trim();
-  const password = document.getElementById("motPasseConnexion").value.trim();
-
-  try {
-    const data = await apiFetch("/auth/login", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { nom_complet: nom } }
     });
 
-    localStorage.setItem("token", data.token);
-
-    // 🔥 Charger immédiatement les tontines
-    tontines = await apiFetch("/tontines");
-    chargerSelectsTontines();
-
-    alert("✅ Connexion réussie !");
-    initialiserApplication();
-    ouvrirPage("accueil");
-
-  } catch (err) {
-    console.error("Erreur API (connexion):", err);
-    alert("❌ Connexion échouée : " + (err.message || "Erreur serveur"));
+    if (error) {
+      alert("Erreur: " + error.message);
+    } else {
+      alert("Inscription réussie ! Vérifie ton email.");
+      ouvrirPageConnexion();
+    }
   }
-};
 
+  async function seConnecter(e) {
+    e.preventDefault();
+    const email = document.getElementById("emailConnexion").value;
+    const password = document.getElementById("motPasseConnexion").value;
 
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      alert("Erreur: " + error.message);
+    } else {
+      document.getElementById("nomUtilisateur").innerText = data.user.user_metadata.nom_complet || data.user.email;
+      ouvrirPage("accueil");
+      chargerTontines();
+    }
+  }
 
-window.sInscrire = async function(e) {
-  e.preventDefault();
+  async function seDeconnecter() {
+    await supabase.auth.signOut();
+    ouvrirPageConnexion();
+  }
 
-  const nom = document.getElementById("nomInscription").value.trim();
-  const email = document.getElementById("emailInscription").value.trim();
-  const password = document.getElementById("motPasseInscription").value.trim();
-  const confirm = document.getElementById("confirmMotPasse").value.trim();
+  /* -----------------------
+     🟣 TONTINES
+  ------------------------*/
+  async function creerTontine() {
+    const user = (await supabase.auth.getUser()).data.user;
+    if (!user) return alert("Connecte-toi d'abord !");
 
-  if (password !== confirm) {
-    alert("❌ Les mots de passe ne correspondent pas !");
+    const nom = document.getElementById("nomTontine").value;
+    const type = document.getElementById("typeTontine").value;
+    const montant = document.getElementById("montantCotisation").value;
+    const frequence = document.getElementById("frequenceCotisation").value;
+    const jour = document.getElementById("jourCotisation").value;
+    const tirage = document.getElementById("frequenceTirage").value;
+    const nbMembres = document.getElementById("nombreMembres").value;
+    const description = document.getElementById("descriptionTontine").value;
+
+    const { error } = await supabase.from("tontines").insert([{
+      nom, type, montant_cotisation: montant,
+      frequence_cotisation: frequence,
+      jour_cotisation: jour,
+      frequence_tirage: tirage,
+      nombre_membres: nbMembres,
+      description,
+      createur: user.id
+    }]);
+
+    if (error) {
+      alert("Erreur: " + error.message);
+    } else {
+      alert("Tontine créée !");
+      ouvrirPage("accueil");
+      chargerTontines();
+    }
+  }
+
+  async function chargerTontines() {
+    const { data: tontines, error } = await supabase.from("tontines").select("*");
+    if (error) return console.error(error);
+
+    const liste = document.getElementById("listeTontines");
+    liste.innerHTML = "";
+    tontines.forEach(t => {
+      const div = document.createElement("div");
+      div.className = "tontine-card p-6";
+      div.innerHTML = `<h3 class="text-xl font-bold">${t.nom}</h3>
+                       <p>Type: ${t.type}</p>
+                       <p>Montant: ${t.montant_cotisation}</p>`;
+      liste.appendChild(div);
+    });
+
+    // Remplir aussi le <select> pour la gestion
+    const selectGestion = document.getElementById("selectTontineGestion");
+    const selectMembres = document.getElementById("selectTontineMembres");
+    selectGestion.innerHTML = `<option value="">Choisir une tontine...</option>`;
+    selectMembres.innerHTML = `<option value="">Choisir une tontine...</option>`;
+    tontines.forEach(t => {
+      selectGestion.innerHTML += `<option value="${t.id}">${t.nom}</option>`;
+      selectMembres.innerHTML += `<option value="${t.id}">${t.nom}</option>`;
+    });
+  }
+
+  /* -----------------------
+     👥 MEMBRES
+  ------------------------*/
+  async function ajouterMembreTontine() {
+    const tontineId = document.getElementById("selectTontineGestion").value;
+    const nom = document.getElementById("nouveauMembre").value;
+
+    if (!tontineId) return alert("Choisis une tontine !");
+    if (!nom) return alert("Nom du membre obligatoire.");
+
+    const { error } = await supabase.from("membres").insert([{ tontine_id: tontineId, nom }]);
+    if (error) {
+      alert("Erreur: " + error.message);
+    } else {
+      alert("Membre ajouté !");
+      chargerMembresTontine(tontineId);
+    }
+  }
+
+  async function chargerMembresTontine(tontineId) {
+    const { data: membres, error } = await supabase.from("membres").select("*").eq("tontine_id", tontineId);
+    if (error) return console.error(error);
+
+    const liste = document.getElementById("listeMembresTontineGestion");
+    liste.innerHTML = "";
+    membres.forEach(m => {
+      const div = document.createElement("div");
+      div.className = "member-card p-4";
+      div.innerHTML = `<p class="font-bold">${m.nom}</p>`;
+      liste.appendChild(div);
+    });
+
+    // Remplir le select des cotisations
+    const selectCotisation = document.getElementById("membreCotisationSelect");
+    selectCotisation.innerHTML = `<option value="">Choisir un membre</option>`;
+    membres.forEach(m => {
+      selectCotisation.innerHTML += `<option value="${m.id}">${m.nom}</option>`;
+    });
+  }
+
+  /* -----------------------
+     💵 COTISATIONS
+  ------------------------*/
+async function enregistrerCotisationTontine() {
+  const tontineId = document.getElementById("selectTontineGestion").value;
+  const membreId = document.getElementById("membreCotisationSelect").value;
+  const date = document.getElementById("dateCotisation").value;
+
+  if (!tontineId || !membreId) return alert("Choisis une tontine et un membre.");
+
+  // 🔹 Récupérer la tontine pour avoir son montant
+  const { data: tontine, error: errT } = await supabase
+    .from("tontines")
+    .select("montant_cotisation")
+    .eq("id", tontineId)
+    .single();
+
+  if (errT) return alert("Erreur lors de la récupération de la tontine: " + errT.message);
+  const montant = tontine.montant_cotisation;
+
+  // 🔹 Enregistrer la cotisation
+  const { error } = await supabase.from("cotisations").insert([{
+    tontine_id: tontineId,
+    membre_id: membreId,
+    montant,
+    date_cotisation: date || new Date().toISOString().split("T")[0] // si pas de date → aujourd'hui
+  }]);
+
+  if (error) {
+    alert("Erreur: " + error.message);
+  } else {
+    alert(`Cotisation de ${montant} enregistrée !`);
+    chargerCotisations(tontineId);
+  }
+}
+
+ async function chargerCotisations(tontineId) {
+  const { data: cotisations, error } = await supabase
+    .from("cotisations")
+    .select("*, membres(nom)")
+    .eq("tontine_id", tontineId);
+
+  if (error) return console.error(error);
+
+  const historique = document.getElementById("historiqueCotisations");
+  historique.innerHTML = "";
+
+  if (!cotisations || cotisations.length === 0) {
+    historique.innerHTML = `<p class="text-gray-500">Aucune cotisation enregistrée pour cette tontine.</p>`;
     return;
   }
 
-  try {
-    const data = await apiFetch("/auth/register", {
-      method: "POST",
-      body: JSON.stringify({ email, password }),
-    });
-
-    // data contient { token }
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("nomUtilisateur", nom);
-
-    // 🔥 Charger immédiatement les tontines
-    tontines = await apiFetch("/tontines");
-    chargerSelectsTontines();
-
-    alert("✅ Compte créé avec succès !");
-    initialiserApplication();
-    ouvrirPage("accueil");
-
-  } catch (err) {
-    console.error("Erreur API (inscription):", err);
-    alert("❌ Échec de l'inscription : " + (err.message || "Erreur serveur"));
-  }
-};
-
-window.seDeconnecter = function(){
-  localStorage.removeItem("token");
-  try { sessionStorage.clear(); } catch(e){}
-  location.reload();
-};
-
-// --- Alertes ---
-
-
-window.verifierAlertes = async function () {
-  if (!localStorage.getItem("token")) {
-    console.warn("Pas de token → pas de récupération des alertes");
-    const badge = document.getElementById("badgeAlertes");
-    if (badge) badge.classList.add("hidden");
-    return [];
-  }
-
-  try {
-    // apiFetch renvoie déjà le JSON parsé
-    const data = await apiFetch("/alertes");
-
-    if (typeof window.afficherAlertes === "function") {
-      window.afficherAlertes(data);
-    }
-
-    const badge = document.getElementById("badgeAlertes");
-    if (badge) {
-      const n = Array.isArray(data) ? data.length : (data?.count || 0);
-      badge.textContent = n;
-      badge.classList.toggle("hidden", !n);
-    }
-
-    return data;
-  } catch (err) {
-    console.warn("verifierAlertes:", err);
-    const badge = document.getElementById("badgeAlertes");
-    if (badge) badge.classList.add("hidden");
-    return [];
-  }
-};
-
-window.mettreAJourAlertes = window.verifierAlertes;
-
-// --- Tirages ---
-window.supprimerTirage = async function(tirageId, tontineId){
-  if(!confirm("Supprimer ce tirage ?")) return;
-  try{
-    const r = await apiFetch(`/tirages/${tirageId}`, { method:"DELETE" });
-    if (!r.ok) throw new Error("HTTP "+r.status);
-    alert("✅ Tirage supprimé !");
-    if (typeof window.chargerTontineTirage === "function") window.chargerTontineTirage();
-    await window.verifierAlertes();
-  }catch(err){
-    console.error(err);
-    alert("❌ Erreur lors de la suppression du tirage");
-  }
-};
-
-// --- Statut réseau ---
-window.mettreAJourStatutReseau = function(){
-  const online = navigator.onLine;
-  const bandeau = document.getElementById("banniereReseau");
-  if (bandeau) bandeau.classList.toggle("hidden", online);
-};
-
-// --- Stats + rafraîchissement UI ---
-window.mettreAJourAffichage = async function(){
-  try{
-    // Exemple: vous pouvez appeler un endpoint de résumé si disponible
-    // const r = await apiFetch("/dashboard/overview");
-    // const stats = (await r.json()) || {};
-
-    // Sinon, on met juste à jour les alertes + quelques compteurs déjà présents en DOM si vous les remplissez ailleurs
-    await window.verifierAlertes();
-
-    // Affichage des cartes de stats si elles existent dans le DOM (hors API pour l'instant)
-    const elT = document.getElementById("statTotalTontines");
-    const elM = document.getElementById("statTotalMembres");
-    const elTi = document.getElementById("statTotalTirages");
-    // Laissez la logique existante les mettre à jour ailleurs; ici, on ne force rien s'ils n'existent pas.
-    // Vous pourrez compléter avec de vraies données si vous exposez un endpoint /dashboard/overview côté backend.
-  }catch(e){
-    console.warn("mettreAJourAffichage:", e);
-  }
-};
-
-// --- PWA Install (dropdown + header s'ils existent) ---
-(function(){
-  let deferredPrompt = null;
-  const updateBtn = (show) => {
-    ["installAppBtnDropdown","installAppBtn"].forEach(id=>{
-      const b = document.getElementById(id);
-      if (!b) return;
-      b.classList.toggle("hidden", !show);
-      b.onclick = async () => {
-        try{
-          if (!deferredPrompt) return;
-          deferredPrompt.prompt();
-          await deferredPrompt.userChoice;
-        }finally{
-          deferredPrompt = null;
-          updateBtn(false);
-        }
+  // 🔹 Regrouper les cotisations par membre
+  const stats = {};
+  cotisations.forEach(c => {
+    if (!stats[c.membre_id]) {
+      stats[c.membre_id] = {
+        nom: c.membres.nom,
+        total: 0,
+        nombre: 0,
+        derniere_date: c.date_cotisation
       };
-    });
-  };
-
-  window.addEventListener("beforeinstallprompt", (e)=>{
-    e.preventDefault();
-    deferredPrompt = e;
-    updateBtn(true);
-  });
-  window.addEventListener("appinstalled", ()=> updateBtn(false));
-})();
-
-// --- SW registration (ne duplique pas si déjà fait ailleurs) ---
-if ("serviceWorker" in navigator && !navigator.serviceWorker.controller) {
-  navigator.serviceWorker.register("/pwa/sw.js").catch(()=>{});
-}
-
-// --- Bootstrap au chargement ---
-document.addEventListener("DOMContentLoaded", async function(){
-  try{
-    window.mettreAJourStatutReseau();
-    window.addEventListener("online",  window.mettreAJourStatutReseau);
-    window.addEventListener("offline", window.mettreAJourStatutReseau);
-
-    const token = localStorage.getItem("token");
-    if (token) {
-      await window.mettreAJourAffichage();
-    } else {
-      // Laissez la page de connexion visible; les formulaires appellent seConnecter/sInscrire
-      // Rien à faire de plus ici
     }
-  }catch(e){
-    console.error("Init error:", e);
-  }
-});
-// ===== Fin correctifs =====
+    stats[c.membre_id].total += c.montant;
+    stats[c.membre_id].nombre += 1;
+
+    // garder la date la plus récente
+    if (new Date(c.date_cotisation) > new Date(stats[c.membre_id].derniere_date)) {
+      stats[c.membre_id].derniere_date = c.date_cotisation;
+    }
+  });
+
+  // 🔹 Construire le tableau
+  const table = document.createElement("table");
+  table.className = "min-w-full bg-white rounded-lg shadow-md overflow-hidden";
+
+  table.innerHTML = `
+    <thead class="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+      <tr>
+        <th class="px-4 py-2 text-left">👤 Membre</th>
+        <th class="px-4 py-2 text-center"># Cotisations</th>
+        <th class="px-4 py-2 text-center">💰 Total payé</th>
+        <th class="px-4 py-2 text-center">📅 Dernière date</th>
+      </tr>
+    </thead>
+    <tbody id="bodyCotisations" class="text-gray-700"></tbody>
+  `;
+
+  const tbody = table.querySelector("#bodyCotisations");
+
+  Object.values(stats).forEach(s => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="px-4 py-2 font-semibold">${s.nom}</td>
+      <td class="px-4 py-2 text-center">${s.nombre}</td>
+      <td class="px-4 py-2 text-center">${s.total}</td>
+      <td class="px-4 py-2 text-center">${s.derniere_date}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  historique.appendChild(table);
+}
 </script>
-</body>
+
+
+
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
