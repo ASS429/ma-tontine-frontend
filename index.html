@@ -3390,8 +3390,9 @@ function estEnRetardPeriode(membre, tontine) {
 
   // 🔹 CONFIG SUPABASE (uniquement pour l'auth)
   const supabaseUrl = "https://fcefsbpqyymxgjaijbka.supabase.co"; 
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZWZzYnBxeXlteGdqYWlqYmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MjQ2NTQsImV4cCI6MjA3MTQwMDY1NH0.B_Ys0FuZv5FPkFs8LkX_hNxW-MrXcKvI36owIE-eO8M"; // ta clé "anon"
-  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZWZzYnBxeXlteGdqYWlqYmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MjQ2NTQsImV4cCI6MjA3MTQwMDY1NH0.B_Ys0FuZv5FPkFs8LkX_hNxW-MrXcKvI36owIE-eO8M"; 
+  const { createClient } = supabase;
+  const sb = createClient(supabaseUrl, supabaseKey);
 
   const API_BASE = "https://ma-tontine-backend.onrender.com/api"; // 👉 ton backend Render
 
@@ -3415,7 +3416,6 @@ function estEnRetardPeriode(membre, tontine) {
 
     container.appendChild(notif);
 
-    // Auto-suppression après 3s
     setTimeout(() => {
       notif.style.opacity = "0";
       notif.style.transform = "translateX(100%)";
@@ -3427,7 +3427,7 @@ function estEnRetardPeriode(membre, tontine) {
   // 🔑 HELPERS
   // -----------------------------
   async function authHeaders() {
-    const { data } = await supabase.auth.getSession();
+    const { data } = await sb.auth.getSession();
     const token = data.session?.access_token;
     return token ? { Authorization: `Bearer ${token}` } : {};
   }
@@ -3460,7 +3460,7 @@ function estEnRetardPeriode(membre, tontine) {
     const email = document.getElementById("emailInscription").value;
     const password = document.getElementById("motPasseInscription").value;
 
-    const { error } = await supabase.auth.signUp({
+    const { error } = await sb.auth.signUp({
       email,
       password,
       options: { data: { nom_complet: nom } }
@@ -3479,7 +3479,7 @@ function estEnRetardPeriode(membre, tontine) {
     const email = document.getElementById("emailConnexion").value;
     const password = document.getElementById("motPasseConnexion").value;
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
     if (error) {
       showNotification("Erreur: " + error.message, "error");
     } else {
@@ -3492,7 +3492,7 @@ function estEnRetardPeriode(membre, tontine) {
   }
 
   async function seDeconnecter() {
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
     showNotification("Déconnexion réussie 👋", "success");
     ouvrirPageConnexion();
   }
@@ -3666,6 +3666,7 @@ function estEnRetardPeriode(membre, tontine) {
     } catch {}
   }
 </script>
+
 
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
