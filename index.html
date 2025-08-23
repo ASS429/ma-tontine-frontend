@@ -1169,13 +1169,13 @@ async function migrerComptesEnClair() {
   let derniereSynchronisation = null;
   let estEnLigne = navigator.onLine;
 
-document.addEventListener('DOMContentLoaded', () => {
-  migrerComptesEnClair(); 
-
-  // Données de l'application (spécifiques à l'utilisateur connecté)
+   // Données de l'application (spécifiques à l'utilisateur connecté)
   let tontines = [];
   let alertes = [];
   let tontineActive = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+  migrerComptesEnClair(); 
   let pageActuelle = 'accueil';
   
   
@@ -3800,9 +3800,8 @@ window.verifierAlertes = async function () {
   }
 
   try {
-    const r = await apiFetch("/alertes");
-    if (!r.ok) throw new Error("HTTP " + r.status);
-    const data = await r.json();
+    // apiFetch renvoie déjà le JSON parsé
+    const data = await apiFetch("/alertes");
 
     if (typeof window.afficherAlertes === "function") {
       window.afficherAlertes(data);
