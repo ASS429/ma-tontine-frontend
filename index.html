@@ -1800,18 +1800,20 @@ function chargerSelectsTontines() {
 
 
 async function chargerTontineGestion() {
-  const id = document.getElementById('selectTontineGestion').value;
+  const id = document.getElementById('selectTontineGestion').value; // garder en string
   if (!id) {
     document.getElementById('panneauGestion').classList.add('hidden');
     return;
   }
 
-  tontineActive = tontines.find(t => t.id === id);
+  // 1. récupérer la tontine
+  tontineActive = tontines.find(t => String(t.id) === String(id));
   if (!tontineActive) {
-    console.warn("Tontine non trouvée");
+    console.error("Tontine non trouvée (id:", id, ")");
     return;
   }
 
+  // 2. récupérer ses membres depuis l’API
   try {
     const membres = await apiFetch(`/membres/${id}`);
     tontineActive.membres = membres;
@@ -1821,6 +1823,7 @@ async function chargerTontineGestion() {
   }
 
   document.getElementById('panneauGestion').classList.remove('hidden');
+  
   afficherInfosTontine();
   afficherMembresTontineGestion();
   mettreAJourSelectMembres();
