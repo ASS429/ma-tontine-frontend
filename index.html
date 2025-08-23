@@ -1799,14 +1799,25 @@ function chargerSelectsTontines() {
 }
 
 
-function chargerTontineGestion() {
-    const id = document.getElementById('selectTontineGestion').value; // <-- pas de parseInt
+async function chargerTontineGestion() {
+    const id = document.getElementById('selectTontineGestion').value;
     if (!id) {
         document.getElementById('panneauGestion').classList.add('hidden');
         return;
     }
 
+    // 1. récupérer la tontine
     tontineActive = tontines.find(t => t.id === id);
+
+    // 2. récupérer ses membres depuis l’API
+    try {
+        const membres = await apiFetch(`/membres/${id}`);
+        tontineActive.membres = membres;   // injecter dans l’objet
+    } catch (err) {
+        console.error("Erreur chargement membres:", err);
+        tontineActive.membres = [];
+    }
+
     document.getElementById('panneauGestion').classList.remove('hidden');
     
     afficherInfosTontine();
@@ -2252,20 +2263,30 @@ function supprimerCotisation(cotisationId, tontineId) {
 }
 
         // Système de tirage
-function chargerTontineTirage() {
-    const id = document.getElementById('selectTontineTirage').value; // <-- pas de parseInt
+async function chargerTontineTirage() {
+    const id = document.getElementById('selectTontineTirage').value;
     if (!id) {
         document.getElementById('panneauTirage').classList.add('hidden');
         return;
     }
 
     tontineActive = tontines.find(t => t.id === id);
+
+    try {
+        const membres = await apiFetch(`/membres/${id}`);
+        tontineActive.membres = membres;
+    } catch (err) {
+        console.error("Erreur chargement membres:", err);
+        tontineActive.membres = [];
+    }
+
     document.getElementById('panneauTirage').classList.remove('hidden');
     
     afficherMembresEligibles();
     afficherHistoriqueGagnants();
     afficherInfosTirage();
 }
+
 
  function afficherMembresEligibles() {
     const liste = document.getElementById('membresEligibles');
