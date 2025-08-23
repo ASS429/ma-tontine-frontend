@@ -1079,6 +1079,8 @@ label { font-size: 0.95rem; font-weight: 600; }
         </div>
     </div>
 
+    <div id="notifications" class="fixed top-4 right-4 z-50 space-y-2"></div>
+
     <script>
         // Système d'authentification
         let utilisateurConnecte = JSON.parse(localStorage.getItem('utilisateur_connecte') || 'null');
@@ -1515,50 +1517,7 @@ function afficherErreur(msg) {
   setTimeout(() => div.remove(), 3000);
 }
 
-// Création finale (uniquement à l’étape 4)
-function creerTontine() {
-  if (!validerEtape(4)) return;
 
-  const tontine = {
-    id: Date.now(),
-    nom: document.getElementById('nomTontine').value.trim(),
-    type: document.getElementById('typeTontine').value,
-    montant: parseFloat(document.getElementById('montantCotisation').value),
-    frequenceCotisation: document.getElementById('frequenceCotisation').value,
-    jourCotisation: document.getElementById('jourCotisation').value,
-    frequenceTirage: document.getElementById('frequenceTirage').value,
-    nombreMembresMax: parseInt(document.getElementById('nombreMembres').value),
-    description: document.getElementById('descriptionTontine').value.trim(),
-    dateCreation: new Date().toISOString(),
-    statut: 'active',
-    membres: [],
-    cotisations: [],
-    tirages: [],
-    gagnants: []
-  };
-
-  tontines.push(tontine);
-  sauvegarder();
-
-  // Réinitialiser le wizard
-  document.querySelectorAll(".etape").forEach(e => e.classList.add("hidden"));
-  etape = 1;
-  document.getElementById("etape-1").classList.remove("hidden");
-  document.getElementById("etapeNum").innerText = etape;
-  document.getElementById("btnPrev").classList.add("hidden");
-  document.getElementById("btnNext").classList.remove("hidden");
-  document.getElementById("btnCreate").classList.add("hidden");
-
-  // Nettoyer les champs
-  document.getElementById('nomTontine').value = '';
-  document.getElementById('montantCotisation').value = '';
-  document.getElementById('nombreMembres').value = '';
-  document.getElementById('descriptionTontine').value = '';
-
-  // Message succès
-  alert('✅ Tontine créée avec succès !');
-  ouvrirPage('accueil');
-}
 
         // Affichage des tontines
        function afficherTontines() {
@@ -1903,34 +1862,6 @@ function masquerGuide() {
         }
 
         // Gestion des membres
-        function ajouterMembreTontine() {
-            const nom = document.getElementById('nouveauMembre').value.trim();
-            if (!nom) {
-                alert('Veuillez entrer un nom');
-                return;
-            }
-
-            if (tontineActive.membres.length >= tontineActive.nombreMembresMax) {
-                alert('Nombre maximum de membres atteint');
-                return;
-            }
-
-            const membre = {
-                id: Date.now(),
-                nom: nom,
-                dateAjout: new Date().toISOString(),
-                cotisationsPayees: [],
-                aGagne: false
-            };
-
-            tontineActive.membres.push(membre);
-            sauvegarder();
-            
-            document.getElementById('nouveauMembre').value = '';
-            afficherMembresTontineGestion();
-            mettreAJourSelectMembres();
-            mettreAJourAffichage();
-        }
 
         function afficherMembresTontineGestion() {
             const liste = document.getElementById('listeMembresTontineGestion');
@@ -2008,35 +1939,6 @@ function masquerGuide() {
         }
 
         // Gestion des cotisations
-        function enregistrerCotisationTontine() {
-            const membreId = parseInt(document.getElementById('membreCotisationSelect').value);
-            const date = document.getElementById('dateCotisation').value;
-            
-            if (!membreId || !date) {
-                alert('Veuillez sélectionner un membre et une date');
-                return;
-            }
-
-            const membre = tontineActive.membres.find(m => m.id === membreId);
-
-            const cotisation = {
-                id: Date.now(),
-                membreId: membreId,
-                date: date,
-                montant: tontineActive.montant
-            };
-
-            membre.cotisationsPayees.push(cotisation);
-            tontineActive.cotisations.push(cotisation);
-            
-            sauvegarder();
-            afficherHistoriqueCotisations();
-            afficherMembresTontineGestion();
-            mettreAJourAlertes();
-            
-            alert('✅ Cotisation enregistrée.');
-        }
-
         function afficherHistoriqueCotisations() {
             const liste = document.getElementById('historiqueCotisations');
             liste.innerHTML = '';
@@ -3482,37 +3384,92 @@ function estEnRetardPeriode(membre, tontine) {
             }
         }
     </script>
-    <script src="https://unpkg.com/@supabase/supabase-js"></script>
-<script>
-  
-</script>
 
 <script src="https://unpkg.com/@supabase/supabase-js"></script>
 <script>
-  // 🔹 CONFIG SUPABASE
-    const supabaseUrl = "https://fcefsbpqyymxgjaijbka.supabase.co"; // ton projet Supabase
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZWZzYnBxeXlteGdqYWlqYmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MjQ2NTQsImV4cCI6MjA3MTQwMDY1NH0.B_Ys0FuZv5FPkFs8LkX_hNxW-MrXcKvI36owIE-eO8M";         // depuis Supabase > Settings > API
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-  /* -----------------------
-     🔐 AUTHENTIFICATION
-  ------------------------*/
+  // 🔹 CONFIG SUPABASE (uniquement pour l'auth)
+  const supabaseUrl = "https://fcefsbpqyymxgjaijbka.supabase.co"; 
+  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZWZzYnBxeXlteGdqYWlqYmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MjQ2NTQsImV4cCI6MjA3MTQwMDY1NH0.B_Ys0FuZv5FPkFs8LkX_hNxW-MrXcKvI36owIE-eO8M"; // ta clé "anon"
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+  const API_BASE = "https://ma-tontine-backend.onrender.com/api"; // 👉 ton backend Render
+
+  // -----------------------------
+  // 🔔 NOTIFICATIONS
+  // -----------------------------
+  function showNotification(message, type = "info") {
+    const container = document.getElementById("notifications");
+    const notif = document.createElement("div");
+
+    let color;
+    switch (type) {
+      case "success": color = "bg-green-500"; break;
+      case "error":   color = "bg-red-500"; break;
+      case "warning": color = "bg-yellow-500"; break;
+      default:        color = "bg-blue-500";
+    }
+
+    notif.className = `${color} text-white px-4 py-2 rounded-lg shadow-md transition transform`;
+    notif.textContent = message;
+
+    container.appendChild(notif);
+
+    // Auto-suppression après 3s
+    setTimeout(() => {
+      notif.style.opacity = "0";
+      notif.style.transform = "translateX(100%)";
+      setTimeout(() => notif.remove(), 500);
+    }, 3000);
+  }
+
+  // -----------------------------
+  // 🔑 HELPERS
+  // -----------------------------
+  async function authHeaders() {
+    const { data } = await supabase.auth.getSession();
+    const token = data.session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  }
+
+  async function apiFetch(endpoint, options = {}) {
+    const headers = {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+      ...(await authHeaders())
+    };
+
+    const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
+    let data;
+    try { data = await res.json(); } catch { data = null; }
+
+    if (!res.ok) {
+      showNotification(data?.error || "Erreur API", "error");
+      throw new Error(data?.error || "Erreur API");
+    }
+
+    return data;
+  }
+
+  // -----------------------------
+  // 🔐 AUTHENTIFICATION
+  // -----------------------------
   async function sInscrire(e) {
     e.preventDefault();
     const nom = document.getElementById("nomInscription").value;
     const email = document.getElementById("emailInscription").value;
     const password = document.getElementById("motPasseInscription").value;
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { nom_complet: nom } }
     });
 
     if (error) {
-      alert("Erreur: " + error.message);
+      showNotification("Erreur: " + error.message, "error");
     } else {
-      alert("Inscription réussie ! Vérifie ton email.");
+      showNotification("Inscription réussie ✅ Vérifie ton email", "success");
       ouvrirPageConnexion();
     }
   }
@@ -3524,9 +3481,11 @@ function estEnRetardPeriode(membre, tontine) {
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      alert("Erreur: " + error.message);
+      showNotification("Erreur: " + error.message, "error");
     } else {
-      document.getElementById("nomUtilisateur").innerText = data.user.user_metadata.nom_complet || data.user.email;
+      document.getElementById("nomUtilisateur").innerText =
+        data.user.user_metadata.nom_complet || data.user.email;
+      showNotification("Connexion réussie 👋", "success");
       ouvrirPage("accueil");
       chargerTontines();
     }
@@ -3534,216 +3493,179 @@ function estEnRetardPeriode(membre, tontine) {
 
   async function seDeconnecter() {
     await supabase.auth.signOut();
+    showNotification("Déconnexion réussie 👋", "success");
     ouvrirPageConnexion();
   }
 
-  /* -----------------------
-     🟣 TONTINES
-  ------------------------*/
+  // -----------------------------
+  // 🟣 TONTINES
+  // -----------------------------
   async function creerTontine() {
-    const user = (await supabase.auth.getUser()).data.user;
-    if (!user) return alert("Connecte-toi d'abord !");
+    try {
+      const body = {
+        nom: document.getElementById("nomTontine").value,
+        type: document.getElementById("typeTontine").value,
+        montant: document.getElementById("montantCotisation").value,
+        frequence: document.getElementById("frequenceCotisation").value,
+        jour: document.getElementById("jourCotisation").value,
+        tirage: document.getElementById("frequenceTirage").value,
+        nbMembres: document.getElementById("nombreMembres").value,
+        description: document.getElementById("descriptionTontine").value
+      };
 
-    const nom = document.getElementById("nomTontine").value;
-    const type = document.getElementById("typeTontine").value;
-    const montant = document.getElementById("montantCotisation").value;
-    const frequence = document.getElementById("frequenceCotisation").value;
-    const jour = document.getElementById("jourCotisation").value;
-    const tirage = document.getElementById("frequenceTirage").value;
-    const nbMembres = document.getElementById("nombreMembres").value;
-    const description = document.getElementById("descriptionTontine").value;
+      await apiFetch("/tontines", {
+        method: "POST",
+        body: JSON.stringify(body)
+      });
 
-    const { error } = await supabase.from("tontines").insert([{
-      nom, type, montant_cotisation: montant,
-      frequence_cotisation: frequence,
-      jour_cotisation: jour,
-      frequence_tirage: tirage,
-      nombre_membres: nbMembres,
-      description,
-      createur: user.id
-    }]);
-
-    if (error) {
-      alert("Erreur: " + error.message);
-    } else {
-      alert("Tontine créée !");
+      showNotification("Tontine créée avec succès ✅", "success");
       ouvrirPage("accueil");
       chargerTontines();
-    }
+    } catch {}
   }
 
   async function chargerTontines() {
-    const { data: tontines, error } = await supabase.from("tontines").select("*");
-    if (error) return console.error(error);
+    try {
+      const tontines = await apiFetch("/tontines");
 
-    const liste = document.getElementById("listeTontines");
-    liste.innerHTML = "";
-    tontines.forEach(t => {
-      const div = document.createElement("div");
-      div.className = "tontine-card p-6";
-      div.innerHTML = `<h3 class="text-xl font-bold">${t.nom}</h3>
-                       <p>Type: ${t.type}</p>
-                       <p>Montant: ${t.montant_cotisation}</p>`;
-      liste.appendChild(div);
-    });
+      const liste = document.getElementById("listeTontines");
+      liste.innerHTML = "";
 
-    // Remplir aussi le <select> pour la gestion
-    const selectGestion = document.getElementById("selectTontineGestion");
-    const selectMembres = document.getElementById("selectTontineMembres");
-    selectGestion.innerHTML = `<option value="">Choisir une tontine...</option>`;
-    selectMembres.innerHTML = `<option value="">Choisir une tontine...</option>`;
-    tontines.forEach(t => {
-      selectGestion.innerHTML += `<option value="${t.id}">${t.nom}</option>`;
-      selectMembres.innerHTML += `<option value="${t.id}">${t.nom}</option>`;
-    });
+      tontines.forEach(t => {
+        const div = document.createElement("div");
+        div.className = "tontine-card p-6";
+        div.innerHTML = `<h3 class="text-xl font-bold">${t.nom}</h3>
+                         <p>Type: ${t.type}</p>
+                         <p>Montant: ${t.montant_cotisation}</p>`;
+        liste.appendChild(div);
+      });
+
+      const selectGestion = document.getElementById("selectTontineGestion");
+      const selectMembres = document.getElementById("selectTontineMembres");
+      selectGestion.innerHTML = `<option value="">Choisir une tontine...</option>`;
+      selectMembres.innerHTML = `<option value="">Choisir une tontine...</option>`;
+      tontines.forEach(t => {
+        selectGestion.innerHTML += `<option value="${t.id}">${t.nom}</option>`;
+        selectMembres.innerHTML += `<option value="${t.id}">${t.nom}</option>`;
+      });
+    } catch {}
   }
 
-  /* -----------------------
-     👥 MEMBRES
-  ------------------------*/
+  // -----------------------------
+  // 👥 MEMBRES
+  // -----------------------------
   async function ajouterMembreTontine() {
     const tontineId = document.getElementById("selectTontineGestion").value;
     const nom = document.getElementById("nouveauMembre").value;
 
-    if (!tontineId) return alert("Choisis une tontine !");
-    if (!nom) return alert("Nom du membre obligatoire.");
+    if (!tontineId || !nom) return showNotification("Remplis tous les champs", "warning");
 
-    const { error } = await supabase.from("membres").insert([{ tontine_id: tontineId, nom }]);
-    if (error) {
-      alert("Erreur: " + error.message);
-    } else {
-      alert("Membre ajouté !");
+    try {
+      await apiFetch("/membres", {
+        method: "POST",
+        body: JSON.stringify({ tontineId, nom })
+      });
+      showNotification("Membre ajouté ✅", "success");
       chargerMembresTontine(tontineId);
-    }
+    } catch {}
   }
 
   async function chargerMembresTontine(tontineId) {
-    const { data: membres, error } = await supabase.from("membres").select("*").eq("tontine_id", tontineId);
-    if (error) return console.error(error);
+    try {
+      const membres = await apiFetch(`/membres/${tontineId}`);
 
-    const liste = document.getElementById("listeMembresTontineGestion");
-    liste.innerHTML = "";
-    membres.forEach(m => {
-      const div = document.createElement("div");
-      div.className = "member-card p-4";
-      div.innerHTML = `<p class="font-bold">${m.nom}</p>`;
-      liste.appendChild(div);
-    });
+      const liste = document.getElementById("listeMembresTontineGestion");
+      liste.innerHTML = "";
+      membres.forEach(m => {
+        const div = document.createElement("div");
+        div.className = "member-card p-4";
+        div.innerHTML = `<p class="font-bold">${m.nom}</p>`;
+        liste.appendChild(div);
+      });
 
-    // Remplir le select des cotisations
-    const selectCotisation = document.getElementById("membreCotisationSelect");
-    selectCotisation.innerHTML = `<option value="">Choisir un membre</option>`;
-    membres.forEach(m => {
-      selectCotisation.innerHTML += `<option value="${m.id}">${m.nom}</option>`;
-    });
+      const selectCotisation = document.getElementById("membreCotisationSelect");
+      selectCotisation.innerHTML = `<option value="">Choisir un membre</option>`;
+      membres.forEach(m => {
+        selectCotisation.innerHTML += `<option value="${m.id}">${m.nom}</option>`;
+      });
+    } catch {}
   }
 
-  /* -----------------------
-     💵 COTISATIONS
-  ------------------------*/
-async function enregistrerCotisationTontine() {
-  const tontineId = document.getElementById("selectTontineGestion").value;
-  const membreId = document.getElementById("membreCotisationSelect").value;
-  const date = document.getElementById("dateCotisation").value;
+  // -----------------------------
+  // 💵 COTISATIONS
+  // -----------------------------
+  async function enregistrerCotisationTontine() {
+    const tontineId = document.getElementById("selectTontineGestion").value;
+    const membreId = document.getElementById("membreCotisationSelect").value;
+    const date = document.getElementById("dateCotisation").value;
 
-  if (!tontineId || !membreId) return alert("Choisis une tontine et un membre.");
+    if (!tontineId || !membreId)
+      return showNotification("Choisis une tontine et un membre", "warning");
 
-  // 🔹 Récupérer la tontine pour avoir son montant
-  const { data: tontine, error: errT } = await supabase
-    .from("tontines")
-    .select("montant_cotisation")
-    .eq("id", tontineId)
-    .single();
-
-  if (errT) return alert("Erreur lors de la récupération de la tontine: " + errT.message);
-  const montant = tontine.montant_cotisation;
-
-  // 🔹 Enregistrer la cotisation
-  const { error } = await supabase.from("cotisations").insert([{
-    tontine_id: tontineId,
-    membre_id: membreId,
-    montant,
-    date_cotisation: date || new Date().toISOString().split("T")[0] // si pas de date → aujourd'hui
-  }]);
-
-  if (error) {
-    alert("Erreur: " + error.message);
-  } else {
-    alert(`Cotisation de ${montant} enregistrée !`);
-    chargerCotisations(tontineId);
-  }
-}
-
- async function chargerCotisations(tontineId) {
-  const { data: cotisations, error } = await supabase
-    .from("cotisations")
-    .select("*, membres(nom)")
-    .eq("tontine_id", tontineId);
-
-  if (error) return console.error(error);
-
-  const historique = document.getElementById("historiqueCotisations");
-  historique.innerHTML = "";
-
-  if (!cotisations || cotisations.length === 0) {
-    historique.innerHTML = `<p class="text-gray-500">Aucune cotisation enregistrée pour cette tontine.</p>`;
-    return;
+    try {
+      await apiFetch("/cotisations", {
+        method: "POST",
+        body: JSON.stringify({ tontineId, membreId, date })
+      });
+      showNotification("Cotisation enregistrée 💰", "success");
+      chargerCotisations(tontineId);
+    } catch {}
   }
 
-  // 🔹 Regrouper les cotisations par membre
-  const stats = {};
-  cotisations.forEach(c => {
-    if (!stats[c.membre_id]) {
-      stats[c.membre_id] = {
-        nom: c.membres.nom,
-        total: 0,
-        nombre: 0,
-        derniere_date: c.date_cotisation
-      };
-    }
-    stats[c.membre_id].total += c.montant;
-    stats[c.membre_id].nombre += 1;
+  async function chargerCotisations(tontineId) {
+    try {
+      const cotisations = await apiFetch(`/cotisations/${tontineId}`);
 
-    // garder la date la plus récente
-    if (new Date(c.date_cotisation) > new Date(stats[c.membre_id].derniere_date)) {
-      stats[c.membre_id].derniere_date = c.date_cotisation;
-    }
-  });
+      const historique = document.getElementById("historiqueCotisations");
+      historique.innerHTML = "";
 
-  // 🔹 Construire le tableau
-  const table = document.createElement("table");
-  table.className = "min-w-full bg-white rounded-lg shadow-md overflow-hidden";
+      if (!cotisations || cotisations.length === 0) {
+        historique.innerHTML = `<p class="text-gray-500">Aucune cotisation enregistrée pour cette tontine.</p>`;
+        return;
+      }
 
-  table.innerHTML = `
-    <thead class="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-      <tr>
-        <th class="px-4 py-2 text-left">👤 Membre</th>
-        <th class="px-4 py-2 text-center"># Cotisations</th>
-        <th class="px-4 py-2 text-center">💰 Total payé</th>
-        <th class="px-4 py-2 text-center">📅 Dernière date</th>
-      </tr>
-    </thead>
-    <tbody id="bodyCotisations" class="text-gray-700"></tbody>
-  `;
+      const stats = {};
+      cotisations.forEach(c => {
+        if (!stats[c.membre]) {
+          stats[c.membre] = { nom: c.membre, total: 0, nombre: 0, derniere_date: c.date_cotisation };
+        }
+        stats[c.membre].total += c.montant;
+        stats[c.membre].nombre += 1;
+        if (new Date(c.date_cotisation) > new Date(stats[c.membre].derniere_date)) {
+          stats[c.membre].derniere_date = c.date_cotisation;
+        }
+      });
 
-  const tbody = table.querySelector("#bodyCotisations");
+      const table = document.createElement("table");
+      table.className = "min-w-full bg-white rounded-lg shadow-md overflow-hidden";
+      table.innerHTML = `
+        <thead class="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
+          <tr>
+            <th class="px-4 py-2 text-left">👤 Membre</th>
+            <th class="px-4 py-2 text-center"># Cotisations</th>
+            <th class="px-4 py-2 text-center">💰 Total payé</th>
+            <th class="px-4 py-2 text-center">📅 Dernière date</th>
+          </tr>
+        </thead>
+        <tbody id="bodyCotisations" class="text-gray-700"></tbody>
+      `;
 
-  Object.values(stats).forEach(s => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="px-4 py-2 font-semibold">${s.nom}</td>
-      <td class="px-4 py-2 text-center">${s.nombre}</td>
-      <td class="px-4 py-2 text-center">${s.total}</td>
-      <td class="px-4 py-2 text-center">${s.derniere_date}</td>
-    `;
-    tbody.appendChild(tr);
-  });
+      const tbody = table.querySelector("#bodyCotisations");
+      Object.values(stats).forEach(s => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="px-4 py-2 font-semibold">${s.nom}</td>
+          <td class="px-4 py-2 text-center">${s.nombre}</td>
+          <td class="px-4 py-2 text-center">${s.total}</td>
+          <td class="px-4 py-2 text-center">${s.derniere_date}</td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-  historique.appendChild(table);
-}
+      historique.appendChild(table);
+    } catch {}
+  }
 </script>
-
-
 
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
