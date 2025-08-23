@@ -1361,6 +1361,8 @@ document.addEventListener('DOMContentLoaded', () => {
   try {
     // Charger les tontines depuis l’API (avec leurs UUID)
     tontines = await apiFetch("/tontines");
+     
+    console.log("Tontines chargées:", tontines);   // 🔍 Debug
 
     // Remplir les selects avec les tontines du backend
     chargerSelectsTontines();
