@@ -1357,23 +1357,35 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Initialisation de l'application
-        function initialiserApplication() {
-            mettreAJourStatutReseau();
-            mettreAJourAffichage();
-            mettreAJourAlertes();
-            
-            // Initialiser la date de cotisation si l'élément existe
-            const dateCotisation = document.getElementById('dateCotisation');
-            if (dateCotisation) {
-                dateCotisation.value = new Date().toISOString().split('T')[0];
-            }
-            
-            // Afficher la dernière synchronisation si disponible
-            if (derniereSynchronisation) {
-                const dateDerniere = new Date(derniereSynchronisation);
-                console.log(`Dernière synchronisation: ${dateDerniere.toLocaleString('fr-FR')}`);
-            }
-        }
+        async function initialiserApplication() {
+  try {
+    // Charger les tontines depuis l’API (avec leurs UUID)
+    tontines = await apiFetch("/tontines");
+
+    // Remplir les selects avec les tontines du backend
+    chargerSelectsTontines();
+
+    // Mettre à jour le statut réseau + affichage + alertes
+    mettreAJourStatutReseau();
+    mettreAJourAffichage();
+    await mettreAJourAlertes();
+
+    // Initialiser la date de cotisation si l'élément existe
+    const dateCotisation = document.getElementById("dateCotisation");
+    if (dateCotisation) {
+      dateCotisation.value = new Date().toISOString().split("T")[0];
+    }
+
+    // Afficher la dernière synchronisation si disponible
+    if (derniereSynchronisation) {
+      const dateDerniere = new Date(derniereSynchronisation);
+      console.log(`Dernière synchronisation: ${dateDerniere.toLocaleString("fr-FR")}`);
+    }
+  } catch (err) {
+    console.error("Erreur init:", err);
+    alert("❌ Impossible de charger vos tontines");
+  }
+}
 
         // Configuration des événements réseau
         function configurerEvenementsReseau() {
@@ -1581,7 +1593,7 @@ async function creerTontine() {
   if (!validerEtape(4)) return;
 
   try {
-    const newTontine = await apiFetch("/tontines", {
+    await apiFetch("/tontines", {
       method: "POST",
       body: JSON.stringify({
         nom: document.getElementById("nomTontine").value.trim(),
@@ -1592,10 +1604,12 @@ async function creerTontine() {
       }),
     });
 
-    // Ajoute la tontine renvoyée par le backend (avec un vrai UUID)
-    tontines.push(newTontine);
+    // 🔁 Recharge toute la liste depuis le backend
+    tontines = await apiFetch("/tontines");
+    afficherTontines();
+    chargerSelectsTontines();
 
-    // Réinitialiser le wizard
+    // Reset wizard
     document.querySelectorAll(".etape").forEach(e => e.classList.add("hidden"));
     etape = 1;
     document.getElementById("etape-1").classList.remove("hidden");
@@ -1605,21 +1619,19 @@ async function creerTontine() {
     document.getElementById("btnCreate").classList.add("hidden");
 
     // Nettoyer les champs
-    document.getElementById("nomTontine").value = "";
-    document.getElementById("montantCotisation").value = "";
-    document.getElementById("nombreMembres").value = "";
-    document.getElementById("descriptionTontine").value = "";
+    ["nomTontine","montantCotisation","nombreMembres","descriptionTontine"].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
 
-    // Succès
     alert("✅ Tontine créée avec succès !");
     ouvrirPage("accueil");
-    afficherTontines(); // recharge l’affichage
+
   } catch (err) {
     console.error(err);
     alert("❌ Erreur lors de la création de la tontine");
   }
 }
-
 
         // Affichage des tontines
      function afficherTontines() {
@@ -1997,34 +2009,39 @@ async function chargerTontineGestion() {
 
 
         // Gestion des membres
-        function ajouterMembreTontine() {
-            const nom = document.getElementById('nouveauMembre').value.trim();
-            if (!nom) {
-                alert('Veuillez entrer un nom');
-                return;
-            }
+      async function ajouterMembreTontine() {
+  const nom = document.getElementById("nouveauMembre").value.trim();
+  if (!nom) {
+    alert("Veuillez entrer un nom");
+    return;
+  }
 
-            if (tontineActive.membres.length >= tontineActive.nombreMembresMax) {
-                alert('Nombre maximum de membres atteint');
-                return;
-            }
+  if (!tontineActive) {
+    alert("❌ Aucune tontine active");
+    return;
+  }
 
-            const membre = {
-                id: Date.now(),
-                nom: nom,
-                dateAjout: new Date().toISOString(),
-                cotisationsPayees: [],
-                aGagne: false
-            };
+  try {
+    const newMembre = await apiFetch(`/membres/${tontineActive.id}`, {
+      method: "POST",
+      body: JSON.stringify({ nom })
+    });
 
-            tontineActive.membres.push(membre);
-            sauvegarder();
-            
-            document.getElementById('nouveauMembre').value = '';
-            afficherMembresTontineGestion();
-            mettreAJourSelectMembres();
-            mettreAJourAffichage();
-        }
+    // Mettre à jour en local
+    tontineActive.membres = tontineActive.membres || [];
+    tontineActive.membres.push(newMembre);
+
+    document.getElementById("nouveauMembre").value = "";
+    afficherMembresTontineGestion();
+    mettreAJourSelectMembres();
+    mettreAJourAffichage();
+
+    alert(`✅ Membre "${nom}" ajouté avec succès !`);
+  } catch (err) {
+    console.error("Erreur ajout membre:", err);
+    alert("❌ Impossible d’ajouter le membre");
+  }
+}
 
         function afficherMembresTontineGestion() {
     const liste = document.getElementById('listeMembresTontineGestion');
