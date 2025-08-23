@@ -1577,49 +1577,49 @@ function afficherErreur(msg) {
 }
 
 // Création finale (uniquement à l’étape 4)
-function creerTontine() {
+async function creerTontine() {
   if (!validerEtape(4)) return;
 
-  const tontine = {
-    id: Date.now(),
-    nom: document.getElementById('nomTontine').value.trim(),
-    type: document.getElementById('typeTontine').value,
-    montant: parseFloat(document.getElementById('montantCotisation').value),
-    frequenceCotisation: document.getElementById('frequenceCotisation').value,
-    jourCotisation: document.getElementById('jourCotisation').value,
-    frequenceTirage: document.getElementById('frequenceTirage').value,
-    nombreMembresMax: parseInt(document.getElementById('nombreMembres').value),
-    description: document.getElementById('descriptionTontine').value.trim(),
-    dateCreation: new Date().toISOString(),
-    statut: 'active',
-    membres: [],
-    cotisations: [],
-    tirages: [],
-    gagnants: []
-  };
+  try {
+    const newTontine = await apiFetch("/tontines", {
+      method: "POST",
+      body: JSON.stringify({
+        nom: document.getElementById("nomTontine").value.trim(),
+        type: document.getElementById("typeTontine").value,
+        montant: parseFloat(document.getElementById("montantCotisation").value),
+        membres_max: parseInt(document.getElementById("nombreMembres").value),
+        statut: "active"
+      }),
+    });
 
-  tontines.push(tontine);
-  sauvegarder();
+    // Ajoute la tontine renvoyée par le backend (avec un vrai UUID)
+    tontines.push(newTontine);
 
-  // Réinitialiser le wizard
-  document.querySelectorAll(".etape").forEach(e => e.classList.add("hidden"));
-  etape = 1;
-  document.getElementById("etape-1").classList.remove("hidden");
-  document.getElementById("etapeNum").innerText = etape;
-  document.getElementById("btnPrev").classList.add("hidden");
-  document.getElementById("btnNext").classList.remove("hidden");
-  document.getElementById("btnCreate").classList.add("hidden");
+    // Réinitialiser le wizard
+    document.querySelectorAll(".etape").forEach(e => e.classList.add("hidden"));
+    etape = 1;
+    document.getElementById("etape-1").classList.remove("hidden");
+    document.getElementById("etapeNum").innerText = etape;
+    document.getElementById("btnPrev").classList.add("hidden");
+    document.getElementById("btnNext").classList.remove("hidden");
+    document.getElementById("btnCreate").classList.add("hidden");
 
-  // Nettoyer les champs
-  document.getElementById('nomTontine').value = '';
-  document.getElementById('montantCotisation').value = '';
-  document.getElementById('nombreMembres').value = '';
-  document.getElementById('descriptionTontine').value = '';
+    // Nettoyer les champs
+    document.getElementById("nomTontine").value = "";
+    document.getElementById("montantCotisation").value = "";
+    document.getElementById("nombreMembres").value = "";
+    document.getElementById("descriptionTontine").value = "";
 
-  // Message succès
-  alert('✅ Tontine créée avec succès !');
-  ouvrirPage('accueil');
+    // Succès
+    alert("✅ Tontine créée avec succès !");
+    ouvrirPage("accueil");
+    afficherTontines(); // recharge l’affichage
+  } catch (err) {
+    console.error(err);
+    alert("❌ Erreur lors de la création de la tontine");
+  }
 }
+
 
         // Affichage des tontines
      function afficherTontines() {
