@@ -1125,6 +1125,7 @@ label { font-size: 0.95rem; font-weight: 600; }
         // Système d'authentification
         let utilisateurConnecte = null; 
         const utilisateurs = [];    
+        let estEnLigne = navigator.onLine;
 
         // --- Hash SHA-256 pour mots de passe (stockage local sécurisé) ---
 async function hashPassword(plain) {
