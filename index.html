@@ -512,6 +512,9 @@ label { font-size: 0.95rem; font-weight: 600; }
                             <button type="submit" class="btn-gradient w-full py-4 rounded-xl text-lg font-bold">
                                 🔐 Se connecter
                             </button>
+
+                            <button onclick="testerBackend()">Tester Backend</button>
+
                         </form>
                         
                         <div class="mt-6 text-center">
@@ -1085,6 +1088,36 @@ label { font-size: 0.95rem; font-weight: 600; }
   const SUPABASE_URL = 'https://fcefsbpqyymxgjaijbka.supabase.co';
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZWZzYnBxeXlteGdqYWlqYmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MjQ2NTQsImV4cCI6MjA3MTQwMDY1NH0.B_Ys0FuZv5FPkFs8LkX_hNxW-MrXcKvI36owIE-eO8M';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  async function testerBackend() {
+  // 1. Connexion (ou inscription si le compte n’existe pas encore)
+  const { data, error } = await sb.auth.signInWithPassword({
+    email: "testuser@example.com",   // remplace par un vrai email
+    password: "motdepasse123"        // remplace par ton mot de passe
+  });
+
+  if (error) {
+    console.error("Erreur connexion:", error);
+    alert("❌ Connexion impossible: " + error.message);
+    return;
+  }
+
+  // 2. Récupérer le token JWT
+  const token = data.session.access_token;
+  console.log("✅ Token JWT:", token);
+
+  // 3. Appeler ton backend Render
+  const res = await fetch("https://ma-tontine-backend.onrender.com/api/tontines", {
+    headers: {
+      "Authorization": `Bearer ${token}`
+    }
+  });
+
+  const json = await res.json();
+  console.log("📡 Réponse backend:", json);
+  alert("Backend OK ! Réponse: " + JSON.stringify(json));
+}
+
 </script>
 
 
