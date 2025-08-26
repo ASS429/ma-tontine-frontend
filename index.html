@@ -1079,13 +1079,20 @@ label { font-size: 0.95rem; font-weight: 600; }
         </div>
     </div>
 
-    <div id="notifications" class="fixed top-4 right-4 z-50 space-y-2"></div>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  // ⚠️ Remplace par les valeurs de ton projet
+  const SUPABASE_URL = 'https://fcefsbpqyymxgjaijbka.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZWZzYnBxeXlteGdqYWlqYmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MjQ2NTQsImV4cCI6MjA3MTQwMDY1NH0.B_Ys0FuZv5FPkFs8LkX_hNxW-MrXcKvI36owIE-eO8M';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+
 
     <script>
         // Système d'authentification
-        let utilisateurConnecte = JSON.parse(localStorage.getItem('utilisateur_connecte') || 'null');
-        let utilisateurs = JSON.parse(localStorage.getItem('app_utilisateurs') || '[]');
-        
+        let utilisateurConnecte = null; 
+        const utilisateurs = [];    
+
         // --- Hash SHA-256 pour mots de passe (stockage local sécurisé) ---
 async function hashPassword(plain) {
   const bytes = new TextEncoder().encode(plain);
@@ -1093,160 +1100,94 @@ async function hashPassword(plain) {
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
-// Migration douce: si un compte est stocké en clair, on l'upgrade en hash
-async function migrerComptesEnClair() {
-  let modif = false;
-  utilisateurs = await Promise.all((utilisateurs || []).map(async u => {
-    if (u.motPasse && !String(u.motPasse).startsWith('sha256:')) {
-      modif = true;
-      return { ...u, motPasse: 'sha256:' + await hashPassword(u.motPasse) };
-    }
-    return u;
-  }));
-  if (modif) localStorage.setItem('app_utilisateurs', JSON.stringify(utilisateurs));
-}
 
-document.addEventListener('DOMContentLoaded', () => { migrerComptesEnClair(); });
+document.addEventListener('DOMContentLoaded', async () => {
+  // Vérifie si l’utilisateur est déjà connecté avec Supabase
+  const { data, error } = await sb.auth.getUser();
+  if (data?.user) {
+    utilisateurConnecte = {
+      id: data.user.id,
+      nom: data.user.user_metadata?.nom_complet || (data.user.email || '').split('@')[0],
+      email: data.user.email
+    };
 
+    // Charger les données depuis Supabase
+    await chargerDepuisSupabase();
+    initialiserApplication();
+    afficherInterfaceConnectee();
+  } else {
+    // Sinon afficher la page de connexion
+    afficherPageConnexion();
+  }
 
-        // Données de l'application (spécifiques à l'utilisateur connecté)
-        let tontines = [];
-        let alertes = [];
-        let tontineActive = null;
-        let pageActuelle = 'accueil';
-        
-        // Variables pour la synchronisation
-        let estEnLigne = navigator.onLine;
-        let donneesModifiees = false;
-        let derniereSynchronisation = null;
-
-        // Initialisation
-        document.addEventListener('DOMContentLoaded', function() {
-            verifierAuthentification();
-            configurerEvenementsReseau();
-            
-            // Vérifier les alertes toutes les 5 minutes
-            setInterval(mettreAJourAlertes, 5 * 60 * 1000);
-            
-            // Vérifier la synchronisation toutes les 30 secondes
-            setInterval(verifierSynchronisation, 30 * 1000);
-        });
+  // ⚡ Garde la mise à jour des alertes en continu
+  setInterval(mettreAJourAlertes, 5 * 60 * 1000);
+});
 
         // Système d'authentification
-        function verifierAuthentification() {
-            if (utilisateurConnecte) {
-                chargerDonneesUtilisateur();
-                initialiserApplication();
-                afficherInterfaceConnectee();
-            } else {
-                afficherPageConnexion();
-            }
-        }
 
         async function seConnecter(event) {
   event.preventDefault();
-
   const email = document.getElementById('emailConnexion').value.trim();
   const motPasse = document.getElementById('motPasseConnexion').value;
+  if (!email || !motPasse) return alert('Remplissez tous les champs.');
 
-  if (!email || !motPasse) { alert('Remplissez tous les champs.'); return; }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: motPasse });
+  if (error) return alert('Connexion impossible: ' + error.message);
 
-  const utilisateur = utilisateurs.find(u => u.email === email);
-  if (!utilisateur) { alert('Identifiants invalides. Réessayez.'); return; }
+  const { user } = data;
+  utilisateurConnecte = {
+    id: user.id,
+    nom: user.user_metadata?.nom_complet || (user.email || '').split('@')[0],
+    email: user.email
+  };
 
-  const stocke = utilisateur.motPasse || '';
-  let ok = false;
-
-  if (String(stocke).startsWith('sha256:')) {
-    const h = await hashPassword(motPasse);
-    ok = stocke === ('sha256:' + h);
-  } else {
-    // Compat plain → on migre immédiatement au format hashé
-    ok = stocke === motPasse;
-    if (ok) {
-      utilisateur.motPasse = 'sha256:' + await hashPassword(motPasse);
-      localStorage.setItem('app_utilisateurs', JSON.stringify(utilisateurs));
-    }
-  }
-
-  if (!ok) { alert('Identifiants invalides. Réessayez.'); return; }
-
-  utilisateurConnecte = utilisateur;
-  localStorage.setItem('utilisateur_connecte', JSON.stringify(utilisateur));
-
-  chargerDonneesUtilisateur();
+  await chargerDepuisSupabase();  // charge tontines + membres + cotisations
   initialiserApplication();
   afficherInterfaceConnectee();
-
-  document.getElementById('emailConnexion').value = '';
-  document.getElementById('motPasseConnexion').value = '';
 }
-
 
         async function sInscrire(event) {
   event.preventDefault();
-
   const nom = document.getElementById('nomInscription').value.trim();
   const email = document.getElementById('emailInscription').value.trim();
   const motPasse = document.getElementById('motPasseInscription').value;
-  const confirmMotPasse = document.getElementById('confirmMotPasse').value;
+  const confirm = document.getElementById('confirmMotPasse').value;
 
-  if (!nom || !email || !motPasse || !confirmMotPasse) { alert('Remplissez tous les champs.'); return; }
-  if (motPasse !== confirmMotPasse) { alert('Les mots de passe ne correspondent pas.'); return; }
-  if (motPasse.length < 6) { alert('Le mot de passe doit avoir au moins 6 caractères.'); return; }
-  if (utilisateurs.some(u => u.email === email)) { alert('Cet email est déjà utilisé.'); return; }
+  if (!nom || !email || !motPasse || !confirm) return alert('Remplissez tous les champs.');
+  if (motPasse !== confirm) return alert('Les mots de passe ne correspondent pas.');
+  if (motPasse.length < 6) return alert('Mot de passe trop court.');
 
-  const nouvelUtilisateur = {
-    id: Date.now(),
-    nom,
+  const { data, error } = await sb.auth.signUp({
     email,
-    motPasse: 'sha256:' + await hashPassword(motPasse),
-    dateCreation: new Date().toISOString()
-  };
+    password: motPasse,
+    options: { data: { nom_complet: nom } } // user_metadata
+  });
+  if (error) return alert('Inscription impossible: ' + error.message);
 
-  utilisateurs.push(nouvelUtilisateur);
-  localStorage.setItem('app_utilisateurs', JSON.stringify(utilisateurs));
+  // Créer la ligne profil (table "utilisateurs") avec le même id (= auth.uid())
+  const user = data.user;
+  if (user) {
+    const { error: e2 } = await sb.from('utilisateurs')
+      .insert({ id: user.id, nom_complet: nom, email });
+    if (e2) console.warn('Profil non créé (utilisateurs):', e2.message);
+  }
 
-  // Connexion auto
-  utilisateurConnecte = nouvelUtilisateur;
-  localStorage.setItem('utilisateur_connecte', JSON.stringify(nouvelUtilisateur));
-
-  tontines = [];
-  alertes = [];
-  sauvegarderDonneesUtilisateur();
-
-  initialiserApplication();
-  afficherInterfaceConnectee();
-
-  // Reset formulaire
-  document.getElementById('nomInscription').value = '';
-  document.getElementById('emailInscription').value = '';
-  document.getElementById('motPasseInscription').value = '';
-  document.getElementById('confirmMotPasse').value = '';
+  alert('Compte créé. Vérifie l’email de confirmation si activée.');
+  // Option: connexion auto si email confirm disabled
 }
 
-
-        function seDeconnecter() {
-            if (confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) {
-                // Sauvegarder les données avant déconnexion
-                sauvegarderDonneesUtilisateur();
-                
-                // Nettoyer les données de session
-                utilisateurConnecte = null;
-                localStorage.removeItem('utilisateur_connecte');
-                
-                // Réinitialiser les données
-                tontines = [];
-                alertes = [];
-                tontineActive = null;
-                pageActuelle = 'connexion';
-                
-                // Afficher la page de connexion
-                afficherPageConnexion();
-                
-                alert('✅ Déconnexion réussie !');
-            }
-        }
+        async function seDeconnecter() {
+  if (!confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) return;
+  await sb.auth.signOut();
+  utilisateurConnecte = null;
+  tontines = [];
+  alertes = [];
+  tontineActive = null;
+  pageActuelle = 'connexion';
+  afficherPageConnexion();
+  alert('✅ Déconnexion réussie !');
+}
 
         function ouvrirPageConnexion() {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1277,23 +1218,87 @@ document.addEventListener('DOMContentLoaded', () => { migrerComptesEnClair(); })
             ouvrirPage('accueil');
         }
 
-        function chargerDonneesUtilisateur() {
-            if (!utilisateurConnecte) return;
-            
-            const cleUtilisateur = `user_${utilisateurConnecte.id}`;
-            tontines = JSON.parse(localStorage.getItem(`${cleUtilisateur}_tontines`) || '[]');
-            alertes = JSON.parse(localStorage.getItem(`${cleUtilisateur}_alertes`) || '[]');
-            derniereSynchronisation = localStorage.getItem(`${cleUtilisateur}_derniere_sync`) || null;
-        }
+// -------- DATA LAYER --------
+async function chargerDepuisSupabase() {
+  if (!utilisateurConnecte) return;
+  // Récupérer toutes les tontines de l’utilisateur + membres + cotisations
+  const { data: rows, error } = await sb
+    .from('tontines')
+    .select(`
+      id, nom, type, montant_cotisation, frequence_cotisation, jour_cotisation,
+      frequence_tirage, nombre_membres, description, cree_le,
+      membres ( id, nom, cree_le ),
+      cotisations ( id, membre_id, montant, date_cotisation ),
+      tirages ( id, membre_id, date_tirage )
+    `)
+    .order('cree_le', { ascending: true });
 
-        function sauvegarderDonneesUtilisateur() {
-            if (!utilisateurConnecte) return;
-            
-            const cleUtilisateur = `user_${utilisateurConnecte.id}`;
-            localStorage.setItem(`${cleUtilisateur}_tontines`, JSON.stringify(tontines));
-            localStorage.setItem(`${cleUtilisateur}_alertes`, JSON.stringify(alertes));
-            localStorage.setItem(`${cleUtilisateur}_derniere_sync`, derniereSynchronisation || '');
-        }
+  if (error) {
+    console.error(error);
+    return alert('Erreur au chargement des données: ' + error.message);
+  }
+
+  // Mapper vers ta structure actuelle (pour ne pas toucher à ton UI)
+  tontines = (rows || []).map(mapTontineRowToLocal);
+
+  // Reconstituer cotisationsPayees par membre (comme aujourd’hui)
+  tontines.forEach(t => {
+    (t.cotisations || []).forEach(c => {
+      const m = t.membres.find(mm => mm.id === c.membreId);
+      if (m) m.cotisationsPayees.push({ id: c.id, date: c.date, montant: c.montant });
+    });
+  });
+}
+
+function mapTontineRowToLocal(r) {
+  const membres = (r.membres || []).map(m => ({
+    id: m.id,
+    nom: m.nom,
+    aGagne: false,               // sera piloté par la table 'tirages' si tu l’ajoutes
+    dateAjout: m.cree_le,
+    cotisationsPayees: []
+  }));
+
+  const cotisations = (r.cotisations || []).map(c => ({
+    id: c.id,
+    membreId: c.membre_id,
+    montant: Number(c.montant),
+    date: new Date(c.date_cotisation).toISOString()
+  }));
+
+  const tirages = (r.tirages || []).map(t => ({
+  id: t.id,
+  gagnantId: t.membre_id,
+  date: new Date(t.date_tirage).toISOString()
+}));
+
+const gagnants = tirages.map(tr => {
+  const membre = (r.membres || []).find(m => m.id === tr.membre_id);
+  return {
+    gagnantId: tr.gagnantId,
+    nom: membre?.nom || "Inconnu",
+    date: tr.date
+  };
+});
+
+  return {
+    id: r.id,
+    nom: r.nom,
+    type: r.type,
+    montant: Number(r.montant_cotisation || 0),
+    frequenceCotisation: r.frequence_cotisation,
+    jourCotisation: r.jour_cotisation,
+    frequenceTirage: r.frequence_tirage,
+    nombreMembresMax: r.nombre_membres,
+    description: r.description || '',
+    membres,
+    cotisations,
+    tirages,    
+    gagnants
+  };
+}
+
+
 
         // Initialisation de l'application
         function initialiserApplication() {
@@ -1376,13 +1381,6 @@ document.addEventListener('DOMContentLoaded', () => { migrerComptesEnClair(); })
             } catch (error) {
                 console.error('Erreur de synchronisation:', error);
                 afficherNotificationSync('❌ Erreur de synchronisation');
-            }
-        }
-
-        // Vérification périodique de la synchronisation
-        function verifierSynchronisation() {
-            if (estEnLigne && donneesModifiees) {
-                synchroniserDonnees();
             }
         }
 
@@ -1517,7 +1515,43 @@ function afficherErreur(msg) {
   setTimeout(() => div.remove(), 3000);
 }
 
+// Création finale (uniquement à l’étape 4)
+async function creerTontine() {
+  const nom = document.getElementById('nomTontine').value.trim();
+  const type = document.getElementById('typeTontine').value;
+  const montant = parseFloat(document.getElementById('montantCotisation').value);
+  const frequenceCot = document.getElementById('frequenceCotisation').value;
+  const jourCot = document.getElementById('jourCotisation').value;
+  const frequenceTir = document.getElementById('frequenceTirage').value;
+  const nbMembres = parseInt(document.getElementById('nombreMembres').value, 10);
+  const description = document.getElementById('descriptionTontine').value.trim();
 
+  if (!nom || !montant || !nbMembres || nbMembres < 2) {
+    return afficherErreur("Veuillez remplir les champs requis.");
+  }
+
+  const { data, error } = await sb.from('tontines')
+    .insert({
+      nom,
+      type,
+      montant_cotisation: montant,
+      frequence_cotisation: frequenceCot,
+      jour_cotisation: jourCot,
+      frequence_tirage: frequenceTir,
+      nombre_membres: nbMembres,
+      description,
+      createur: utilisateurConnecte.id
+    })
+    .select()
+    .single();
+
+  if (error) return alert('Création impossible: ' + error.message);
+
+  // Met à jour le state local pour réutiliser ton UI sans refactor
+  tontines.push(mapTontineRowToLocal({ ...data, membres: [], cotisations: [] }));
+  ouvrirPage('accueil');
+  alert('✅ Tontine créée avec succès !');
+}
 
         // Affichage des tontines
        function afficherTontines() {
@@ -1862,6 +1896,27 @@ function masquerGuide() {
         }
 
         // Gestion des membres
+        async function ajouterMembreTontine() {
+  if (!tontineActive) return;
+  const nom = document.getElementById('nomMembre').value.trim();
+  if (!nom) return alert('Veuillez entrer un nom de membre');
+
+  const { data, error } = await sb.from('membres')
+    .insert({ tontine_id: tontineActive.id, nom })
+    .select()
+    .single();
+
+  if (error) return alert('Ajout impossible: ' + error.message);
+
+  tontineActive.membres.push({
+    id: data.id, nom: data.nom, aGagne: false,
+    dateAjout: data.cree_le, cotisationsPayees: []
+  });
+  document.getElementById('nomMembre').value = '';
+  mettreAJourSelectMembres?.();
+  afficherMembresTontineGestion?.();
+  alert('✅ Membre ajouté.');
+}
 
         function afficherMembresTontineGestion() {
             const liste = document.getElementById('listeMembresTontineGestion');
@@ -1939,6 +1994,31 @@ function masquerGuide() {
         }
 
         // Gestion des cotisations
+        async function enregistrerCotisationTontine() {
+  if (!tontineActive) return;
+  const membreId = document.getElementById('selectMembreCotisation').value;
+  const montant = tontineActive.montant;
+  const date = document.getElementById('dateCotisation').value || new Date().toISOString().split('T')[0];
+
+  const { data, error } = await sb.from('cotisations')
+    .insert({ tontine_id: tontineActive.id, membre_id: membreId, montant, date_cotisation: date })
+    .select()
+    .single();
+
+  if (error) return alert('Enregistrement impossible: ' + error.message);
+
+  // MAJ state local pour l’UI
+  const c = { id: data.id, membreId, montant: Number(data.montant), date: new Date(data.date_cotisation).toISOString() };
+  tontineActive.cotisations.push(c);
+  const m = tontineActive.membres.find(mm => mm.id === membreId);
+  if (m) m.cotisationsPayees.push({ id: c.id, date: c.date, montant: c.montant });
+
+  afficherHistoriqueCotisations?.();
+  afficherMembresTontineGestion?.();
+  mettreAJourAlertes?.();
+  alert('✅ Cotisation enregistrée.');
+}
+
         function afficherHistoriqueCotisations() {
             const liste = document.getElementById('historiqueCotisations');
             liste.innerHTML = '';
@@ -1983,90 +2063,80 @@ function masquerGuide() {
         }
 
         // Fonctions de gestion des cotisations et membres
-        function retirerMembreTontine(membreId, tontineId) {
-            const tontine = tontines.find(t => t.id === tontineId);
-            if (!tontine) return;
-            
-            const membre = tontine.membres.find(m => m.id === membreId);
-            if (!membre) return;
-            
-            const cotisationsCount = membre.cotisationsPayees.length;
-            const totalCotise = cotisationsCount * tontine.montant;
-            const cotisationsTontine = tontine.cotisations.filter(c => c.membreId === membreId).length;
-            
-            const message = `⚠️ RETRAIT DE MEMBRE ⚠️\n\n` +
-                          `Membre: "${membre.nom}"\n` +
-                          `Tontine: "${tontine.nom}"\n` +
-                          `Statut: ${membre.aGagne ? '🏆 Gagnant' : '👤 Actif'}\n` +
-                          `Membre depuis: ${new Date(membre.dateAjout).toLocaleDateString('fr-FR')}\n\n` +
-                          `💰 IMPACT FINANCIER:\n` +
-                          `• Cotisations payées: ${cotisationsCount}\n` +
-                          `• Montant total cotisé: ${totalCotise.toLocaleString()} FCFA\n` +
-                          `• Cotisations dans l'historique: ${cotisationsTontine}\n\n` +
-                          `⚠️ CONSÉQUENCES:\n` +
-                          `• Toutes ses cotisations seront supprimées\n` +
-                          `• Son historique sera effacé définitivement\n` +
-                          `${membre.aGagne ? '• Son statut de gagnant sera perdu\n' : ''}\n` +
-                          `Confirmer le retrait ?`;
-            
-            if (confirm(message)) {
-                // Supprimer le membre et ses cotisations
-                tontine.membres = tontine.membres.filter(m => m.id !== membreId);
-                tontine.cotisations = tontine.cotisations.filter(c => c.membreId !== membreId);
-                
-                // Supprimer des gagnants si applicable
-                if (membre.aGagne) {
-                    tontine.gagnants = tontine.gagnants.filter(g => g.gagnantId !== membreId);
-                    tontine.tirages = tontine.tirages.filter(t => t.gagnantId !== membreId);
-                }
-                
-                sauvegarder();
-                
-                if (pageActuelle === 'gestion') {
-                    afficherMembresTontineGestion();
-                    mettreAJourSelectMembres();
-                } else if (pageActuelle === 'membres') {
-                    afficherMembresTontine();
-                }
-                
-                mettreAJourAlertes();
-                
-                alert(`✅ Membre "${membre.nom}" retiré avec succès !\n\n` +
-                      `📊 Résumé du retrait:\n` +
-                      `• ${cotisationsCount} cotisations supprimées\n` +
-                      `• ${totalCotise.toLocaleString()} FCFA retirés de l'historique\n` +
-                      `${membre.aGagne ? '• Statut de gagnant annulé\n' : ''}` +
-                      `• Membre retiré de "${tontine.nom}"`);
-            }
-        }
+        async function retirerMembreTontine(membreId, tontineId) {
+  const tontine = tontines.find(t => t.id === tontineId);
+  if (!tontine) return;
+
+  const membre = tontine.membres.find(m => m.id === membreId);
+  if (!membre) return;
+
+  const cotisationsCount = membre.cotisationsPayees.length;
+  const totalCotise = cotisationsCount * tontine.montant;
+  const cotisationsTontine = tontine.cotisations.filter(c => c.membreId === membreId).length;
+
+  const message = `⚠️ RETRAIT DE MEMBRE ⚠️\n\n` +
+                  `Membre: "${membre.nom}"\n` +
+                  `Tontine: "${tontine.nom}"\n` +
+                  `Statut: ${membre.aGagne ? '🏆 Gagnant' : '👤 Actif'}\n` +
+                  `Membre depuis: ${new Date(membre.dateAjout).toLocaleDateString('fr-FR')}\n\n` +
+                  `💰 IMPACT FINANCIER:\n` +
+                  `• Cotisations payées: ${cotisationsCount}\n` +
+                  `• Montant total cotisé: ${totalCotise.toLocaleString()} FCFA\n` +
+                  `• Cotisations dans l'historique: ${cotisationsTontine}\n\n` +
+                  `⚠️ CONSÉQUENCES:\n` +
+                  `• Toutes ses cotisations seront supprimées\n` +
+                  `• Son historique sera effacé définitivement\n` +
+                  `${membre.aGagne ? '• Son statut de gagnant sera perdu\n' : ''}\n` +
+                  `Confirmer le retrait ?`;
+
+  if (!confirm(message)) return;
+
+  // 🔹 Supprimer côté BDD (membre + cotisations associées via ON DELETE CASCADE)
+  const { error } = await sb.from('membres').delete().eq('id', membreId);
+  if (error) return alert('Suppression impossible: ' + error.message);
+
+  // 🔹 MAJ côté front (pour ne pas casser ton UI)
+  tontine.membres = tontine.membres.filter(m => m.id !== membreId);
+  tontine.cotisations = tontine.cotisations.filter(c => c.membreId !== membreId);
+  if (membre.aGagne) {
+    tontine.gagnants = tontine.gagnants.filter(g => g.gagnantId !== membreId);
+    tontine.tirages = tontine.tirages.filter(t => t.gagnantId !== membreId);
+  }
+
+  // 🔹 Rafraîchir l’affichage
+  if (pageActuelle === 'gestion') {
+    afficherMembresTontineGestion();
+    mettreAJourSelectMembres();
+  } else if (pageActuelle === 'membres') {
+    afficherMembresTontine();
+  }
+  mettreAJourAlertes();
+
+  alert(`✅ Membre "${membre.nom}" retiré avec succès !\n\n` +
+        `📊 Résumé du retrait:\n` +
+        `• ${cotisationsCount} cotisations supprimées\n` +
+        `• ${totalCotise.toLocaleString()} FCFA retirés de l'historique\n` +
+        `${membre.aGagne ? '• Statut de gagnant annulé\n' : ''}` +
+        `• Membre retiré de "${tontine.nom}"`);
+}
         
-        function supprimerCotisation(cotisationId, tontineId) {
-            if (confirm('Supprimer cette cotisation ?')) {
-                const tontine = tontines.find(t => t.id === tontineId);
-                if (!tontine) return;
-                
-                const cotisation = tontine.cotisations.find(c => c.id == cotisationId);
-                if (!cotisation) return;
-                
-                tontine.cotisations = tontine.cotisations.filter(c => c.id != cotisationId);
-                
-                const membre = tontine.membres.find(m => m.id === cotisation.membreId);
-                if (membre) {
-                    membre.cotisationsPayees = membre.cotisationsPayees.filter(c => c.id != cotisationId);
-                }
-                
-                sauvegarder();
-                
-                if (pageActuelle === 'gestion') {
-                    afficherHistoriqueCotisations();
-                } else if (pageActuelle === 'membres') {
-                    afficherMembresTontine();
-                }
-                
-                mettreAJourAlertes();
-                alert('✅ Cotisation supprimée !');
-            }
-        }
+        async function supprimerCotisation(cotisationId, tontineId) {
+  if (!confirm('Supprimer cette cotisation ?')) return;
+  const { error } = await sb.from('cotisations').delete().eq('id', cotisationId);
+  if (error) return alert('Suppression impossible: ' + error.message);
+
+  const t = tontines.find(t => t.id === tontineId);
+  if (t) {
+    const c = t.cotisations.find(x => x.id == cotisationId);
+    t.cotisations = t.cotisations.filter(x => x.id != cotisationId);
+    const m = t.membres.find(mm => mm.id === c?.membreId);
+    if (m) m.cotisationsPayees = m.cotisationsPayees.filter(x => x.id != cotisationId);
+  }
+  afficherHistoriqueCotisations?.();
+  afficherMembresTontine?.();
+  mettreAJourAlertes?.();
+  alert('✅ Cotisation supprimée !');
+}
 
         // Système de tirage
         function chargerTontineTirage() {
@@ -2238,90 +2308,46 @@ function masquerGuide() {
             btnTirage.innerHTML = '🎲 Effectuer le Tirage';
         }
 
-        function effectuerTirage() {
-            const eligibles = tontineActive.membres.filter(m => !m.aGagne);
-            
-            if (eligibles.length === 0) {
-                alert('Aucun membre éligible pour le tirage');
-                return;
-            }
+        async function effectuerTirage() {
+  if (!tontineActive) return;
 
-            if (!verifierCotisationsCompletes(tontineActive)) {
-                alert('Toutes les cotisations ne sont pas complètes');
-                return;
-            }
+  const participants = tontineActive.membres.filter(m => !m.aGagne);
+  if (participants.length === 0) {
+    return alert("Tous les membres ont déjà gagné.");
+  }
 
-            if (!verifierDateTiragePossible(tontineActive)) {
-                const joursRestants = obtenirJoursRestantsAvantTirage(tontineActive);
-                const intervalles = {
-                    'hebdomadaire': '7 jours',
-                    'mensuel': '30 jours',
-                    'trimestriel': '90 jours'
-                };
-                alert(`Tirage non autorisé !\n\nIntervalle requis: ${intervalles[tontineActive.frequenceTirage] || '30 jours'}\nProchain tirage possible dans: ${joursRestants} jour(s)`);
-                return;
-            }
+  // Tirage aléatoire
+  const gagnant = participants[Math.floor(Math.random() * participants.length)];
 
-            // Masquer le bouton et afficher l'animation du dé
-            const btnTirage = document.getElementById('btnTirage');
-            const animationDe = document.getElementById('animationDe');
-            const resultatTirage = document.getElementById('resultatTirage');
-            
-            btnTirage.style.display = 'none';
-            resultatTirage.classList.add('hidden');
-            animationDe.classList.remove('hidden');
-            
-            // Attendre la fin de l'animation (2 secondes) avant d'afficher le résultat
-            setTimeout(() => {
-                // Tirage aléatoire
-                const gagnantIndex = Math.floor(Math.random() * eligibles.length);
-                const gagnant = eligibles[gagnantIndex];
-                
-                // Marquer comme gagnant
-                gagnant.aGagne = true;
-                
-                // Ajouter à l'historique
-                const tirage = {
-                    id: Date.now(),
-                    gagnantId: gagnant.id,
-                    nom: gagnant.nom,
-                    date: new Date().toISOString(),
-                    montantTotal: tontineActive.montant * tontineActive.membres.length
-                };
-                
-                tontineActive.gagnants.push(tirage);
-                tontineActive.tirages.push(tirage);
-                
-                sauvegarder();
-                
-                // Masquer l'animation et afficher le résultat
-                animationDe.classList.add('hidden');
-                
-                // Afficher le résultat avec une animation
-                document.getElementById('gagnantTirage').textContent = `🎉 ${gagnant.nom} a gagné !`;
-                document.getElementById('montantGagne').textContent = `Montant: ${tirage.montantTotal.toLocaleString()} FCFA`;
-                resultatTirage.classList.remove('hidden');
-                
-                // Remettre le bouton après 3 secondes
-                setTimeout(() => {
-                    btnTirage.style.display = 'inline-block';
-                }, 3000);
-                
-                // Mettre à jour l'affichage
-                afficherMembresEligibles();
-                afficherHistoriqueGagnants();
-                afficherInfosTirage();
-                
-                // Vérifier si la tontine est terminée
-                const tousOntGagne = tontineActive.membres.every(m => m.aGagne);
-                if (tousOntGagne) {
-                    tontineActive.statut = 'terminee';
-                    setTimeout(() => {
-                        alert('🎊 Tontine terminée ! Tous les membres ont gagné.');
-                    }, 1000);
-                }
-            }, 2000); // Attendre 2 secondes pour l'animation du dé
-        }
+  // 🔹 Insérer dans Supabase
+  const { data, error } = await sb.from('tirages')
+    .insert({ tontine_id: tontineActive.id, membre_id: gagnant.id })
+    .select()
+    .single();
+
+  if (error) return alert('Erreur lors du tirage : ' + error.message);
+
+  // 🔹 MAJ locale pour l’UI
+  tontineActive.tirages.push({
+    id: data.id,
+    gagnantId: gagnant.id,
+    date: new Date(data.date_tirage).toISOString()
+  });
+
+  tontineActive.gagnants.push({
+    gagnantId: gagnant.id,
+    date: new Date(data.date_tirage).toISOString()
+  });
+
+  // Marquer le membre comme gagnant
+  gagnant.aGagne = true;
+
+  // Rafraîchir l’affichage
+  afficherInfosTontine();
+  mettreAJourAlertes();
+
+  alert(`🎉 Tirage effectué !\n\nLe gagnant est : ${gagnant.nom}`);
+}
 
         // Statistiques et graphiques
         function afficherStatistiques() {
@@ -2594,341 +2620,259 @@ function masquerGuide() {
         }
 
         // Système d'alertes intelligentes automatiques
-        function mettreAJourAlertes() {
-            // Nettoyer les alertes obsolètes
-            alertes = alertes.filter(alerte => {
-                const tontine = tontines.find(t => t.id === alerte.tontineId);
-                if (!tontine || tontine.statut !== 'active') return false;
-                
-                // Supprimer les alertes de tirage qui ne sont plus valides
-                if (alerte.type === 'tirage') {
-                    const eligibles = tontine.membres.filter(m => !m.aGagne);
-                    const cotisationsCompletes = verifierCotisationsCompletes(tontine);
-                    const tiragePossible = verifierDateTiragePossible(tontine);
-                    return eligibles.length > 0 && cotisationsCompletes && tiragePossible;
-                }
-                
-                // Supprimer les alertes de retard pour les membres qui ont payé pour la période actuelle
-                if (alerte.type === 'retard') {
-                    const membre = tontine.membres.find(m => m.id === alerte.membreId);
-                    if (!membre) return false;
-                    
-                    // Si tous les membres ont gagné, supprimer toutes les alertes de retard
-                    const tousOntGagne = tontine.membres.every(m => m.aGagne);
-                    if (tousOntGagne) return false;
-                    
-                    // Vérifier si le membre a cotisé pour la période actuelle
-                    const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
-                    const aCotisePeriodeActuelle = membre.cotisationsPayees.some(c => {
-                        const periodeCotisation = obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation);
-                        return periodeCotisation === periodeActuelle;
-                    });
-                    
-                    return !aCotisePeriodeActuelle; // Garder l'alerte si pas encore cotisé
-                }
-                
-                // Nettoyer les autres types d'alertes
-                if (alerte.type === 'cycle_retard') {
-                    const eligibles = tontine.membres.filter(m => !m.aGagne);
-                    const cotisationsCompletes = verifierCotisationsCompletes(tontine);
-                    const tiragePossible = verifierDateTiragePossible(tontine);
-                    return eligibles.length > 0 && cotisationsCompletes && !tiragePossible;
-                }
-                
-                return true;
-            });
-            
-            // Générer de nouvelles alertes
-            const nouvellesAlertes = [];
-            
-            tontines.forEach(tontine => {
-                if (tontine.statut !== 'active') return;
-                
-                // Vérifier les cotisations en retard (TOUS les membres, même les gagnants)
-                // Exception : si tous les membres ont gagné (tontine terminée)
-                const tousOntGagne = tontine.membres.every(m => m.aGagne);
-                if (!tousOntGagne) {
-                    tontine.membres.forEach(membre => {
-                        const dejaAlerte = alertes.some(a => 
-                            a.type === 'retard' && a.tontineId === tontine.id && a.membreId === membre.id
-                        );
-                        
-                        // Vérifier si le membre a cotisé pour la période actuelle
-                        const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
-                        const aCotisePeriodeActuelle = membre.cotisationsPayees.some(c => {
-                            const periodeCotisation = obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation);
-                            return periodeCotisation === periodeActuelle;
-                        });
-                        
-                        if (!dejaAlerte && !aCotisePeriodeActuelle) {
-                            const joursRetard = membre.cotisationsPayees.length === 0 ? 
-                                Math.floor((new Date() - new Date(membre.dateAjout)) / (1000 * 60 * 60 * 24)) :
-                                Math.floor((new Date() - new Date(membre.cotisationsPayees[membre.cotisationsPayees.length - 1].date)) / (1000 * 60 * 60 * 24));
-                            
-                            nouvellesAlertes.push({
-                                id: Date.now() + Math.random(),
-                                type: 'retard',
-                                tontineId: tontine.id,
-                                membreId: membre.id,
-                                message: `${membre.nom} ${membre.aGagne ? '(gagnant)' : ''} est en retard de ${joursRetard} jour(s) pour "${tontine.nom}"`,
-                                tontine: tontine.nom,
-                                membre: membre.nom,
-                                joursRetard: joursRetard,
-                                estGagnant: membre.aGagne,
-                                urgence: joursRetard > 7 ? 'haute' : 'moyenne',
-                                dateCreation: new Date().toISOString()
-                            });
-                        }
-                    });
-                }
-                
-                // Vérifier les tirages possibles avec validation complète
-                const eligibles = tontine.membres.filter(m => !m.aGagne);
-                if (eligibles.length > 0) {
-                    const cotisationsCompletes = verifierCotisationsCompletes(tontine);
-                    const tiragePossible = verifierDateTiragePossible(tontine);
-                    
-                    // Alerte tirage disponible
-                    const dejaAlerteTirage = alertes.some(a => 
-                        a.type === 'tirage' && a.tontineId === tontine.id
-                    );
-                    
-                    if (!dejaAlerteTirage && cotisationsCompletes && tiragePossible) {
-                        const estPremierTirage = tontine.tirages.length === 0;
-                        const montantTotal = tontine.montant * tontine.membres.length;
-                        
-                        nouvellesAlertes.push({
-                            id: Date.now() + Math.random(),
-                            type: 'tirage',
-                            tontineId: tontine.id,
-                            message: estPremierTirage ? 
-                                `🎯 Premier tirage disponible pour "${tontine.nom}" - ${montantTotal.toLocaleString()} FCFA` : 
-                                `🎲 Nouveau tirage disponible pour "${tontine.nom}" - ${montantTotal.toLocaleString()} FCFA`,
-                            tontine: tontine.nom,
-                            eligibles: eligibles.length,
-                            montantTotal: montantTotal,
-                            estPremierTirage: estPremierTirage,
-                            urgence: estPremierTirage ? 'haute' : 'moyenne',
-                            dateCreation: new Date().toISOString()
-                        });
-                    }
-                    
-                    // Alerte cycle en retard
-                    const dejaAlerteCycle = alertes.some(a => 
-                        a.type === 'cycle_retard' && a.tontineId === tontine.id
-                    );
-                    
-                    if (!dejaAlerteCycle && cotisationsCompletes && !tiragePossible) {
-                        const joursRestants = obtenirJoursRestantsAvantTirage(tontine);
-                        const prochaineTirage = obtenirProchaineDateTirage(tontine);
-                        
-                        nouvellesAlertes.push({
-                            id: Date.now() + Math.random(),
-                            type: 'cycle_retard',
-                            tontineId: tontine.id,
-                            message: `⏳ Cycle en attente pour "${tontine.nom}" - Tirage dans ${joursRestants} jour(s)`,
-                            tontine: tontine.nom,
-                            joursRestants: joursRestants,
-                            prochaineTirage: prochaineTirage.toLocaleDateString('fr-FR'),
-                            urgence: joursRestants <= 3 ? 'moyenne' : 'basse',
-                            dateCreation: new Date().toISOString()
-                        });
-                    }
-                }
-            });
-            
-            // Ajouter les nouvelles alertes
-            alertes = [...alertes, ...nouvellesAlertes];
-            
-            localStorage.setItem('app_alertes', JSON.stringify(alertes));
-            mettreAJourBadgeAlertes();
-            return alertes;
+        async function mettreAJourAlertes() {
+  if (!utilisateurConnecte) return [];
+
+  // 1. Charger les alertes existantes depuis Supabase
+  const { data: alertesExistantes, error: errLoad } = await sb
+    .from('alertes')
+    .select('*')
+    .eq('utilisateurId', utilisateurConnecte.id);
+
+  if (errLoad) {
+    console.error("Erreur chargement alertes:", errLoad);
+    return [];
+  }
+
+  let nouvellesAlertes = [];
+
+  // 2. Vérifier les tontines
+  tontines.forEach(tontine => {
+    if (tontine.statut !== 'active') return;
+
+    const tousOntGagne = tontine.membres.every(m => m.aGagne);
+
+    // ⚠️ Retards cotisations
+    if (!tousOntGagne) {
+      tontine.membres.forEach(membre => {
+        const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
+        const aCotise = membre.cotisationsPayees.some(c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle);
+
+        const dejaAlerte = alertesExistantes?.some(a => a.type === 'retard' && a.membreId === membre.id && a.tontineId === tontine.id);
+
+        if (!aCotise && !dejaAlerte) {
+          const joursRetard = membre.cotisationsPayees.length === 0 ? 
+            Math.floor((new Date() - new Date(membre.dateAjout)) / 86400000) :
+            Math.floor((new Date() - new Date(membre.cotisationsPayees.at(-1).date)) / 86400000);
+
+          nouvellesAlertes.push({
+            type: 'retard',
+            tontineId: tontine.id,
+            membreId: membre.id,
+            message: `${membre.nom} est en retard de ${joursRetard} jour(s) pour "${tontine.nom}"`,
+            urgence: joursRetard > 7 ? 'haute' : 'moyenne',
+            utilisateurId: utilisateurConnecte.id,
+            dateCreation: new Date().toISOString()
+          });
         }
+      });
+    }
+
+    // 🎲 Tirage possible
+    const eligibles = tontine.membres.filter(m => !m.aGagne);
+    const cotisationsCompletes = verifierCotisationsCompletes(tontine);
+    const tiragePossible = verifierDateTiragePossible(tontine);
+    const dejaAlerteTirage = alertesExistantes?.some(a => a.type === 'tirage' && a.tontineId === tontine.id);
+
+    if (eligibles.length > 0 && cotisationsCompletes && tiragePossible && !dejaAlerteTirage) {
+      nouvellesAlertes.push({
+        type: 'tirage',
+        tontineId: tontine.id,
+        message: `🎲 Tirage disponible pour "${tontine.nom}"`,
+        urgence: tontine.tirages.length === 0 ? 'haute' : 'moyenne',
+        utilisateurId: utilisateurConnecte.id,
+        dateCreation: new Date().toISOString()
+      });
+    }
+
+    // ⏳ Cycle en retard
+    const dejaAlerteCycle = alertesExistantes?.some(a => a.type === 'cycle_retard' && a.tontineId === tontine.id);
+    if (cotisationsCompletes && !tiragePossible && !dejaAlerteCycle) {
+      const joursRestants = obtenirJoursRestantsAvantTirage(tontine);
+      nouvellesAlertes.push({
+        type: 'cycle_retard',
+        tontineId: tontine.id,
+        message: `⏳ Cycle en attente pour "${tontine.nom}" (${joursRestants} j restants)`,
+        urgence: joursRestants <= 3 ? 'moyenne' : 'basse',
+        utilisateurId: utilisateurConnecte.id,
+        dateCreation: new Date().toISOString()
+      });
+    }
+  });
+
+  // 3. Insérer les nouvelles alertes
+  if (nouvellesAlertes.length > 0) {
+    const { error: errInsert } = await sb.from('alertes').insert(nouvellesAlertes);
+    if (errInsert) {
+      console.error("Erreur insertion alertes:", errInsert);
+    }
+  }
+
+  // 4. Mettre à jour l’affichage **une seule fois**
+  await afficherAlertes(); // ⚡ recharge le DOM + le badge
+
+  // ✅ Retourne la liste complète
+  return [...(alertesExistantes || []), ...nouvellesAlertes];
+}
         
-        function mettreAJourBadgeAlertes() {
-            const badge = document.getElementById('badgeAlertes');
-            if (alertes.length > 0) {
-                badge.textContent = alertes.length;
-                badge.classList.remove('hidden');
-            } else {
-                badge.classList.add('hidden');
-            }
-        }
-        
+       function mettreAJourBadgeAlertes(alertesActuelles = []) {
+  const badge = document.getElementById('badgeAlertes');
+  if (alertesActuelles && alertesActuelles.length > 0) {
+    badge.textContent = alertesActuelles.length;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+
         function verifierAlertes() {
             return mettreAJourAlertes();
         }
 
-        function afficherAlertes() {
-            const alertesActuelles = mettreAJourAlertes();
-            const liste = document.getElementById('listeAlertes');
-            liste.innerHTML = '';
-            
-            if (alertesActuelles.length === 0) {
-                liste.innerHTML = `
-                    <div class="text-center py-16">
-                        <div class="text-8xl mb-6 floating-animation">✅</div>
-                        <h3 class="text-3xl font-bold text-gray-700 mb-4">Aucune alerte active</h3>
-                        <p class="text-gray-600 text-lg mb-4">Toutes les tontines sont bien gérées !</p>
-                        <div class="bg-gradient-to-r from-green-100 to-blue-100 p-6 rounded-xl max-w-md mx-auto">
-                            <div class="text-sm text-gray-700">
-                                <div class="font-semibold mb-2">🎯 Système d'alertes intelligent :</div>
-                                <div class="space-y-1 text-left">
-                                    <div>• Validation automatique des tirages</div>
-                                    <div>• Nettoyage des alertes obsolètes</div>
-                                    <div>• Suivi des membres éligibles uniquement</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Trier les alertes par urgence et type
-            const alertesTriees = alertesActuelles.sort((a, b) => {
-                const urgenceOrder = { 'haute': 4, 'moyenne': 3, 'basse': 2 };
-                const typeOrder = { 'tirage': 4, 'retard': 3, 'cycle_retard': 2, 'paiement_attente': 1 };
-                
-                if (urgenceOrder[a.urgence] !== urgenceOrder[b.urgence]) {
-                    return urgenceOrder[b.urgence] - urgenceOrder[a.urgence];
-                }
-                return typeOrder[b.type] - typeOrder[a.type];
-            });
-            
-            alertesTriees.forEach((alerte, index) => {
-                let couleur, icone, details = '';
-                
-                if (alerte.type === 'retard') {
-                    couleur = alerte.urgence === 'haute' ? 'from-red-600 to-red-700' : 'from-orange-500 to-red-500';
-                    icone = alerte.urgence === 'haute' ? '🚨' : '⚠️';
-                    details = `
-                        <div class="text-sm opacity-90 mt-2">
-                            <div>👤 Membre: ${alerte.membre} ${alerte.estGagnant ? '🏆' : ''}</div>
-                            <div>⏰ Retard: ${alerte.joursRetard} jour(s)</div>
-                            <div>🎯 Urgence: ${alerte.urgence === 'haute' ? 'ÉLEVÉE' : 'Modérée'}</div>
-                            ${alerte.estGagnant ? '<div class="text-yellow-200 font-semibold">⚠️ Ce membre a déjà gagné mais doit continuer à cotiser</div>' : ''}
-                        </div>
-                    `;
-                } else if (alerte.type === 'tirage') {
-                    couleur = alerte.estPremierTirage ? 'from-green-500 to-emerald-600' : 'from-blue-500 to-green-500';
-                    icone = alerte.estPremierTirage ? '🎯' : '🎲';
-                    details = `
-                        <div class="text-sm opacity-90 mt-2">
-                            <div>👥 Éligibles: ${alerte.eligibles} membre(s)</div>
-                            <div>💰 Montant: ${alerte.montantTotal.toLocaleString()} FCFA</div>
-                            <div>🎉 ${alerte.estPremierTirage ? 'Premier tirage de cette tontine !' : 'Nouveau tirage disponible'}</div>
-                        </div>
-                    `;
-                } else if (alerte.type === 'cycle_retard') {
-                    couleur = alerte.urgence === 'moyenne' ? 'from-yellow-500 to-orange-500' : 'from-yellow-400 to-yellow-500';
-                    icone = '⏳';
-                    details = `
-                        <div class="text-sm opacity-90 mt-2">
-                            <div>⏰ Temps restant: ${alerte.joursRestants} jour(s)</div>
-                            <div>📅 Prochain tirage: ${alerte.prochaineTirage}</div>
-                            <div>✅ Cotisations complètes, en attente d'intervalle</div>
-                        </div>
-                    `;
-                }
-                
-                const div = document.createElement('div');
-                div.className = `bg-gradient-to-r ${couleur} p-6 rounded-2xl text-white fade-in-up mb-6 shadow-lg`;
-                div.style.animationDelay = `${index * 0.1}s`;
-                div.innerHTML = `
-                    <div class="flex items-start justify-between">
-                        <div class="flex items-start flex-1">
-                            <span class="text-4xl mr-4 floating-animation" style="animation-delay: ${index * 0.2}s">${icone}</span>
-                            <div class="flex-1">
-                                <div class="font-bold text-xl mb-1">${alerte.message}</div>
-                                <div class="text-sm opacity-75 mb-2">📋 Tontine: ${alerte.tontine}</div>
-                                ${details}
-                                <div class="text-xs opacity-60 mt-3">
-                                    🕒 Créée le ${new Date(alerte.dateCreation).toLocaleDateString('fr-FR')} à ${new Date(alerte.dateCreation).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}
-                                </div>
-                            </div>
-                        </div>
-                        <div class="flex flex-col gap-2 ml-4">
-                            ${alerte.type === 'tirage' ? 
-                                `<button onclick="allerAuTirage(${alerte.tontineId})" 
-                                        class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                                    🎯 Effectuer le tirage
-                                </button>` : 
-                              alerte.type === 'cycle_retard' ?
-                                `<button onclick="allerAuTirage(${alerte.tontineId})" 
-                                        class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                                    📊 Voir les tirages
-                                </button>` :
-                                `<button onclick="allerAuTirage(${alerte.tontineId})" 
-                                        class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                                    ⚙️ Gérer la tontine
-                                </button>`
-                            }
-                            <button onclick="supprimerAlerte('${alerte.id}')" 
-                                    class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                                ❌ Ignorer
-                            </button>
-                        </div>
-                    </div>
-                `;
-                liste.appendChild(div);
-            });
-            
-            // Ajouter un résumé en bas
-            const resume = document.createElement('div');
-            resume.className = 'bg-gradient-to-r from-gray-100 to-gray-200 p-6 rounded-xl mt-8';
-            resume.innerHTML = `
-                <div class="text-center text-gray-700">
-                    <div class="font-bold text-lg mb-4">📊 Résumé des Alertes</div>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div class="bg-white p-3 rounded-lg border-l-4 border-red-500">
-                            <div class="font-semibold text-red-600 text-xl">${alertesActuelles.filter(a => a.type === 'retard').length}</div>
-                            <div class="text-gray-600">⚠️ Retards</div>
-                            <div class="text-xs text-red-500 mt-1">${alertesActuelles.filter(a => a.type === 'retard' && a.urgence === 'haute').length} urgents</div>
-                        </div>
-                        <div class="bg-white p-3 rounded-lg border-l-4 border-yellow-500">
-                            <div class="font-semibold text-yellow-600 text-xl">${alertesActuelles.filter(a => a.type === 'cycle_retard').length}</div>
-                            <div class="text-gray-600">⏳ Cycles retard</div>
-                            <div class="text-xs text-yellow-500 mt-1">En attente</div>
-                        </div>
-                        <div class="bg-white p-3 rounded-lg border-l-4 border-blue-500">
-                            <div class="font-semibold text-blue-600 text-xl">${tontines.reduce((sum, t) => {
-                                const tousOntGagne = t.membres.every(m => m.aGagne);
-                                if (tousOntGagne) return sum;
-                                const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], t.frequenceCotisation);
-                                return sum + t.membres.filter(m => !m.cotisationsPayees.some(c => obtenirPeriodeCotisation(c.date, t.frequenceCotisation) === periodeActuelle)).length;
-                            }, 0)}</div>
-                            <div class="text-gray-600">💳 Paiements</div>
-                            <div class="text-xs text-blue-500 mt-1">En attente</div>
-                        </div>
-                        <div class="bg-white p-3 rounded-lg border-l-4 border-green-500">
-                            <div class="font-semibold text-green-600 text-xl">${alertesActuelles.filter(a => a.type === 'tirage').length}</div>
-                            <div class="text-gray-600">🎲 Tirages</div>
-                            <div class="text-xs text-green-500 mt-1">${alertesActuelles.filter(a => a.type === 'tirage' && a.estPremierTirage).length} premiers</div>
-                        </div>
-                    </div>
-                    <div class="mt-4 text-xs text-gray-500">
-                        🔄 Mise à jour automatique • Nettoyage intelligent des alertes obsolètes
-                    </div>
-                </div>
-            `;
-            liste.appendChild(resume);
-        }
-        
+       async function afficherAlertes() {
+  if (!utilisateurConnecte) return;
+
+  // Charger les alertes de Supabase
+  const { data: alertesActuelles, error } = await sb
+    .from('alertes')
+    .select('*')
+    .eq('utilisateurId', utilisateurConnecte.id)
+    .order('dateCreation', { ascending: false });
+
+  if (error) {
+    console.error("Erreur récupération alertes:", error);
+    return;
+  }
+
+  const liste = document.getElementById('listeAlertes');
+  liste.innerHTML = '';
+
+  if (!alertesActuelles || alertesActuelles.length === 0) {
+    liste.innerHTML = `
+      <div class="text-center py-16">
+          <div class="text-8xl mb-6 floating-animation">✅</div>
+          <h3 class="text-3xl font-bold text-gray-700 mb-4">Aucune alerte active</h3>
+          <p class="text-gray-600 text-lg mb-4">Toutes les tontines sont bien gérées !</p>
+          <div class="bg-gradient-to-r from-green-100 to-blue-100 p-6 rounded-xl max-w-md mx-auto">
+              <div class="text-sm text-gray-700">
+                  <div class="font-semibold mb-2">🎯 Système d'alertes intelligent :</div>
+                  <div class="space-y-1 text-left">
+                      <div>• Validation automatique des tirages</div>
+                      <div>• Nettoyage des alertes obsolètes</div>
+                      <div>• Suivi des membres éligibles uniquement</div>
+                  </div>
+              </div>
+          </div>
+      </div>
+    `;
+    // ✅ Badge à zéro
+    document.getElementById('badgeAlertes').classList.add('hidden');
+    return;
+  }
+
+  // Trier par urgence puis par type
+  const urgenceOrder = { 'haute': 4, 'moyenne': 3, 'basse': 2 };
+  const typeOrder = { 'tirage': 4, 'retard': 3, 'cycle_retard': 2, 'paiement_attente': 1 };
+
+  alertesActuelles.sort((a, b) => {
+    if (urgenceOrder[a.urgence] !== urgenceOrder[b.urgence]) {
+      return urgenceOrder[b.urgence] - urgenceOrder[a.urgence];
+    }
+    return typeOrder[b.type] - typeOrder[a.type];
+  });
+
+  // Affichage
+  alertesActuelles.forEach((alerte, index) => {
+    let couleur, icone, details = '';
+
+    if (alerte.type === 'retard') {
+      couleur = alerte.urgence === 'haute' ? 'from-red-600 to-red-700' : 'from-orange-500 to-red-500';
+      icone = alerte.urgence === 'haute' ? '🚨' : '⚠️';
+      details = `<div class="text-sm opacity-90 mt-2">⏰ Urgence: ${alerte.urgence}</div>`;
+    } 
+    else if (alerte.type === 'tirage') {
+      couleur = 'from-blue-500 to-green-500';
+      icone = '🎲';
+      details = `<div class="text-sm opacity-90 mt-2">🎉 Tirage disponible</div>`;
+    } 
+    else if (alerte.type === 'cycle_retard') {
+      couleur = 'from-yellow-500 to-orange-500';
+      icone = '⏳';
+      details = `<div class="text-sm opacity-90 mt-2">📊 Cycle en retard</div>`;
+    } 
+    else {
+      couleur = 'from-gray-500 to-gray-600';
+      icone = 'ℹ️';
+    }
+
+    const div = document.createElement('div');
+    div.className = `bg-gradient-to-r ${couleur} p-6 rounded-2xl text-white fade-in-up mb-6 shadow-lg`;
+    div.style.animationDelay = `${index * 0.1}s`;
+
+    // ✅ on ajoute l'attribut data-alerte-id
+    div.setAttribute("data-alerte-id", alerte.id);
+
+    div.innerHTML = `
+      <div class="flex items-start justify-between">
+          <div class="flex items-start flex-1">
+              <span class="text-4xl mr-4 floating-animation" style="animation-delay: ${index * 0.2}s">${icone}</span>
+              <div class="flex-1">
+                  <div class="font-bold text-xl mb-1">${alerte.message}</div>
+                  <div class="text-sm opacity-75 mb-2">📋 Tontine ID: ${alerte.tontineId}</div>
+                  ${details}
+                  <div class="text-xs opacity-60 mt-3">
+                      🕒 Créée le ${new Date(alerte.dateCreation).toLocaleDateString('fr-FR')} à ${new Date(alerte.dateCreation).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}
+                  </div>
+              </div>
+          </div>
+          <div class="flex flex-col gap-2 ml-4">
+              <button onclick="supprimerAlerte('${alerte.id}')" 
+                      class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
+                  ❌ Ignorer
+              </button>
+          </div>
+      </div>
+    `;
+    liste.appendChild(div);
+  });
+
+  // ✅ Mise à jour badge (une seule fois)
+  const badge = document.getElementById('badgeAlertes');
+  badge.textContent = alertesActuelles.length;
+  badge.classList.remove('hidden');
+}
+
         function allerAuTirage(tontineId) {
             ouvrirPage('tirages');
             document.getElementById('selectTontineTirage').value = tontineId;
             chargerTontineTirage();
         }
         
-        function supprimerAlerte(alerteId) {
-            alertes = alertes.filter(a => a.id != alerteId);
-            localStorage.setItem('app_alertes', JSON.stringify(alertes));
-            mettreAJourBadgeAlertes();
-            afficherAlertes();
-        }
+       async function supprimerAlerte(alerteId) {
+  const { error } = await sb.from('alertes').delete().eq('id', alerteId);
+  if (error) {
+    alert("Erreur suppression: " + error.message);
+    return;
+  }
 
+  // ✅ Retirer du DOM directement
+  const el = document.querySelector(`[data-alerte-id="${alerteId}"]`);
+  if (el) el.remove();
 
+  // ✅ Mettre à jour le badge en décrémentant
+  const badge = document.getElementById('badgeAlertes');
+  const actuel = parseInt(badge.textContent || "0", 10);
+
+  if (actuel > 1) {
+    badge.textContent = actuel - 1;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+
+  console.log(`✅ Alerte ${alerteId} supprimée`);
+}
 
         // Fonction pour calculer le cycle actuel
         function obtenirCycleActuel(tontine) {
@@ -3158,65 +3102,66 @@ function estEnRetardPeriode(membre, tontine) {
             document.getElementById('modaleEditionTontine').classList.add('hidden');
         }
         
-        function sauvegarderEditionTontine() {
-            const nom = document.getElementById('editNomTontine').value.trim();
-            const type = document.getElementById('editTypeTontine').value;
-            const montant = parseFloat(document.getElementById('editMontantCotisation').value);
-            const frequenceCot = document.getElementById('editFrequenceCotisation').value;
-            const jourCot = document.getElementById('editJourCotisation').value;
-            const frequenceTir = document.getElementById('editFrequenceTirage').value;
-            const nbMembres = parseInt(document.getElementById('editNombreMembres').value);
-            const description = document.getElementById('editDescriptionTontine').value.trim();
-            
-            if (!nom || !montant || !nbMembres || nbMembres < 2) {
-                alert('Veuillez remplir tous les champs obligatoires');
-                return;
-            }
-            
-            if (nbMembres < tontineActive.membres.length) {
-                alert(`Impossible de réduire le nombre de membres en dessous de ${tontineActive.membres.length} (nombre actuel de membres)`);
-                return;
-            }
-            
-            // Mettre à jour la tontine
-            tontineActive.nom = nom;
-            tontineActive.type = type;
-            tontineActive.montant = montant;
-            tontineActive.frequenceCotisation = frequenceCot;
-            tontineActive.jourCotisation = jourCot;
-            tontineActive.frequenceTirage = frequenceTir;
-            tontineActive.nombreMembresMax = nbMembres;
-            tontineActive.description = description;
-            
-            sauvegarder();
-            fermerModaleEdition();
-            afficherInfosTontine();
-            mettreAJourAffichage();
-            
-            alert('✅ Tontine modifiée avec succès !');
-        }
+        async function sauvegarderEditionTontine() {
+  if (!tontineActive) return;
+  const id = tontineActive.id;
+  const nom = document.getElementById('editNomTontine').value.trim();
+  const type = document.getElementById('editTypeTontine').value;
+  const montant = parseFloat(document.getElementById('editMontantCotisation').value);
+  const frequenceCot = document.getElementById('editFrequenceCotisation').value;
+  const jourCot = document.getElementById('editJourCotisation').value;
+  const frequenceTir = document.getElementById('editFrequenceTirage').value;
+  const nbMembres = parseInt(document.getElementById('editNombreMembres').value, 10);
+  const description = document.getElementById('editDescriptionTontine').value.trim();
+
+  const { error } = await sb.from('tontines').update({
+    nom, type, montant_cotisation: montant, frequence_cotisation: frequenceCot,
+    jour_cotisation: jourCot, frequence_tirage: frequenceTir,
+    nombre_membres: nbMembres, description
+  }).eq('id', id);
+
+  if (error) return alert('Modification impossible: ' + error.message);
+
+  // MAJ state local pour l’UI (comme avant)
+  Object.assign(tontineActive, {
+    nom, type, montant, frequenceCotisation: frequenceCot,
+    jourCotisation: jourCot, frequenceTirage: frequenceTir,
+    nombreMembresMax: nbMembres, description
+  });
+  fermerModaleEdition?.();
+  afficherInfosTontine?.();
+  mettreAJourAffichage?.();
+  alert('✅ Tontine modifiée avec succès !');
+}
         
-        function supprimerTontineActive() {
-            if (!tontineActive) return;
-            
-            if (!confirm(`Êtes-vous sûr de vouloir supprimer la tontine "${tontineActive.nom}" ?\n\nToutes les données (membres, cotisations, tirages) seront définitivement perdues.`)) {
-                return;
-            }
-            
-            // Supprimer la tontine
-            tontines = tontines.filter(t => t.id !== tontineActive.id);
-            
-            // Supprimer les alertes liées à cette tontine
-            alertes = alertes.filter(a => a.tontineId !== tontineActive.id);
-            
-            sauvegarder();
-            mettreAJourAlertes();
-            
-            alert('✅ Tontine supprimée avec succès !');
-            
-            // Retourner à l'accueil
-            ouvrirPage('accueil');
-        }
+        async function supprimerTontineActive() {
+  if (!tontineActive) return;
+
+  const message = `⚠️ SUPPRESSION DE TONTINE ⚠️\n\n` +
+                  `Nom: "${tontineActive.nom}"\n\n` +
+                  `Cette action est irréversible.\n` +
+                  `Toutes les données liées (membres, cotisations, tirages, alertes) seront supprimées définitivement.\n\n` +
+                  `Confirmer la suppression ?`;
+
+  if (!confirm(message)) return;
+
+  // 🔹 Suppression côté Supabase
+  const { error } = await sb.from('tontines').delete().eq('id', tontineActive.id);
+  if (error) return alert('Suppression impossible: ' + error.message);
+
+  // 🔹 Mise à jour côté front
+  tontines = tontines.filter(t => t.id !== tontineActive.id);
+  alertes = alertes.filter(a => a.tontineId !== tontineActive.id);
+  tontineActive = null;
+
+  mettreAJourAlertes();
+
+  alert(`✅ Tontine "${tontineActive?.nom || ''}" supprimée avec succès !\n\n` +
+        `📊 Toutes ses données associées (membres, cotisations, tirages) ont été effacées.`);
+
+  // Retourner à l'accueil
+  ouvrirPage('accueil');
+}
         
         // Fonctions d'édition de membre
         function ouvrirModaleEditionMembre(membreId) {
@@ -3384,301 +3329,5 @@ function estEnRetardPeriode(membre, tontine) {
             }
         }
     </script>
-
-<script src="https://unpkg.com/@supabase/supabase-js"></script>
-<script>
-  // ============================
-  // 🔹 CONFIG SUPABASE (auth)
-  // ============================
-  const supabaseUrl = "https://fcefsbpqyymxgjaijbka.supabase.co"; 
-  const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."; 
-  const { createClient } = supabase;
-  const sb = createClient(supabaseUrl, supabaseKey);
-
-  const API_BASE = "https://ma-tontine-backend.onrender.com/api"; // 👉 ton backend Render
-
-  // ============================
-  // 🔔 NOTIFICATIONS
-  // ============================
-  function showNotification(message, type = "info") {
-    const container = document.getElementById("notifications");
-    const notif = document.createElement("div");
-
-    let color;
-    switch (type) {
-      case "success": color = "bg-green-500"; break;
-      case "error":   color = "bg-red-500"; break;
-      case "warning": color = "bg-yellow-500"; break;
-      default:        color = "bg-blue-500";
-    }
-
-    notif.className = `${color} text-white px-4 py-2 rounded-lg shadow-md transition transform`;
-    notif.textContent = message;
-
-    container.appendChild(notif);
-
-    setTimeout(() => {
-      notif.style.opacity = "0";
-      notif.style.transform = "translateX(100%)";
-      setTimeout(() => notif.remove(), 500);
-    }, 3000);
-  }
-
-  // ============================
-  // 🔑 HELPERS
-  // ============================
-  async function authHeaders() {
-    const { data } = await sb.auth.getSession();
-    const token = data.session?.access_token;
-    return token ? { Authorization: `Bearer ${token}` } : {};
-  }
-
-  async function apiFetch(endpoint, options = {}) {
-    const headers = {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-      ...(await authHeaders())
-    };
-
-    const res = await fetch(`${API_BASE}${endpoint}`, { ...options, headers });
-    let data;
-    try { data = await res.json(); } catch { data = null; }
-
-    if (!res.ok) {
-      showNotification(data?.error || "Erreur API", "error");
-      throw new Error(data?.error || "Erreur API");
-    }
-
-    return data;
-  }
-
-  // ============================
-  // 👤 INFOS UTILISATEUR
-  // ============================
-  async function getUserNom() {
-    try {
-      const user = await apiFetch("/auth/me");
-      document.getElementById("nomUtilisateur").innerText =
-        user.nom_complet || user.email || "Utilisateur";
-    } catch {
-      document.getElementById("nomUtilisateur").innerText = "";
-    }
-  }
-
-  // ============================
-  // 🔐 AUTHENTIFICATION
-  // ============================
-  async function sInscrire(e) {
-    e.preventDefault();
-    const nom = document.getElementById("nomInscription").value;
-    const email = document.getElementById("emailInscription").value;
-    const password = document.getElementById("motPasseInscription").value;
-
-    const { error } = await sb.auth.signUp({
-      email,
-      password,
-      options: { data: { nom_complet: nom } }
-    });
-
-    if (error) {
-      showNotification("Erreur: " + error.message, "error");
-    } else {
-      showNotification("Inscription réussie ✅ Vérifie ton email", "success");
-      ouvrirPageConnexion();
-    }
-  }
-
-  async function seConnecter(e) {
-    e.preventDefault();
-    const email = document.getElementById("emailConnexion").value;
-    const password = document.getElementById("motPasseConnexion").value;
-
-    const { error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) {
-      showNotification("Erreur: " + error.message, "error");
-    } else {
-      showNotification("Connexion réussie 👋", "success");
-      await getUserNom();   // ⬅️ on affiche directement le nom/email via /auth/me
-      ouvrirPage("accueil");
-      chargerTontines();
-    }
-  }
-
-  async function seDeconnecter() {
-    await sb.auth.signOut();
-    showNotification("Déconnexion réussie 👋", "success");
-    ouvrirPageConnexion();
-  }
-
-  // ============================
-  // 🟣 TONTINES
-  // ============================
-  async function creerTontine() {
-    try {
-      const body = {
-        nom: document.getElementById("nomTontine").value,
-        type: document.getElementById("typeTontine").value,
-        montant: document.getElementById("montantCotisation").value,
-        frequence: document.getElementById("frequenceCotisation").value,
-        jour: document.getElementById("jourCotisation").value,
-        tirage: document.getElementById("frequenceTirage").value,
-        nbMembres: document.getElementById("nombreMembres").value,
-        description: document.getElementById("descriptionTontine").value
-      };
-
-      await apiFetch("/tontines", {
-        method: "POST",
-        body: JSON.stringify(body)
-      });
-
-      showNotification("Tontine créée avec succès ✅", "success");
-      ouvrirPage("accueil");
-      chargerTontines();
-    } catch {}
-  }
-
-  async function chargerTontines() {
-    try {
-      const tontines = await apiFetch("/tontines");
-      const liste = document.getElementById("listeTontines");
-      liste.innerHTML = "";
-
-      tontines.forEach(t => {
-        const div = document.createElement("div");
-        div.className = "tontine-card p-6";
-        div.innerHTML = `<h3 class="text-xl font-bold">${t.nom}</h3>
-                         <p>Type: ${t.type}</p>
-                         <p>Montant: ${t.montant_cotisation}</p>`;
-        liste.appendChild(div);
-      });
-
-      const selectGestion = document.getElementById("selectTontineGestion");
-      const selectMembres = document.getElementById("selectTontineMembres");
-      selectGestion.innerHTML = `<option value="">Choisir une tontine...</option>`;
-      selectMembres.innerHTML = `<option value="">Choisir une tontine...</option>`;
-      tontines.forEach(t => {
-        selectGestion.innerHTML += `<option value="${t.id}">${t.nom}</option>`;
-        selectMembres.innerHTML += `<option value="${t.id}">${t.nom}</option>`;
-      });
-    } catch {}
-  }
-
-  // ============================
-  // 👥 MEMBRES
-  // ============================
-  async function ajouterMembreTontine() {
-    const tontineId = document.getElementById("selectTontineGestion").value;
-    const nom = document.getElementById("nouveauMembre").value;
-
-    if (!tontineId || !nom) return showNotification("Remplis tous les champs", "warning");
-
-    try {
-      await apiFetch("/membres", {
-        method: "POST",
-        body: JSON.stringify({ tontineId, nom })
-      });
-      showNotification("Membre ajouté ✅", "success");
-      chargerMembresTontine(tontineId);
-    } catch {}
-  }
-
-  async function chargerMembresTontine(tontineId) {
-    try {
-      const membres = await apiFetch(`/membres/${tontineId}`);
-      const liste = document.getElementById("listeMembresTontineGestion");
-      liste.innerHTML = "";
-      membres.forEach(m => {
-        const div = document.createElement("div");
-        div.className = "member-card p-4";
-        div.innerHTML = `<p class="font-bold">${m.nom}</p>`;
-        liste.appendChild(div);
-      });
-
-      const selectCotisation = document.getElementById("membreCotisationSelect");
-      selectCotisation.innerHTML = `<option value="">Choisir un membre</option>`;
-      membres.forEach(m => {
-        selectCotisation.innerHTML += `<option value="${m.id}">${m.nom}</option>`;
-      });
-    } catch {}
-  }
-
-  // ============================
-  // 💵 COTISATIONS
-  // ============================
-  async function enregistrerCotisationTontine() {
-    const tontineId = document.getElementById("selectTontineGestion").value;
-    const membreId = document.getElementById("membreCotisationSelect").value;
-    const date = document.getElementById("dateCotisation").value;
-
-    if (!tontineId || !membreId)
-      return showNotification("Choisis une tontine et un membre", "warning");
-
-    try {
-      await apiFetch("/cotisations", {
-        method: "POST",
-        body: JSON.stringify({ tontineId, membreId, date })
-      });
-      showNotification("Cotisation enregistrée 💰", "success");
-      chargerCotisations(tontineId);
-    } catch {}
-  }
-
-  async function chargerCotisations(tontineId) {
-    try {
-      const cotisations = await apiFetch(`/cotisations/${tontineId}`);
-      const historique = document.getElementById("historiqueCotisations");
-      historique.innerHTML = "";
-
-      if (!cotisations || cotisations.length === 0) {
-        historique.innerHTML = `<p class="text-gray-500">Aucune cotisation enregistrée pour cette tontine.</p>`;
-        return;
-      }
-
-      const stats = {};
-      cotisations.forEach(c => {
-        if (!stats[c.membre]) {
-          stats[c.membre] = { nom: c.membre, total: 0, nombre: 0, derniere_date: c.date_cotisation };
-        }
-        stats[c.membre].total += c.montant;
-        stats[c.membre].nombre += 1;
-        if (new Date(c.date_cotisation) > new Date(stats[c.membre].derniere_date)) {
-          stats[c.membre].derniere_date = c.date_cotisation;
-        }
-      });
-
-      const table = document.createElement("table");
-      table.className = "min-w-full bg-white rounded-lg shadow-md overflow-hidden";
-      table.innerHTML = `
-        <thead class="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
-          <tr>
-            <th class="px-4 py-2 text-left">👤 Membre</th>
-            <th class="px-4 py-2 text-center"># Cotisations</th>
-            <th class="px-4 py-2 text-center">💰 Total payé</th>
-            <th class="px-4 py-2 text-center">📅 Dernière date</th>
-          </tr>
-        </thead>
-        <tbody id="bodyCotisations" class="text-gray-700"></tbody>
-      `;
-
-      const tbody = table.querySelector("#bodyCotisations");
-      Object.values(stats).forEach(s => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="px-4 py-2 font-semibold">${s.nom}</td>
-          <td class="px-4 py-2 text-center">${s.nombre}</td>
-          <td class="px-4 py-2 text-center">${s.total}</td>
-          <td class="px-4 py-2 text-center">${s.derniere_date}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-
-      historique.appendChild(table);
-    } catch {}
-  }
-</script>
-
-</script>
-
-
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
