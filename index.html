@@ -2840,7 +2840,7 @@ function masquerGuide() {
     .from('alertes')
     .select('*')
     .eq('utilisateurId', utilisateurConnecte.id)
-    .order('dateCreation', { ascending: false });
+    .order('datecreation', { ascending: false });
 
   if (error) {
     console.error("Erreur récupération alertes:", error);
