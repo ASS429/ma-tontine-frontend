@@ -1223,21 +1223,25 @@ document.addEventListener('DOMContentLoaded', async () => {
   const { data, error } = await sb.auth.signInWithPassword({ email, password: motPasse });
   if (error) return alert('Connexion impossible: ' + error.message);
 
-  const { user } = data;
+  const { user, session } = data;
+  if (!session) return alert("Impossible de récupérer la session");
+
+  // 🔹 Sauvegarder le vrai token JWT
+  localStorage.setItem("token", session.access_token);
+
   utilisateurConnecte = {
     id: user.id,
     nom: user.user_metadata?.nom_complet || (user.email || '').split('@')[0],
     email: user.email
   };
 
-  // 🔹 S’assurer qu’un profil existe dans la table "utilisateurs"
-  const { data: profil, error: profilError } = await sb
-    .from('utilisateurs')
+  // 🔹 Vérifier ou créer le profil
+  const { data: profil } = await sb.from('utilisateurs')
     .select('*')
     .eq('id', user.id)
     .single();
 
-  if (!profil && !profilError) {
+  if (!profil) {
     await sb.from('utilisateurs').insert({
       id: user.id,
       nom_complet: utilisateurConnecte.nom,
@@ -1261,7 +1265,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (motPasse !== confirm) return alert('Les mots de passe ne correspondent pas.');
   if (motPasse.length < 6) return alert('Mot de passe trop court.');
 
-  // 🔹 Création de l'utilisateur dans Supabase Auth
   const { data, error } = await sb.auth.signUp({
     email,
     password: motPasse,
@@ -1270,13 +1273,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   if (error) return alert('Inscription impossible: ' + error.message);
 
-  const user = data.user;
-  if (user) {
-    // 🔹 Création du profil dans ta table "utilisateurs"
-    const { error: e2 } = await sb.from('utilisateurs')
-      .insert({ id: user.id, nom_complet: nom, email: email });
+  const { user, session } = data;
 
-    if (e2) console.warn('⚠️ Profil non créé (utilisateurs):', e2.message);
+  if (session) {
+    // 🔹 Sauvegarder le token JWT
+    localStorage.setItem("token", session.access_token);
+  }
+
+  if (user) {
+    await sb.from('utilisateurs').insert({
+      id: user.id,
+      nom_complet: nom,
+      email: email
+    }).catch(e => console.warn('⚠️ Profil non créé (utilisateurs):', e.message));
   }
 
   alert('✅ Compte créé ! Vérifie tes mails si la confirmation est activée.');
@@ -1285,6 +1294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         async function seDeconnecter() {
   if (!confirm('Êtes-vous sûr de vouloir vous déconnecter ?')) return;
   await sb.auth.signOut();
+  localStorage.removeItem("token"); // 🔹 Nettoyer le token
   utilisateurConnecte = null;
   tontines = [];
   alertes = [];
