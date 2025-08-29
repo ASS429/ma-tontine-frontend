@@ -1923,116 +1923,76 @@ function masquerGuide() {
 }
 
         // Affichage des membres par tontine
-        function afficherMembresTontine() {
-            const id = parseInt(document.getElementById('selectTontineMembres').value);
-            if (!id) {
-                document.getElementById('panneauMembres').classList.add('hidden');
-                return;
-            }
+        async function afficherMembresTontine() {
+  const tontineId = document.getElementById('selectTontineMembres').value;
+  if (!tontineId) {
+    document.getElementById('panneauMembres').classList.add('hidden');
+    return;
+  }
 
-            const tontine = tontines.find(t => t.id === id);
-            document.getElementById('panneauMembres').classList.remove('hidden');
-            
-            const cartes = document.getElementById('cartesMembres');
-            cartes.innerHTML = '';
+  // 🔹 Charger membres + cotisations depuis Supabase
+  const { data: membres, error } = await sb
+    .from('membres')
+    .select('id, nom, date_ajout, cotisations (id, montant, date)')
+    .eq('tontine_id', tontineId);
 
-            if (tontine.membres.length === 0) {
-                cartes.innerHTML = `
-                    <div class="col-span-full text-center py-12">
-                        <div class="text-6xl mb-6 floating-animation">👥</div>
-                        <h3 class="text-xl font-bold text-gray-700">Aucun membre</h3>
-                        <p class="text-gray-600">Cette tontine n'a pas encore de membres</p>
-                    </div>
-                `;
-                return;
-            }
+  if (error) {
+    console.error('Erreur chargement membres:', error);
+    return alert('Impossible de charger les membres ❌');
+  }
 
-            tontine.membres.forEach((membre, index) => {
-                const cotisationsCount = membre.cotisationsPayees.length;
-                const totalCotise = cotisationsCount * tontine.montant;
-                const statut = membre.aGagne ? 'Gagnant' : 'Actif';
-                const couleurStatut = membre.aGagne ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-white' : 'bg-gradient-to-r from-green-400 to-green-500 text-white';
-                
-                // Calculer le statut de paiement pour la période actuelle
-                const tousOntGagne = tontine.membres.every(m => m.aGagne);
-                let statutPaiement;
-                
-                if (tousOntGagne) {
-                    statutPaiement = '<span class="text-blue-600 font-semibold">🏁 Tontine terminée</span>';
-                } else {
-                    const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
-                    const aCotisePeriodeActuelle = membre.cotisationsPayees.some(c => {
-                        const periodeCotisation = obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation);
-                        return periodeCotisation === periodeActuelle;
-                    });
-                    
-                    statutPaiement = aCotisePeriodeActuelle ? 
-                        '<span class="text-green-600 font-semibold">✅ À jour</span>' : 
-                        '<span class="text-red-600 font-semibold">⚠️ En retard</span>';
-                }
-                
-                const div = document.createElement('div');
-                div.className = 'member-card p-8 fade-in-up';
-                div.style.animationDelay = `${index * 0.1}s`;
-                div.innerHTML = `
-                    <div class="text-center mb-6">
-                        <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 floating-animation">
-                            <span class="text-white text-3xl">${membre.aGagne ? '🏆' : '👤'}</span>
-                        </div>
-                        <h3 class="font-bold text-xl text-gray-800 mb-2">${membre.nom}</h3>
-                        <span class="px-4 py-2 ${couleurStatut} rounded-full text-sm font-semibold">${statut}</span>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <span class="text-gray-600 font-medium">Cotisations:</span>
-                            <span class="font-bold text-lg">${cotisationsCount}</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <span class="text-gray-600 font-medium">Total cotisé:</span>
-                            <span class="font-bold text-lg text-green-600">${totalCotise.toLocaleString()} FCFA</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <span class="text-gray-600 font-medium">Statut paiement:</span>
-                            ${statutPaiement}
-                        </div>
-                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-                            <span class="text-gray-600 font-medium">Membre depuis:</span>
-                            <span class="font-bold">${new Date(membre.dateAjout).toLocaleDateString('fr-FR')}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-6 pt-4 border-t">
-                        <div class="text-sm text-gray-600 font-medium mb-3">Historique des paiements:</div>
-                        <div class="space-y-2 max-h-40 overflow-y-auto">
-                            ${membre.cotisationsPayees.slice(-5).reverse().map(c => 
-                                `<div class="flex justify-between items-center text-xs bg-gradient-to-r from-blue-50 to-purple-50 p-3 rounded-lg">
-                                    <div>
-                                        <div class="font-medium">${new Date(c.date).toLocaleDateString('fr-FR')}</div>
-                                        <div class="text-gray-500">${c.montant.toLocaleString()} FCFA</div>
-                                        ${c.montant > tontine.montant ? `<div class="text-green-600 font-semibold text-xs">📊 ${Math.round(c.montant / tontine.montant)} cotisations</div>` : ''}
-                                    </div>
-                                    <div class="flex gap-1">
-                                        <button onclick="editerCotisation('${c.id}', ${tontine.id})" class="text-blue-500 hover:text-blue-700 text-sm" title="Éditer">✏️</button>
-                                        <button onclick="supprimerCotisation('${c.id}', ${tontine.id})" class="text-red-500 hover:text-red-700 text-sm" title="Supprimer">❌</button>
-                                    </div>
-                                </div>`
-                            ).join('')}
-                        </div>
-                    </div>
-                    
-                    <div class="flex gap-3 mt-6 pt-4 border-t">
-                        <button onclick="ouvrirModaleEditionMembre(${membre.id})" class="flex-1 btn-gradient px-4 py-3 rounded-xl font-medium" style="background: var(--warning-gradient)">
-                            ✏️ Éditer
-                        </button>
-                        <button onclick="retirerMembreTontine(${membre.id}, ${tontine.id})" class="flex-1 btn-gradient btn-danger py-3 rounded-xl font-medium">
-                            🗑️ Retirer
-                        </button>
-                    </div>
-                `;
-                cartes.appendChild(div);
-            });
-        }
+  document.getElementById('panneauMembres').classList.remove('hidden');
+  const cartes = document.getElementById('cartesMembres');
+  cartes.innerHTML = '';
+
+  if (!membres || membres.length === 0) {
+    cartes.innerHTML = `
+      <div class="col-span-full text-center py-12">
+        <div class="text-6xl mb-6 floating-animation">👥</div>
+        <h3 class="text-xl font-bold text-gray-700">Aucun membre</h3>
+        <p class="text-gray-600">Cette tontine n'a pas encore de membres</p>
+      </div>`;
+    return;
+  }
+
+  membres.forEach((membre, index) => {
+    const cotisationsCount = membre.cotisations?.length || 0;
+    const totalCotise = membre.cotisations?.reduce((s, c) => s + c.montant, 0) || 0;
+
+    const div = document.createElement('div');
+    div.className = 'member-card p-8 fade-in-up';
+    div.style.animationDelay = `${index * 0.1}s`;
+    div.innerHTML = `
+      <div class="text-center mb-6">
+        <div class="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center mx-auto mb-4 floating-animation">
+          <span class="text-white text-3xl">👤</span>
+        </div>
+        <h3 class="font-bold text-xl text-gray-800 mb-2">${membre.nom}</h3>
+        <span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full text-sm font-semibold">Actif</span>
+      </div>
+      <div class="space-y-4">
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+          <span class="text-gray-600 font-medium">Cotisations:</span>
+          <span class="font-bold text-lg">${cotisationsCount}</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+          <span class="text-gray-600 font-medium">Total cotisé:</span>
+          <span class="font-bold text-lg text-green-600">${totalCotise.toLocaleString()} FCFA</span>
+        </div>
+        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+          <span class="text-gray-600 font-medium">Membre depuis:</span>
+          <span class="font-bold">${new Date(membre.date_ajout).toLocaleDateString('fr-FR')}</span>
+        </div>
+      </div>
+      <div class="flex gap-3 mt-6 pt-4 border-t">
+        <button onclick="retirerMembreTontine('${membre.id}', '${tontineId}')" class="flex-1 btn-gradient btn-danger py-3 rounded-xl font-medium">
+          🗑️ Retirer
+        </button>
+      </div>`;
+    cartes.appendChild(div);
+  });
+}
+
 
         // Gestion des membres
         async function ajouterMembreTontine() {
