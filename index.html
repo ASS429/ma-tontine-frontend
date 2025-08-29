@@ -1213,7 +1213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Système d'authentification
 
-        async function seConnecter(event) {
+        async function seConnecter(event) { 
   event.preventDefault();
   const email = document.getElementById('emailConnexion').value.trim();
   const motPasse = document.getElementById('motPasseConnexion').value;
@@ -1235,13 +1235,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     email: user.email
   };
 
-  // 🔹 Vérifier ou créer le profil
-  const { data: profil } = await sb.from('utilisateurs')
+  // 🔹 Vérifier si un profil existe dans "utilisateurs"
+  const { data: profil, error: profilError } = await sb
+    .from('utilisateurs')
     .select('*')
     .eq('id', user.id)
-    .single();
+    .maybeSingle(); // ⚡ évite les crashs si aucun résultat
 
-  if (!profil) {
+  if (!profil && !profilError) {
     await sb.from('utilisateurs').insert({
       id: user.id,
       nom_complet: utilisateurConnecte.nom,
@@ -1276,7 +1277,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const { user, session } = data;
 
   if (session) {
-    // 🔹 Sauvegarder le token JWT
+    // 🔹 Sauvegarde immédiate du token JWT
     localStorage.setItem("token", session.access_token);
   }
 
