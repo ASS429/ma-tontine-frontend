@@ -2164,7 +2164,7 @@ function mettreAJourSelectMembres() {
         // Gestion des cotisations
         // ➤ Enregistrer une cotisation
 async function enregistrerCotisationTontine() {
-  if (!tontineActive) return;
+  if (!tontineActive) return alert("⚠️ Aucune tontine active !");
 
   const membreId = document.getElementById('selectMembreCotisation').value;
   if (!membreId) return alert("⚠️ Sélectionne un membre !");
@@ -2188,13 +2188,23 @@ async function enregistrerCotisationTontine() {
     return alert('❌ Enregistrement impossible: ' + error.message);
   }
 
-  const cotisation = normaliserCotisation(data);
+  // 🔹 Normalisation
+  const cotisation = {
+    id: data.id,
+    membre_id: data.membre_id,
+    montant: Number(data.montant),
+    date_cotisation: data.date_cotisation
+  };
 
+  // 🔹 Sécurité
   if (!tontineActive.cotisations) tontineActive.cotisations = [];
   tontineActive.cotisations.push(cotisation);
 
-  const membre = tontineActive.membres.find(m => m.id === cotisation.membreId);
-  if (membre) membre.cotisationsPayees.push(cotisation);
+  const membre = tontineActive.membres?.find(m => m.id === data.membre_id);
+  if (membre) {
+    if (!membre.cotisationsPayees) membre.cotisationsPayees = [];
+    membre.cotisationsPayees.push(cotisation);
+  }
 
   afficherHistoriqueCotisations?.();
   afficherMembresTontineGestion?.();
