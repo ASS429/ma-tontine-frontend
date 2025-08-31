@@ -1842,40 +1842,43 @@ function masquerGuide() {
         }
 
         async function chargerTontineGestion() {
-    const id = document.getElementById('selectTontineGestion').value;
-    if (!id) {
-        document.getElementById('panneauGestion').classList.add('hidden');
-        return;
+  const id = document.getElementById('selectTontineGestion').value;
+  if (!id) {
+    document.getElementById('panneauGestion').classList.add('hidden');
+    return;
+  }
+
+  try {
+    // 🔹 Charger la tontine complète depuis ton backend
+    const res = await fetch(`${API_BASE}/tontines/${id}`, {
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error("Erreur chargement tontine");
     }
 
-    try {
-        // 🔹 Charger la tontine complète depuis le backend
-        const res = await fetch(`${API_BASE}/tontines/${id}`, {
-            headers: {
-                "Authorization": `Bearer ${localStorage.getItem("token")}`,
-                "Content-Type": "application/json"
-            }
-        });
+    tontineActive = await res.json();
 
-        if (!res.ok) {
-            throw new Error("Erreur chargement tontine");
-        }
+    // 🔹 Recharger en direct les membres + cotisations depuis Supabase
+    await rechargerMembresTontine(id);
 
-        tontineActive = await res.json();
+    // ✅ Afficher le panneau
+    document.getElementById('panneauGestion').classList.remove('hidden');
 
-        // ✅ Afficher le panneau
-        document.getElementById('panneauGestion').classList.remove('hidden');
+    // ✅ Afficher les infos avec les données mises à jour
+    afficherInfosTontine();
+    afficherMembresTontineGestion();
+    mettreAJourSelectMembres();
+    afficherHistoriqueCotisations();
 
-        // ✅ Afficher les infos avec les nouvelles données
-        afficherInfosTontine();
-        afficherMembresTontineGestion();
-        mettreAJourSelectMembres();
-        afficherHistoriqueCotisations();
-
-    } catch (err) {
-        console.error("Erreur chargement gestion tontine:", err);
-        alert("Impossible de charger la tontine sélectionnée ❌");
-    }
+  } catch (err) {
+    console.error("Erreur chargement gestion tontine:", err);
+    alert("Impossible de charger la tontine sélectionnée ❌");
+  }
 }
 
         function afficherInfosTontine() {
@@ -2162,6 +2165,53 @@ function mettreAJourSelectMembres() {
   });
 }
         // Gestion des cotisations
+        // ➤ Recharger membres + cotisations depuis Supabase
+async function rechargerMembresTontine(tontineId) {
+  if (!tontineId) return null;
+
+  const { data, error } = await sb
+    .from('membres')
+    .select(`
+      id,
+      nom,
+      date_ajout,
+      cotisations (
+        id,
+        montant,
+        date_cotisation
+      )
+    `)
+    .eq('tontine_id', tontineId);
+
+  if (error) {
+    console.error("Erreur Supabase (rechargerMembresTontine):", error);
+    return null;
+  }
+
+  // 🔹 Normalisation uniforme
+  tontineActive.membres = data.map(m => ({
+    id: m.id,
+    nom: m.nom,
+    dateAjout: m.date_ajout,
+    cotisationsPayees: (m.cotisations || []).map(c => ({
+      id: c.id,
+      membreId: m.id,
+      montant: Number(c.montant),
+      date: new Date(c.date_cotisation).toISOString()
+    }))
+  }));
+
+  // 🔹 Flat list de cotisations dans tontineActive
+  tontineActive.cotisations = tontineActive.membres.flatMap(m =>
+    m.cotisationsPayees.map(c => ({
+      ...c,
+      membreId: m.id
+    }))
+  );
+
+  return tontineActive;
+}
+
         // ➤ Enregistrer une cotisation
 async function enregistrerCotisationTontine() {
   if (!tontineActive) return alert("⚠️ Aucune tontine active !");
@@ -2188,15 +2238,14 @@ async function enregistrerCotisationTontine() {
     return alert('❌ Enregistrement impossible: ' + error.message);
   }
 
-  // 🔹 Normalisation
+  // ✅ Normalisation uniforme
   const cotisation = {
     id: data.id,
-    membre_id: data.membre_id,
+    membreId: data.membre_id,
     montant: Number(data.montant),
-    date_cotisation: data.date_cotisation
+    date: new Date(data.date_cotisation).toISOString()
   };
 
-  // 🔹 Sécurité
   if (!tontineActive.cotisations) tontineActive.cotisations = [];
   tontineActive.cotisations.push(cotisation);
 
@@ -2227,11 +2276,15 @@ function afficherHistoriqueCotisations() {
     return;
   }
 
-  // ✅ On part de cotisations normalisées (avec .membreId et .date)
   const cotisationsRecentes = tontineActive.cotisations.slice(-10).reverse();
 
   cotisationsRecentes.forEach((cotisation, index) => {
-    const membre = tontineActive.membres.find(m => m.id === cotisation.membreId);
+    const membre = tontineActive.membres?.find(m => m.id === cotisation.membreId);
+    const nomMembre = membre ? membre.nom : "Membre supprimé";
+    const dateCotisation = cotisation.date
+      ? new Date(cotisation.date).toLocaleDateString('fr-FR')
+      : "-";
+
     const div = document.createElement('div');
     div.className = 'member-card p-4 bg-gradient-to-r from-green-50 to-green-100 fade-in-up';
     div.style.animationDelay = `${index * 0.1}s`;
@@ -2240,9 +2293,9 @@ function afficherHistoriqueCotisations() {
       <div class="flex justify-between items-center">
           <div class="flex-1">
               <div class="flex items-center gap-3">
-                  <span class="font-semibold text-gray-800">${membre ? membre.nom : 'Membre supprimé'}</span>
+                  <span class="font-semibold text-gray-800">${nomMembre}</span>
                   <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
-                    ${new Date(cotisation.date).toLocaleDateString('fr-FR')}
+                    ${dateCotisation}
                   </span>
               </div>
           </div>
@@ -2392,20 +2445,44 @@ async function retirerMembreTontine(membreId, tontineId) {
 }
 
         // Système de tirage
-        function chargerTontineTirage() {
-            const id = parseInt(document.getElementById('selectTontineTirage').value);
-            if (!id) {
-                document.getElementById('panneauTirage').classList.add('hidden');
-                return;
-            }
+        async function chargerTontineTirage() {
+  const id = document.getElementById('selectTontineTirage').value;
+  if (!id) {
+    document.getElementById('panneauTirage').classList.add('hidden');
+    return;
+  }
 
-            tontineActive = tontines.find(t => t.id === id);
-            document.getElementById('panneauTirage').classList.remove('hidden');
-            
-            afficherMembresEligibles();
-            afficherHistoriqueGagnants();
-            afficherInfosTirage();
-        }
+  try {
+    // 🔹 Charger la tontine depuis le backend
+    const res = await fetch(`${API_BASE}/tontines/${id}`, {
+      headers: {
+        "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (!res.ok) {
+      throw new Error("Erreur chargement tontine");
+    }
+
+    tontineActive = await res.json();
+
+    // 🔹 Synchroniser avec Supabase (membres + cotisations)
+    await rechargerMembresTontine(id);
+
+    // ✅ Afficher panneau
+    document.getElementById('panneauTirage').classList.remove('hidden');
+
+    // ✅ Rafraîchir affichages spécifiques tirage
+    afficherMembresEligibles?.();
+    afficherHistoriqueGagnants?.();
+    afficherInfosTirage?.();
+
+  } catch (err) {
+    console.error("Erreur chargement tirage tontine:", err);
+    alert("Impossible de charger la tontine sélectionnée ❌");
+  }
+}
 
         function afficherMembresEligibles() {
             const liste = document.getElementById('membresEligibles');
