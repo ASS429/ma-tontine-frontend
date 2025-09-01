@@ -1875,7 +1875,8 @@ function masquerGuide() {
             });
         }
 
-        async function chargerTontineGestion() {
+        // ➤ Charger la tontine pour la gestion
+async function chargerTontineGestion() {
   const id = document.getElementById('selectTontineGestion').value;
   if (!id) {
     document.getElementById('panneauGestion').classList.add('hidden');
@@ -1883,69 +1884,100 @@ function masquerGuide() {
   }
 
   try {
+    // 🔹 Appel sécurisé backend
     const res = await apiFetch(`${API_BASE}/tontines/${id}`);
     tontineActive = await res.json();
 
-    // 🔹 Synchroniser avec Supabase si besoin
+    // 🔹 Synchroniser membres + cotisations depuis Supabase
     await rechargerMembresTontine(id);
 
+    // ✅ Afficher panneau gestion
     document.getElementById('panneauGestion').classList.remove('hidden');
 
-    afficherInfosTontine();
-    afficherMembresTontineGestion();
-    mettreAJourSelectMembres();
-    afficherHistoriqueCotisations();
+    // ✅ Rafraîchir les affichages
+    afficherInfosTontine?.();
+    afficherMembresTontineGestion?.();
+    afficherHistoriqueCotisations?.();
+    mettreAJourAlertes?.();
+
   } catch (err) {
-    console.error("Erreur chargement gestion tontine:", err);
-    alert("Impossible de charger la tontine sélectionnée ❌");
+    console.error("❌ Erreur chargement gestion tontine:", err);
+    alert("Impossible de charger la tontine sélectionnée");
   }
 }
 
+       // ➤ Afficher les infos de la tontine active
+function afficherInfosTontine() {
+  if (!tontineActive) return;
 
-        function afficherInfosTontine() {
-    const tontine = tontineActive;
-    const typeIcon = {
-        'argent': '💰',
-        'electronique': '📱',
-        'cosmetique': '💄',
-        'autre': '🎁',
-        'classique': '🎯'
-    };
+  const tontine = tontineActive;
 
-    const cycleActuel = tontine.cotisations.length > 0 ? Math.ceil(tontine.cotisations.length / tontine.nombre_membres) : 1;
-    const totalCycles = tontine.nombre_membres || 0;
-    const progressionCycle = totalCycles > 0 ? ((cycleActuel - 1) / totalCycles) * 100 : 0;
+  const typeIcon = {
+    'argent': '💰',
+    'electronique': '📱',
+    'cosmetique': '💄',
+    'autre': '🎁',
+    'classique': '🎯'
+  };
 
-    document.getElementById('infosTontine').innerHTML = `
-        <div class="grid md:grid-cols-5 gap-6">
-            <div class="text-center">
-                <div class="text-5xl mb-3 floating-animation">${typeIcon[tontine.type] || '🎁'}</div>
-                <div class="font-bold text-xl text-gray-800">${tontine.nom}</div>
-                <div class="text-sm text-gray-600 font-medium">${tontine.type}</div>
-            </div>
-            <div class="text-center">
-                <div class="text-3xl font-bold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent">${tontine.montant_cotisation.toLocaleString()}</div>
-                <div class="text-sm text-gray-600 font-medium">FCFA par cotisation</div>
-            </div>
-            <div class="text-center">
-                <div class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">${tontine.membres.length}/${tontine.nombre_membres}</div>
-                <div class="text-sm text-gray-600 font-medium">Membres</div>
-            </div>
-            <div class="text-center">
-                <div class="text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">${cycleActuel}/${totalCycles || '?'}</div>
-                <div class="text-sm text-gray-600 font-medium">Cycle actuel</div>
-                <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full" style="width: ${progressionCycle}%"></div>
-                </div>
-            </div>
-            <div class="text-center">
-                <div class="text-3xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent">${tontine.cotisations.length}</div>
-                <div class="text-sm text-gray-600 font-medium">Cotisations enregistrées</div>
-            </div>
+  // 🔹 Calcul du cycle actuel
+  const totalCotisations = tontine.cotisations?.length || 0;
+  const totalMembres = tontine.nombre_membres || 0;
+  const cycleActuel = totalCotisations > 0 && totalMembres > 0
+    ? Math.ceil(totalCotisations / totalMembres)
+    : 1;
+  const progressionCycle = totalMembres > 0
+    ? ((cycleActuel - 1) / totalMembres) * 100
+    : 0;
+
+  // 🔹 Rendu dynamique
+  document.getElementById('infosTontine').innerHTML = `
+    <div class="grid md:grid-cols-5 gap-6">
+      <!-- Nom + type -->
+      <div class="text-center">
+        <div class="text-5xl mb-3 floating-animation">${typeIcon[tontine.type] || '🎁'}</div>
+        <div class="font-bold text-xl text-gray-800">${tontine.nom}</div>
+        <div class="text-sm text-gray-600 font-medium">${tontine.type}</div>
+      </div>
+
+      <!-- Montant par cotisation -->
+      <div class="text-center">
+        <div class="text-3xl font-bold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent">
+          ${Number(tontine.montant_cotisation || 0).toLocaleString()}
         </div>
-    `;
-}
+        <div class="text-sm text-gray-600 font-medium">FCFA par cotisation</div>
+      </div>
 
+      <!-- Membres -->
+      <div class="text-center">
+        <div class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
+          ${(tontine.membres?.length || 0)}/${tontine.nombre_membres || 0}
+        </div>
+        <div class="text-sm text-gray-600 font-medium">Membres</div>
+      </div>
+
+      <!-- Cycle actuel -->
+      <div class="text-center">
+        <div class="text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
+          ${cycleActuel}/${totalMembres || '?'}
+        </div>
+        <div class="text-sm text-gray-600 font-medium">Cycle actuel</div>
+        <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+          <div class="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full" 
+               style="width: ${progressionCycle}%"></div>
+        </div>
+      </div>
+
+      <!-- Cotisations enregistrées -->
+      <div class="text-center">
+        <div class="text-3xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent">
+          ${totalCotisations}
+        </div>
+        <div class="text-sm text-gray-600 font-medium">Cotisations enregistrées</div>
+      </div>
+    </div>
+  `;
+}
 
 // ✅ Normalise une cotisation venant de Supabase
 function normaliserCotisation(c) {
@@ -2199,7 +2231,7 @@ async function rechargerMembresTontine(tontineId) {
     .select(`
       id,
       nom,
-      date_ajout,
+      cree_le,
       cotisations (
         id,
         montant,
@@ -2209,7 +2241,7 @@ async function rechargerMembresTontine(tontineId) {
     .eq('tontine_id', tontineId);
 
   if (error) {
-    console.error("Erreur Supabase (rechargerMembresTontine):", error);
+    console.error("❌ Erreur Supabase (rechargerMembresTontine):", error);
     return null;
   }
 
@@ -2217,12 +2249,13 @@ async function rechargerMembresTontine(tontineId) {
   tontineActive.membres = data.map(m => ({
     id: m.id,
     nom: m.nom,
-    dateAjout: m.date_ajout,
+    // ✅ Correction: utiliser cree_le au lieu de date_ajout
+    dateAjout: m.cree_le ? new Date(m.cree_le).toISOString() : null,
     cotisationsPayees: (m.cotisations || []).map(c => ({
       id: c.id,
       membreId: m.id,
       montant: Number(c.montant),
-      date: new Date(c.date_cotisation).toISOString()
+      date: c.date_cotisation ? new Date(c.date_cotisation).toISOString() : null
     }))
   }));
 
@@ -2473,7 +2506,7 @@ async function retirerMembreTontine(membreId, tontineId) {
 }
 
         // Système de tirage
-       // ➤ Charger la tontine pour le tirage
+      // ➤ Charger la tontine pour le tirage
 async function chargerTontineTirage() {
   const id = document.getElementById('selectTontineTirage').value;
   if (!id) {
@@ -2482,24 +2515,24 @@ async function chargerTontineTirage() {
   }
 
   try {
-    // 🔹 Appel sécurisé via apiFetch
+    // 🔹 Appel sécurisé backend
     const res = await apiFetch(`${API_BASE}/tontines/${id}`);
     tontineActive = await res.json();
 
-    // 🔹 Synchroniser en direct les membres + cotisations depuis Supabase
+    // 🔹 Synchroniser membres + cotisations depuis Supabase
     await rechargerMembresTontine(id);
 
-    // ✅ Afficher le panneau tirage
+    // ✅ Afficher panneau tirage
     document.getElementById('panneauTirage').classList.remove('hidden');
 
-    // ✅ Rafraîchir affichages spécifiques tirage
+    // ✅ Rafraîchir affichages tirage
+    afficherInfosTirage?.();
     afficherMembresEligibles?.();
     afficherHistoriqueGagnants?.();
-    afficherInfosTirage?.();
 
   } catch (err) {
-    console.error("Erreur chargement tirage tontine:", err);
-    alert("Impossible de charger la tontine sélectionnée ❌");
+    console.error("❌ Erreur chargement tirage tontine:", err);
+    alert("Impossible de charger la tontine sélectionnée");
   }
 }
 
