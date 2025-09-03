@@ -1989,12 +1989,12 @@ function normaliserCotisation(c) {
   };
 }
 
-// ✅ Normalise un membre venant de Supabase
+// ✅ Normalise un membre venant du backend
 function normaliserMembre(m) {
   return {
     id: m.id,
     nom: m.nom,
-    dateAjout: m.cree_le || m.date_ajout, // compatibilité
+    dateAjout: m.cree_le || m.date_ajout, // compatibilité Supabase
     aGagne: m.aGagne || false,
     cotisationsPayees: (m.cotisations || []).map(normaliserCotisation)
   };
@@ -2078,28 +2078,34 @@ async function afficherMembresTontine() {
 
         // Gestion des membres
 
-// ➤ Ajouter un membre à la tontine active (via ton backend sécurisé)
+// ➤ Ajouter un membre à la tontine active (via backend + synchro Supabase)
 async function ajouterMembreTontine() {
   if (!tontineActive) return;
 
-  const nom = document.getElementById('nomMembre').value.trim();
-  if (!nom) return alert('⚠️ Veuillez entrer un nom de membre');
+  const nom = document.getElementById("nomMembre").value.trim();
+  if (!nom) return alert("⚠️ Veuillez entrer un nom de membre");
 
   try {
+    // 1️⃣ Ajout côté backend sécurisé
     const res = await apiFetch(`${API_BASE}/membres`, {
       method: "POST",
-      body: JSON.stringify({ tontine_id: tontineActive.id, nom })
+      body: JSON.stringify({ tontineId: tontineActive.id, nom }) // ✅ clé corrigée
     });
-    const data = await res.json();
 
-    const membre = normaliserMembre({ ...data, cotisations: [] });
-    tontineActive.membres.push(membre);
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || "Erreur lors de l'ajout du membre");
+    }
 
-    document.getElementById('nomMembre').value = '';
+    // 2️⃣ Recharger depuis Supabase pour rester synchro
+    await rechargerMembresTontine(tontineActive.id);
+    
+    // 3️⃣ Rafraîchir affichages
+    document.getElementById("nomMembre").value = "";
     mettreAJourSelectMembres?.();
     afficherMembresTontineGestion?.();
 
-    alert(`✅ Membre "${membre.nom}" ajouté avec succès !`);
+    alert(`✅ Membre "${nom}" ajouté avec succès !`);
   } catch (err) {
     console.error("Erreur ajout membre:", err);
     alert("❌ Ajout impossible: " + err.message);
@@ -2227,7 +2233,7 @@ async function rechargerMembresTontine(tontineId) {
   if (!tontineId) return null;
 
   const { data, error } = await sb
-    .from('membres')
+    .from("membres")
     .select(`
       id,
       nom,
@@ -2238,7 +2244,8 @@ async function rechargerMembresTontine(tontineId) {
         date_cotisation
       )
     `)
-    .eq('tontine_id', tontineId);
+    .eq("tontine_id", tontineId)
+    .order("cree_le", { ascending: true });
 
   if (error) {
     console.error("❌ Erreur Supabase (rechargerMembresTontine):", error);
@@ -2249,17 +2256,19 @@ async function rechargerMembresTontine(tontineId) {
   tontineActive.membres = data.map(m => ({
     id: m.id,
     nom: m.nom,
-    // ✅ Correction: utiliser cree_le au lieu de date_ajout
     dateAjout: m.cree_le ? new Date(m.cree_le).toISOString() : null,
+    aGagne: m.aGagne || false, // compatibilité avec la logique tirage
     cotisationsPayees: (m.cotisations || []).map(c => ({
       id: c.id,
       membreId: m.id,
       montant: Number(c.montant),
-      date: c.date_cotisation ? new Date(c.date_cotisation).toISOString() : null
+      date: c.date_cotisation
+        ? new Date(c.date_cotisation).toISOString()
+        : null
     }))
   }));
 
-  // 🔹 Flat list de cotisations dans tontineActive
+  // 🔹 Liste plate des cotisations dans tontineActive
   tontineActive.cotisations = tontineActive.membres.flatMap(m =>
     m.cotisationsPayees.map(c => ({
       ...c,
@@ -2270,7 +2279,6 @@ async function rechargerMembresTontine(tontineId) {
   return tontineActive;
 }
 
-        // ➤ Enregistrer une cotisation
 // ➤ Enregistrer une cotisation
 async function enregistrerCotisationTontine() {
   if (!tontineActive) return alert("⚠️ Aucune tontine active !");
@@ -2282,23 +2290,28 @@ async function enregistrerCotisationTontine() {
   const date = document.getElementById('dateCotisation').value || new Date().toISOString().split('T')[0];
 
   try {
-    // 🔹 Appel backend sécurisé
+    // 🔹 Appel backend sécurisé → en camelCase
     const res = await apiFetch(`${API_BASE}/cotisations`, {
       method: "POST",
       body: JSON.stringify({
-        tontine_id: tontineActive.id,
-        membre_id: membreId,
+        tontineId: tontineActive.id,
+        membreId,
         montant,
-        date_cotisation: date
+        dateCotisation: date
       })
     });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || "Erreur API");
+    }
 
     const data = await res.json();
 
     // ✅ Normalisation uniforme
     const cotisation = {
       id: data.id,
-      membreId: data.membre_id,
+      membreId: data.membre_id,  // la DB renvoie snake_case
       montant: Number(data.montant),
       date: new Date(data.date_cotisation).toISOString()
     };
@@ -2306,12 +2319,14 @@ async function enregistrerCotisationTontine() {
     if (!tontineActive.cotisations) tontineActive.cotisations = [];
     tontineActive.cotisations.push(cotisation);
 
+    // ✅ Mise à jour du membre concerné
     const membre = tontineActive.membres?.find(m => m.id === data.membre_id);
     if (membre) {
       if (!membre.cotisationsPayees) membre.cotisationsPayees = [];
       membre.cotisationsPayees.push(cotisation);
     }
 
+    // 🔄 Rafraîchir l’affichage
     afficherHistoriqueCotisations?.();
     afficherMembresTontineGestion?.();
     mettreAJourAlertes?.();
@@ -2319,9 +2334,10 @@ async function enregistrerCotisationTontine() {
     alert('✅ Cotisation enregistrée avec succès.');
   } catch (err) {
     console.error("Erreur API cotisation:", err);
-    alert("❌ Impossible d’enregistrer la cotisation");
+    alert("❌ Impossible d’enregistrer la cotisation : " + err.message);
   }
 }
+
 
         // ➤ Afficher l’historique des cotisations
 function afficherHistoriqueCotisations() {
