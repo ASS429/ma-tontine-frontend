@@ -2723,52 +2723,15 @@ async function supprimerTirage(id) {
   }
 }
 
-        // Statistiques et graphiques
-
-        function calculerMetriques() {
-            const alertesActuelles = mettreAJourAlertes();
-            
-            const totalTontines = tontines.filter(t => t.statut === 'active').length;
-            const totalMembres = tontines.reduce((sum, t) => sum + t.membres.length, 0);
-            const totalCotisations = tontines.reduce((sum, t) => 
-                sum + t.cotisations.reduce((s, c) => s + c.montant, 0), 0);
-            const totalTirages = tontines.reduce((sum, t) => sum + t.tirages.length, 0);
-            
-            // Calculer les nouvelles métriques d'alertes
-            const retards = alertesActuelles.filter(a => a.type === 'retard').length;
-            const cyclesRetard = tontines.filter(t => {
-                const eligibles = t.membres.filter(m => !m.aGagne);
-                return eligibles.length > 0 && !verifierDateTiragePossible(t) && verifierCotisationsCompletes(t);
-            }).length;
-            const paiementsAttente = tontines.reduce((sum, t) => {
-                const tousOntGagne = t.membres.every(m => m.aGagne);
-                if (tousOntGagne) return sum;
-                
-                const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], t.frequenceCotisation);
-                return sum + t.membres.filter(m => {
-                    return !m.cotisationsPayees.some(c => {
-                        const periodeCotisation = obtenirPeriodeCotisation(c.date, t.frequenceCotisation);
-                        return periodeCotisation === periodeActuelle;
-                    });
-                }).length;
-            }, 0);
-            const tiragesDisponibles = alertesActuelles.filter(a => a.type === 'tirage').length;
-
-            document.getElementById('statTotalTontines').textContent = totalTontines;
-            document.getElementById('statTotalMembres').textContent = totalMembres;
-            document.getElementById('statTotalCotisations').textContent = totalCotisations.toLocaleString();
-            document.getElementById('statTotalTirages').textContent = totalTirages;
-            document.getElementById('statRetards').textContent = retards;
-            document.getElementById('statCyclesRetard').textContent = cyclesRetard;
-            document.getElementById('statPaiementsAttente').textContent = paiementsAttente;
-            document.getElementById('statTiragesDisponibles').textContent = tiragesDisponibles;
-        }
-
 // 📊 Graphiques
+let chartTypes = null;
+let chartCotisations = null;
+
 function creerGraphiques(types, cotisations) {
   // --- Répartition par type ---
   const ctxTypes = document.getElementById('graphiqueTypes').getContext('2d');
-  new Chart(ctxTypes, {
+  if (chartTypes) chartTypes.destroy(); // 🔴 détruire si déjà existant
+  chartTypes = new Chart(ctxTypes, {
     type: 'doughnut',
     data: {
       labels: types.map(t => {
@@ -2791,7 +2754,8 @@ function creerGraphiques(types, cotisations) {
 
   // --- Cotisations par mois ---
   const ctxCotisations = document.getElementById('graphiqueCotisations').getContext('2d');
-  new Chart(ctxCotisations, {
+  if (chartCotisations) chartCotisations.destroy(); // 🔴 idem
+  chartCotisations = new Chart(ctxCotisations, {
     type: 'line',
     data: {
       labels: cotisations.map(c => c.mois).slice(-6),
