@@ -3614,30 +3614,29 @@ async function supprimerTontine(id) {
         
         // Fonctions d'édition de membre
         function ouvrirModaleEditionMembre(membreId) {
-            let membre;
-            
-            // Chercher le membre dans la tontine active ou dans la tontine sélectionnée pour les membres
-            if (tontineActive) {
-                membre = tontineActive.membres.find(m => m.id === membreId);
-            } else if (pageActuelle === 'membres') {
-                const tontineId = parseInt(document.getElementById('selectTontineMembres').value);
-                const tontine = tontines.find(t => t.id === tontineId);
-                if (tontine) {
-                    membre = tontine.membres.find(m => m.id === membreId);
-                    tontineActive = tontine; // Définir temporairement pour l'édition
-                }
-            }
-            
-            if (!membre) return;
-            
-            membreEnEdition = membre;
-            
-            // Remplir les champs avec les données actuelles
-            document.getElementById('editNomMembre').value = membre.nom;
-            document.getElementById('editDateAjoutMembre').value = membre.dateAjout.split('T')[0];
-            
-            document.getElementById('modaleEditionMembre').classList.remove('hidden');
-        }
+  let membre;
+
+  if (tontineActive) {
+    membre = tontineActive.membres.find(m => m.id === membreId);
+  } else if (pageActuelle === 'membres') {
+    const tontineId = document.getElementById('selectTontineMembres').value;
+    const tontine = tontines.find(t => t.id === tontineId);
+    if (tontine) {
+      membre = tontine.membres.find(m => m.id === membreId);
+      tontineActive = tontine; // on garde la référence
+    }
+  }
+
+  if (!membre) return;
+
+  membreEnEdition = membre;
+
+  document.getElementById('editNomMembre').value = membre.nom;
+  document.getElementById('editDateAjoutMembre').value =
+    membre.dateAjout ? membre.dateAjout.split('T')[0] : '';
+
+  document.getElementById('modaleEditionMembre').classList.remove('hidden');
+}
         
         function fermerModaleEditionMembre() {
             document.getElementById('modaleEditionMembre').classList.add('hidden');
