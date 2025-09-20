@@ -2233,22 +2233,22 @@ async function supprimerMembreTontine(membreId) {
 }
 
 
-        // ➤ Ouvrir l’édition
+       // ➤ Ouvrir l’édition
 async function editerTontineAccueil(id) {
   try {
     const res = await apiFetch(`${API_BASE}/tontines/${id}`);
     if (!res.ok) throw new Error("Impossible de charger la tontine");
     tontineActive = await res.json();
 
-    // Pré-remplir la modale
-    document.getElementById("editNom").value = tontineActive.nom;
-    document.getElementById("editType").value = tontineActive.type;
-    document.getElementById("editMontant").value = tontineActive.montant_cotisation;
-    document.getElementById("editFrequence").value = tontineActive.frequence_cotisation;
-    document.getElementById("editJour").value = tontineActive.jour_cotisation || "";
+    // Pré-remplir la modale avec les bons IDs
+    document.getElementById("editNomTontine").value = tontineActive.nom;
+    document.getElementById("editTypeTontine").value = tontineActive.type;
+    document.getElementById("editMontantCotisation").value = tontineActive.montant_cotisation;
+    document.getElementById("editFrequenceCotisation").value = tontineActive.frequence_cotisation;
+    document.getElementById("editJourCotisation").value = tontineActive.jour_cotisation || "";
     document.getElementById("editFrequenceTirage").value = tontineActive.frequence_tirage;
-    document.getElementById("editMembres").value = tontineActive.nombre_membres;
-    document.getElementById("editDescription").value = tontineActive.description || "";
+    document.getElementById("editNombreMembres").value = tontineActive.nombre_membres;
+    document.getElementById("editDescriptionTontine").value = tontineActive.description || "";
 
     // Afficher la modale
     document.getElementById("modaleEditionTontine").classList.remove("hidden");
@@ -2262,14 +2262,14 @@ async function editerTontineAccueil(id) {
 async function sauvegarderEditionTontine() {
   try {
     const body = {
-      nom: document.getElementById("editNom").value,
-      type: document.getElementById("editType").value,
-      montant_cotisation: parseFloat(document.getElementById("editMontant").value),
-      frequence_cotisation: document.getElementById("editFrequence").value,
-      jour_cotisation: document.getElementById("editJour").value,
+      nom: document.getElementById("editNomTontine").value,
+      type: document.getElementById("editTypeTontine").value,
+      montant_cotisation: parseFloat(document.getElementById("editMontantCotisation").value),
+      frequence_cotisation: document.getElementById("editFrequenceCotisation").value,
+      jour_cotisation: document.getElementById("editJourCotisation").value,
       frequence_tirage: document.getElementById("editFrequenceTirage").value,
-      nombre_membres: parseInt(document.getElementById("editMembres").value),
-      description: document.getElementById("editDescription").value
+      nombre_membres: parseInt(document.getElementById("editNombreMembres").value),
+      description: document.getElementById("editDescriptionTontine").value
     };
 
     const res = await apiFetch(`${API_BASE}/tontines/${tontineActive.id}`, {
@@ -3417,22 +3417,31 @@ async function supprimerTontine(id) {
   if (!confirm(message)) return;
 
   try {
-    await apiFetch(`${API_BASE}/tontines/${id}`, { method: "DELETE" });
+    const res = await apiFetch(`${API_BASE}/tontines/${id}`, { method: "DELETE" });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || "Erreur lors de la suppression");
+    }
+
+    const data = await res.json(); // ← récupère { success, message }
 
     // Nettoyage local
     alertes = alertes.filter(a => a.tontineId !== id);
     tontines = tontines.filter(t => t.id !== id);
 
+    // MAJ affichage
     mettreAJourAffichage?.();
     if (pageActuelle === 'accueil') afficherTontines?.();
 
-    alert(`✅ Tontine "${tontine.nom}" supprimée définitivement !\n\n` +
+    // ✅ Feedback utilisateur
+    alert(`✅ ${data.message}\n\n` +
       `📊 Résumé de la suppression:\n` +
       `• ${tontine.membres.length} membres retirés\n` +
       `• ${totalCotisations.toLocaleString()} FCFA de cotisations effacées\n` +
-      `• ${tontine.tirages.length} tirages supprimés de l'historique`);
+      `• ${tontine.tirages.length} tirages supprimés`);
   } catch (err) {
-    console.error("Erreur suppression tontine:", err);
+    console.error("❌ Erreur suppression tontine:", err);
     alert("❌ Suppression impossible: " + err.message);
   }
 }
