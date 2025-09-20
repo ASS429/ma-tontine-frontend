@@ -1232,6 +1232,8 @@ async function apiFetch(url, options = {}) {
         let estEnLigne = navigator.onLine;
         let donneesModifiees = false;
         let derniereSynchronisation = null;
+        let tontineActive = null;
+        let membreEnEdition = null;
 
         const utilisateurs = [];    
     
@@ -3511,7 +3513,6 @@ async function supprimerTontine(id) {
         }
 
         // Fonctions d'édition de tontine
-        let membreEnEdition = null;
         let cotisationEnEdition = null;
         
         function ouvrirModaleEditionTontine() {
