@@ -3427,7 +3427,6 @@ async function supprimerTontine(id) {
     const data = await res.json(); // ← récupère { success, message }
 
     // Nettoyage local
-    alertes = alertes.filter(a => a.tontineId !== id);
     tontines = tontines.filter(t => t.id !== id);
 
     // MAJ affichage
