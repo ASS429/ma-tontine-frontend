@@ -2230,13 +2230,74 @@ async function supprimerMembreTontine(membreId) {
 }
 
 
-        function editerTontineAccueil(id) {
-            const tontine = tontines.find(t => t.id === id);
-            if (!tontine) return;
-            
-            tontineActive = tontine;
-            ouvrirModaleEditionTontine();
-        }
+        // ➤ Ouvrir l’édition
+async function editerTontineAccueil(id) {
+  try {
+    const res = await apiFetch(`${API_BASE}/tontines/${id}`);
+    if (!res.ok) throw new Error("Impossible de charger la tontine");
+    tontineActive = await res.json();
+
+    // Pré-remplir la modale
+    document.getElementById("editNom").value = tontineActive.nom;
+    document.getElementById("editType").value = tontineActive.type;
+    document.getElementById("editMontant").value = tontineActive.montant_cotisation;
+    document.getElementById("editFrequence").value = tontineActive.frequence_cotisation;
+    document.getElementById("editJour").value = tontineActive.jour_cotisation || "";
+    document.getElementById("editFrequenceTirage").value = tontineActive.frequence_tirage;
+    document.getElementById("editMembres").value = tontineActive.nombre_membres;
+    document.getElementById("editDescription").value = tontineActive.description || "";
+
+    // Afficher la modale
+    document.getElementById("modaleEditionTontine").classList.remove("hidden");
+  } catch (err) {
+    console.error("❌ Erreur édition tontine:", err);
+    alert("Impossible de charger la tontine.");
+  }
+}
+
+// ➤ Sauvegarder les modifs
+async function sauvegarderEditionTontine() {
+  try {
+    const body = {
+      nom: document.getElementById("editNom").value,
+      type: document.getElementById("editType").value,
+      montant_cotisation: parseFloat(document.getElementById("editMontant").value),
+      frequence_cotisation: document.getElementById("editFrequence").value,
+      jour_cotisation: document.getElementById("editJour").value,
+      frequence_tirage: document.getElementById("editFrequenceTirage").value,
+      nombre_membres: parseInt(document.getElementById("editMembres").value),
+      description: document.getElementById("editDescription").value
+    };
+
+    const res = await apiFetch(`${API_BASE}/tontines/${tontineActive.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || "Erreur mise à jour");
+    }
+
+    const updated = await res.json();
+
+    // MAJ locale
+    tontines = tontines.map(t => t.id === updated.id ? updated : t);
+
+    afficherTontines();
+    fermerModaleEditionTontine();
+    alert(`✅ Tontine "${updated.nom}" mise à jour avec succès !`);
+  } catch (err) {
+    console.error("Erreur sauvegarde édition:", err);
+    alert("❌ Impossible de modifier la tontine: " + err.message);
+  }
+}
+
+// ➤ Fermer la modale
+function fermerModaleEditionTontine() {
+  document.getElementById("modaleEditionTontine").classList.add("hidden");
+}
 
 // ➤ Mettre à jour la liste des membres dans le select cotisation
 function mettreAJourSelectMembres() {
