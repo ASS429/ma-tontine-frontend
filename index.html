@@ -2496,33 +2496,26 @@ async function chargerTontineTirage() {
   }
 
   try {
-    // 🔹 Charger tirages existants depuis le backend
     const res = await apiFetch(`${API_BASE}/tirages/${id}`);
     if (!res.ok) throw new Error("Erreur chargement tirages");
     const tirages = await res.json();
 
-    // 🔹 Charger la tontine active depuis ton tableau en mémoire
     tontineActive = tontines.find(t => t.id == id);
     if (!tontineActive) throw new Error("Tontine non trouvée en mémoire");
 
-    // 🔹 Mettre à jour les gagnants
-    tontineActive.gagnants = tirages.map(tr => ({
+    tontineActive.gagnants = tirages.map((tr, i) => ({
       id: tr.id,
       membreId: tr.membre_id,
-      nom: `${tr.membre_prenom} ${tr.membre_nom}`,
-      ordre: tr.ordre,
+      nom: tr.membre_nom, // ✅ correction
+      ordre: i + 1,       // ✅ ordre généré automatiquement
       date: tr.date_tirage || new Date().toISOString()
     }));
 
-    // 🔹 Marquer les membres ayant gagné
     tontineActive.membres.forEach(m => {
       m.aGagne = tontineActive.gagnants.some(g => g.membreId === m.id);
     });
 
-    // ✅ Afficher panneau tirage
     document.getElementById('panneauTirage').classList.remove('hidden');
-
-    // ✅ Rafraîchir affichages
     afficherInfosTirage();
     afficherMembresEligibles();
     afficherHistoriqueGagnants();
@@ -2609,7 +2602,6 @@ async function supprimerTirage(id) {
   });
 }
 
-
         function afficherInfosTirage() {
   const infoDiv = document.getElementById('infoTirage');
   const btnTirage = document.getElementById('btnTirage');
@@ -2677,7 +2669,7 @@ async function supprimerTirage(id) {
   }
 
   // 🟢 Tirage possible
-  const montantTotal = tontineActive.montant * tontineActive.membres.length;
+  const montantTotal = tontineActive.montant_cotisation * tontineActive.membres.length;
 
   infoDiv.innerHTML = `
     <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white">
@@ -2686,7 +2678,7 @@ async function supprimerTirage(id) {
       <div class="bg-green-600 bg-opacity-50 p-3 rounded-lg text-sm space-y-1">
         <div><span class="font-semibold">Membres éligibles:</span> ${eligibles.length}</div>
         <div><span class="font-semibold">Montant à gagner:</span> ${montantTotal.toLocaleString()} FCFA</div>
-        <div><span class="font-semibold">Cotisations:</span> ✅ Toutes complètes</div>
+        <div class="font-semibold">Cotisations: ✅ Toutes complètes</div>
       </div>
     </div>
   `;
@@ -2703,15 +2695,11 @@ async function supprimerTirage(id) {
 
   const tontineId = tontineActive.id;
 
-  // Animation 🎲
   document.getElementById("animationDe").classList.remove("hidden");
   document.getElementById("resultatTirage").classList.add("hidden");
 
   try {
-    // 🔹 Appel backend Express
-    const res = await apiFetch(`${API_BASE}/tirages/run/${tontineId}`, {
-      method: "POST"
-    });
+    const res = await apiFetch(`${API_BASE}/tirages/run/${tontineId}`, { method: "POST" });
     const gagnant = await res.json();
 
     if (!res.ok) {
@@ -2719,18 +2707,14 @@ async function supprimerTirage(id) {
       return;
     }
 
-    // Attente pour l’animation
     setTimeout(() => {
       document.getElementById("animationDe").classList.add("hidden");
       document.getElementById("resultatTirage").classList.remove("hidden");
 
-      // Afficher gagnant
-      document.getElementById("gagnantTirage").textContent = 
-        `🎉 ${gagnant.membre_prenom} ${gagnant.membre_nom}`;
-      document.getElementById("montantGagne").textContent = 
-        `Montant gagné: ${tontineActive.montant.toLocaleString()} FCFA`;
+      // ✅ On utilise membre_nom renvoyé par l’API
+      document.getElementById("gagnantTirage").textContent = `🎉 ${gagnant.membre_nom}`;
+      document.getElementById("montantGagne").textContent = `Montant gagné: ${gagnant.montant.toLocaleString()} FCFA`;
 
-      // Recharger données pour mettre à jour l’UI
       chargerTontineTirage();
     }, 2000);
   } catch (err) {
