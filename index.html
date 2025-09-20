@@ -2907,13 +2907,15 @@ function remplirTableauPerformance(performance) {
   }
 }
         
-        function genererResumeAlertes() {
-            const alertesActuelles = mettreAJourAlertes();
-            const resume = document.getElementById('resumeAlertes');
-            
-            const retards = alertesActuelles.filter(a => a.type === 'retard');
-            const tirages = alertesActuelles.filter(a => a.type === 'tirage');
-            
+        async function genererResumeAlertes() {
+  const alertesActuelles = await mettreAJourAlertes();
+  const resume = document.getElementById('resumeAlertes');
+
+  if (!Array.isArray(alertesActuelles)) return; // sécurité
+
+  const retards = alertesActuelles.filter(a => a.type === 'retard');
+  const tirages = alertesActuelles.filter(a => a.type === 'tirage');
+  
             const cyclesRetard = tontines.filter(t => {
                 const eligibles = t.membres.filter(m => !m.aGagne);
                 return eligibles.length > 0 && !verifierDateTiragePossible(t) && verifierCotisationsCompletes(t);
@@ -2957,7 +2959,8 @@ function remplirTableauPerformance(performance) {
         }
 
         // Système d'alertes intelligentes automatiques
-        async function mettreAJourAlertes() {
+        // 🔔 Système d'alertes intelligentes automatiques
+async function mettreAJourAlertes() {
   if (!utilisateurConnecte) return [];
 
   // 1. Charger les alertes existantes depuis Supabase
@@ -2967,13 +2970,13 @@ function remplirTableauPerformance(performance) {
     .eq('utilisateurId', utilisateurConnecte.id);
 
   if (errLoad) {
-    console.error("Erreur chargement alertes:", errLoad);
+    console.error("❌ Erreur chargement alertes:", errLoad);
     return [];
   }
 
   let nouvellesAlertes = [];
 
-  // 2. Vérifier les tontines
+  // 2. Vérifier les tontines actives
   tontines.forEach(tontine => {
     if (tontine.statut !== 'active') return;
 
@@ -2982,15 +2985,23 @@ function remplirTableauPerformance(performance) {
     // ⚠️ Retards cotisations
     if (!tousOntGagne) {
       tontine.membres.forEach(membre => {
-        const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
-        const aCotise = membre.cotisationsPayees.some(c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle);
+        const periodeActuelle = obtenirPeriodeCotisation(
+          new Date().toISOString().split('T')[0],
+          tontine.frequenceCotisation
+        );
 
-        const dejaAlerte = alertesExistantes?.some(a => a.type === 'retard' && a.membreId === membre.id && a.tontineId === tontine.id);
+        const aCotise = membre.cotisationsPayees.some(
+          c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle
+        );
+
+        const dejaAlerte = alertesExistantes?.some(
+          a => a.type === 'retard' && a.membreId === membre.id && a.tontineId === tontine.id
+        );
 
         if (!aCotise && !dejaAlerte) {
-          const joursRetard = membre.cotisationsPayees.length === 0 ? 
-            Math.floor((new Date() - new Date(membre.dateAjout)) / 86400000) :
-            Math.floor((new Date() - new Date(membre.cotisationsPayees.at(-1).date)) / 86400000);
+          const joursRetard = membre.cotisationsPayees.length === 0
+            ? Math.floor((new Date() - new Date(membre.dateAjout)) / 86400000)
+            : Math.floor((new Date() - new Date(membre.cotisationsPayees.at(-1).date)) / 86400000);
 
           nouvellesAlertes.push({
             type: 'retard',
@@ -3005,50 +3016,36 @@ function remplirTableauPerformance(performance) {
       });
     }
 
-    // 🎲 Tirage possible
-    const eligibles = tontine.membres.filter(m => !m.aGagne);
-    const cotisationsCompletes = verifierCotisationsCompletes(tontine);
-    const tiragePossible = verifierDateTiragePossible(tontine);
-    const dejaAlerteTirage = alertesExistantes?.some(a => a.type === 'tirage' && a.tontineId === tontine.id);
+    // 🎲 Tirages disponibles
+    const cotisationsOK = tontine.membres.every(m => {
+      const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
+      return m.cotisationsPayees.some(c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle);
+    });
 
-    if (eligibles.length > 0 && cotisationsCompletes && tiragePossible && !dejaAlerteTirage) {
-      nouvellesAlertes.push({
-        type: 'tirage',
-        tontineId: tontine.id,
-        message: `🎲 Tirage disponible pour "${tontine.nom}"`,
-        urgence: tontine.tirages.length === 0 ? 'haute' : 'moyenne',
-        utilisateurId: utilisateurConnecte.id,
-        dateCreation: new Date().toISOString()
-      });
-    }
-
-    // ⏳ Cycle en retard
-    const dejaAlerteCycle = alertesExistantes?.some(a => a.type === 'cycle_retard' && a.tontineId === tontine.id);
-    if (cotisationsCompletes && !tiragePossible && !dejaAlerteCycle) {
-      const joursRestants = obtenirJoursRestantsAvantTirage(tontine);
-      nouvellesAlertes.push({
-        type: 'cycle_retard',
-        tontineId: tontine.id,
-        message: `⏳ Cycle en attente pour "${tontine.nom}" (${joursRestants} j restants)`,
-        urgence: joursRestants <= 3 ? 'moyenne' : 'basse',
-        utilisateurId: utilisateurConnecte.id,
-        dateCreation: new Date().toISOString()
-      });
+    if (cotisationsOK) {
+      const dejaAlerteTirage = alertesExistantes?.some(
+        a => a.type === 'tirage' && a.tontineId === tontine.id
+      );
+      if (!dejaAlerteTirage) {
+        nouvellesAlertes.push({
+          type: 'tirage',
+          tontineId: tontine.id,
+          message: `Tirage possible pour "${tontine.nom}"`,
+          urgence: 'basse',
+          utilisateurId: utilisateurConnecte.id,
+          dateCreation: new Date().toISOString()
+        });
+      }
     }
   });
 
-  // 3. Insérer les nouvelles alertes
+  // 3. Insérer les nouvelles alertes dans Supabase
   if (nouvellesAlertes.length > 0) {
     const { error: errInsert } = await sb.from('alertes').insert(nouvellesAlertes);
-    if (errInsert) {
-      console.error("Erreur insertion alertes:", errInsert);
-    }
+    if (errInsert) console.error("❌ Erreur insertion alertes:", errInsert);
   }
 
-  // 4. Mettre à jour l’affichage **une seule fois**
-  await afficherAlertes(); // ⚡ recharge le DOM + le badge
-
-  // ✅ Retourne la liste complète
+  // 4. Retourner l’ensemble
   return [...(alertesExistantes || []), ...nouvellesAlertes];
 }
         
