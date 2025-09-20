@@ -437,10 +437,13 @@ label { font-size: 0.95rem; font-weight: 600; }
 
 
     </style>
+
     <script>
   const API_BASE = "https://ma-tontine-backend.onrender.com/api";
 </script>
+
 </head>
+
 <body>
     <!-- En-tête avec effet glass -->
     <header class="header-glass sticky top-0 z-50 mb-4 md:mb-8">
@@ -1821,18 +1824,18 @@ async function creerTontine() {
                     ` : ''}
                     
                     <div class="grid grid-cols-2 gap-3 mb-4">
-                        <button onclick="gererTontine(${tontine.id})" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium">
+                        <button onclick="gererTontine('${tontine.id}')" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium">
                             ⚙️ Gérer
                         </button>
-                        <button onclick="voirMembres(${tontine.id})" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium" style="background: var(--secondary-gradient)">
+                        <button onclick="voirMembres('${tontine.id}')" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium" style="background: var(--secondary-gradient)">
                             👥 Membres
                         </button>
                     </div>
                     <div class="grid grid-cols-2 gap-3">
-                        <button onclick="editerTontineAccueil(${tontine.id})" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium" style="background: var(--warning-gradient)">
+                        <button onclick="editerTontineAccueil('${tontine.id}')" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium" style="background: var(--warning-gradient)">
                             ✏️ Éditer
                         </button>
-                        <button onclick="supprimerTontine(${tontine.id})" class="btn-gradient btn-danger text-sm py-3 px-4 rounded-xl font-medium">
+                        <button onclick="supprimerTontine('${tontine.id}')" class="btn-gradient btn-danger text-sm py-3 px-4 rounded-xl font-medium">
                             🗑️ Supprimer
                         </button>
                     </div>
