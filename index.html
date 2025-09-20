@@ -2724,11 +2724,6 @@ async function supprimerTirage(id) {
 }
 
         // Statistiques et graphiques
-        function afficherStatistiques() {
-            calculerMetriques();
-            creerGraphiques();
-            remplirTableauPerformance();
-        }
 
         function calculerMetriques() {
             const alertesActuelles = mettreAJourAlertes();
@@ -2769,180 +2764,164 @@ async function supprimerTirage(id) {
             document.getElementById('statTiragesDisponibles').textContent = tiragesDisponibles;
         }
 
-        function creerGraphiques() {
-            // Graphique des types de tontines
-            const typesData = {};
-            tontines.forEach(t => {
-                typesData[t.type] = (typesData[t.type] || 0) + 1;
-            });
+        // 📊 Graphiques (inchangé, sauf sécurisation)
+function creerGraphiques() {
+  const typesData = {};
+  tontines.forEach(t => {
+    typesData[t.type] = (typesData[t.type] || 0) + 1;
+  });
 
-            const ctxTypes = document.getElementById('graphiqueTypes').getContext('2d');
-            new Chart(ctxTypes, {
-                type: 'doughnut',
-                data: {
-                    labels: Object.keys(typesData).map(type => {
-                        const icons = {'argent': '💰', 'electronique': '📱', 'cosmetique': '💄', 'autre': '🎁'};
-                        return icons[type] + ' ' + type.charAt(0).toUpperCase() + type.slice(1);
-                    }),
-                    datasets: [{
-                        data: Object.values(typesData),
-                        backgroundColor: [
-                            'rgba(102, 126, 234, 0.8)',
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(245, 158, 11, 0.8)',
-                            'rgba(239, 68, 68, 0.8)'
-                        ],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom',
-                            labels: {
-                                padding: 20,
-                                font: {
-                                    size: 12,
-                                    weight: 'bold'
-                                }
-                            }
-                        }
-                    },
-                    layout: {
-                        padding: 10
-                    }
-                }
-            });
+  // Graphique types
+  const ctxTypes = document.getElementById('graphiqueTypes').getContext('2d');
+  new Chart(ctxTypes, {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(typesData).map(type => {
+        const icons = { argent: '💰', electronique: '📱', cosmetique: '💄', autre: '🎁' };
+        return (icons[type] || '📦') + ' ' + type.charAt(0).toUpperCase() + type.slice(1);
+      }),
+      datasets: [{
+        data: Object.values(typesData),
+        backgroundColor: [
+          'rgba(102, 126, 234, 0.8)',
+          'rgba(16, 185, 129, 0.8)',
+          'rgba(245, 158, 11, 0.8)',
+          'rgba(239, 68, 68, 0.8)'
+        ],
+        borderWidth: 0
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
 
-            // Graphique des cotisations par mois
-            const cotisationsParMois = {};
-            tontines.forEach(tontine => {
-                tontine.cotisations.forEach(cotisation => {
-                    const mois = new Date(cotisation.date).toLocaleDateString('fr-FR', {year: 'numeric', month: 'short'});
-                    cotisationsParMois[mois] = (cotisationsParMois[mois] || 0) + cotisation.montant;
-                });
-            });
+  // Graphique cotisations par mois
+  const cotisationsParMois = {};
+  tontines.forEach(tontine => {
+    (tontine.cotisations || []).forEach(cotisation => {
+      const mois = new Date(cotisation.date).toLocaleDateString('fr-FR', { year: 'numeric', month: 'short' });
+      cotisationsParMois[mois] = (cotisationsParMois[mois] || 0) + cotisation.montant;
+    });
+  });
 
-            const ctxCotisations = document.getElementById('graphiqueCotisations').getContext('2d');
-            new Chart(ctxCotisations, {
-                type: 'line',
-                data: {
-                    labels: Object.keys(cotisationsParMois).slice(-6),
-                    datasets: [{
-                        label: 'Cotisations (FCFA)',
-                        data: Object.values(cotisationsParMois).slice(-6),
-                        borderColor: 'rgba(102, 126, 234, 1)',
-                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
-                        borderWidth: 3,
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            },
-                            ticks: {
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.1)'
-                            },
-                            ticks: {
-                                font: {
-                                    size: 11
-                                }
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            labels: {
-                                font: {
-                                    weight: 'bold',
-                                    size: 12
-                                }
-                            }
-                        }
-                    },
-                    layout: {
-                        padding: 10
-                    }
-                }
-            });
-        }
+  const ctxCotisations = document.getElementById('graphiqueCotisations').getContext('2d');
+  new Chart(ctxCotisations, {
+    type: 'line',
+    data: {
+      labels: Object.keys(cotisationsParMois).slice(-6),
+      datasets: [{
+        label: 'Cotisations (FCFA)',
+        data: Object.values(cotisationsParMois).slice(-6),
+        borderColor: 'rgba(102, 126, 234, 1)',
+        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+        borderWidth: 3,
+        tension: 0.4,
+        fill: true
+      }]
+    },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+}
 
-        function remplirTableauPerformance() {
-            const tableau = document.getElementById('tableauPerformance');
-            tableau.innerHTML = '';
 
-            tontines.forEach((tontine, index) => {
-                const typeIcons = {'argent': '💰', 'electronique': '📱', 'cosmetique': '💄', 'autre': '🎁'};
-                const totalCotisations = tontine.cotisations.reduce((sum, c) => sum + c.montant, 0);
-                
-                // Progression des membres
-                const progressionMembres = (tontine.membres.length / tontine.nombreMembresMax) * 100;
-                
-                // Progression des tirages
-                const eligibles = tontine.membres.filter(m => !m.aGagne);
-                const progressionTirages = tontine.membres.length > 0 ? 
-                    ((tontine.membres.length - eligibles.length) / tontine.membres.length) * 100 : 0;
-                
-                const tr = document.createElement('tr');
-                tr.className = 'border-b hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all fade-in-up';
-                tr.style.animationDelay = `${index * 0.1}s`;
-                tr.innerHTML = `
-                    <td class="p-3 font-semibold">${typeIcons[tontine.type]} ${tontine.nom}</td>
-                    <td class="p-3 capitalize">${tontine.type}</td>
-                    <td class="p-3">
-                        <div class="flex items-center gap-2">
-                            <div class="flex-1">
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style="width: ${progressionMembres}%"></div>
-                                </div>
-                            </div>
-                            <span class="text-xs font-semibold text-gray-600">${tontine.membres.length}/${tontine.nombreMembresMax}</span>
-                        </div>
-                    </td>
-                    <td class="p-3 font-semibold text-green-600">${totalCotisations.toLocaleString()} FCFA</td>
-                    <td class="p-3">
-                        <div class="flex items-center gap-2">
-                            <div class="flex-1">
-                                <div class="w-full bg-gray-200 rounded-full h-2">
-                                    <div class="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full" style="width: ${progressionTirages}%"></div>
-                                </div>
-                            </div>
-                            <span class="text-xs font-semibold text-gray-600">${tontine.tirages.length}/${tontine.membres.length}</span>
-                        </div>
-                    </td>
-                    <td class="p-3">
-                        <span class="px-3 py-1 rounded-full text-xs font-semibold ${
-                            tontine.statut === 'active' ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' : 
-                            tontine.statut === 'terminee' ? 'bg-gradient-to-r from-gray-400 to-gray-500 text-white' :
-                            'bg-gray-100 text-gray-800'
-                        }">
-                            ${tontine.statut === 'active' ? '🟢 Active' : 
-                              tontine.statut === 'terminee' ? '🏁 Terminée' : tontine.statut}
-                        </span>
-                    </td>
-                `;
-                tableau.appendChild(tr);
-            });
-            
-            // Générer le résumé des alertes
-            genererResumeAlertes();
-        }
+        // 🔹 Fonction pour récupérer les stats
+  async function getStatsOverview() {
+    const res = await fetch(`${API_BASE}/stats/overview`, {
+      headers: { "Content-Type": "application/json" },
+      credentials: "include" // si tu utilises l’auth avec cookies
+    });
+    return res.ok
+      ? res.json()
+      : { tontines_actives: 0, membres_total: 0, montant_collecte: 0, tirages_effectues: 0 };
+  }
+
+
+// 📊 Afficher les stats dans le dashboard
+async function afficherStatistiques() {
+  try {
+    const stats = await getStatsOverview();
+
+    // Injecter dans le DOM
+    document.getElementById('statTotalTontines').textContent = stats.tontines_actives;
+    document.getElementById('statTotalMembres').textContent = stats.membres_total;
+    document.getElementById('statTotalCotisations').textContent = stats.montant_collecte.toLocaleString();
+    document.getElementById('statTotalTirages').textContent = stats.tirages_effectues;
+
+    // Construire graphiques + tableau
+    creerGraphiques();
+    remplirTableauPerformance();
+  } catch (err) {
+    console.error("❌ Erreur affichage statistiques:", err);
+    alert("Impossible de charger les statistiques");
+  }
+}
+
+document.getElementById("onglet-statistiques").addEventListener("click", () => {
+  afficherStatistiques();
+});
+
+        // 📊 Tableau de performance
+function remplirTableauPerformance() {
+  const tableau = document.getElementById('tableauPerformance');
+  tableau.innerHTML = '';
+
+  tontines.forEach((tontine, index) => {
+    const typeIcons = { argent: '💰', electronique: '📱', cosmetique: '💄', autre: '🎁' };
+    const totalCotisations = (tontine.cotisations || []).reduce((sum, c) => sum + c.montant, 0);
+
+    const progressionMembres = tontine.nombre_membres
+      ? (tontine.membres.length / tontine.nombre_membres) * 100
+      : 0;
+
+    const eligibles = tontine.membres.filter(m => !m.aGagne);
+    const progressionTirages = tontine.membres.length > 0
+      ? ((tontine.membres.length - eligibles.length) / tontine.membres.length) * 100
+      : 0;
+
+    const tr = document.createElement('tr');
+    tr.className = 'border-b hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all fade-in-up';
+    tr.style.animationDelay = `${index * 0.1}s`;
+    tr.innerHTML = `
+      <td class="p-3 font-semibold">${(typeIcons[tontine.type] || '📦')} ${tontine.nom}</td>
+      <td class="p-3 capitalize">${tontine.type}</td>
+      <td class="p-3">
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style="width: ${progressionMembres}%"></div>
+            </div>
+          </div>
+          <span class="text-xs font-semibold text-gray-600">${tontine.membres.length}/${tontine.nombre_membres}</span>
+        </div>
+      </td>
+      <td class="p-3 font-semibold text-green-600">${totalCotisations.toLocaleString()} FCFA</td>
+      <td class="p-3">
+        <div class="flex items-center gap-2">
+          <div class="flex-1">
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div class="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full" style="width: ${progressionTirages}%"></div>
+            </div>
+          </div>
+          <span class="text-xs font-semibold text-gray-600">${tontine.tirages?.length || 0}/${tontine.membres.length}</span>
+        </div>
+      </td>
+      <td class="p-3">
+        <span class="px-3 py-1 rounded-full text-xs font-semibold ${
+          tontine.statut === 'active' ? 'bg-gradient-to-r from-green-400 to-green-500 text-white' :
+          tontine.statut === 'terminee' ? 'bg-gradient-to-r from-gray-400 to-gray-500 text-white' :
+          'bg-gray-100 text-gray-800'
+        }">
+          ${tontine.statut === 'active' ? '🟢 Active' :
+            tontine.statut === 'terminee' ? '🏁 Terminée' : tontine.statut}
+        </span>
+      </td>
+    `;
+    tableau.appendChild(tr);
+  });
+
+  if (typeof genererResumeAlertes === "function") {
+    genererResumeAlertes();
+  }
+}
         
         function genererResumeAlertes() {
             const alertesActuelles = mettreAJourAlertes();
