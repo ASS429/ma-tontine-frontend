@@ -2486,6 +2486,7 @@ async function retirerMembreTontine(membreId, tontineId) {
 }
 
         // Système de tirage
+
       // ➤ Charger la tontine pour le tirage
 async function chargerTontineTirage() {
   const id = document.getElementById('selectTontineTirage').value;
@@ -2495,20 +2496,36 @@ async function chargerTontineTirage() {
   }
 
   try {
-    // 🔹 Appel sécurisé backend
-    const res = await apiFetch(`${API_BASE}/tontines/${id}`);
-    tontineActive = await res.json();
+    // 🔹 Charger tirages existants depuis le backend
+    const res = await apiFetch(`${API_BASE}/tirages/${id}`);
+    if (!res.ok) throw new Error("Erreur chargement tirages");
+    const tirages = await res.json();
 
-    // 🔹 Synchroniser membres + cotisations depuis Supabase
-    await rechargerMembresTontine(id);
+    // 🔹 Charger la tontine active depuis ton tableau en mémoire
+    tontineActive = tontines.find(t => t.id == id);
+    if (!tontineActive) throw new Error("Tontine non trouvée en mémoire");
+
+    // 🔹 Mettre à jour les gagnants
+    tontineActive.gagnants = tirages.map(tr => ({
+      id: tr.id,
+      membreId: tr.membre_id,
+      nom: `${tr.membre_prenom} ${tr.membre_nom}`,
+      ordre: tr.ordre,
+      date: tr.date_tirage || new Date().toISOString()
+    }));
+
+    // 🔹 Marquer les membres ayant gagné
+    tontineActive.membres.forEach(m => {
+      m.aGagne = tontineActive.gagnants.some(g => g.membreId === m.id);
+    });
 
     // ✅ Afficher panneau tirage
     document.getElementById('panneauTirage').classList.remove('hidden');
 
-    // ✅ Rafraîchir affichages tirage
-    afficherInfosTirage?.();
-    afficherMembresEligibles?.();
-    afficherHistoriqueGagnants?.();
+    // ✅ Rafraîchir affichages
+    afficherInfosTirage();
+    afficherMembresEligibles();
+    afficherHistoriqueGagnants();
 
   } catch (err) {
     console.error("❌ Erreur chargement tirage tontine:", err);
@@ -2516,199 +2533,210 @@ async function chargerTontineTirage() {
   }
 }
 
+async function supprimerTirage(id) {
+  if (!confirm("❌ Supprimer ce tirage ?")) return;
+
+  try {
+    const res = await apiFetch(`${API_BASE}/tirages/${id}`, { method: "DELETE" });
+    if (res.status === 204) {
+      alert("✅ Tirage supprimé !");
+      chargerTontineTirage(); // 🔄 recharge l'affichage
+    } else {
+      const err = await res.json();
+      alert("Erreur suppression: " + (err.error || "inconnue"));
+    }
+  } catch (err) {
+    console.error("❌ Erreur suppression tirage:", err);
+    alert("Impossible de supprimer ce tirage");
+  }
+}
+
         function afficherMembresEligibles() {
-            const liste = document.getElementById('membresEligibles');
-            liste.innerHTML = '';
-            
-            const eligibles = tontineActive.membres.filter(m => !m.aGagne);
-            
-            if (eligibles.length === 0) {
-                liste.innerHTML = '<p class="text-gray-600 text-center py-4">Aucun membre éligible</p>';
-                return;
-            }
+  const liste = document.getElementById('membresEligibles');
+  liste.innerHTML = '';
 
-            eligibles.forEach((membre, index) => {
-                const div = document.createElement('div');
-                div.className = 'member-card p-4 bg-gradient-to-r from-blue-50 to-purple-50 fade-in-up';
-                div.style.animationDelay = `${index * 0.1}s`;
-                div.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="font-semibold text-gray-800">${membre.nom}</span>
-                        <span class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">${membre.cotisationsPayees.length} cotisations</span>
-                    </div>
-                `;
-                liste.appendChild(div);
-            });
-        }
+  const eligibles = tontineActive.membres.filter(m => !m.aGagne);
 
-        function afficherHistoriqueGagnants() {
-            const liste = document.getElementById('historiqueGagnants');
-            liste.innerHTML = '';
-            
-            tontineActive.gagnants.forEach((gagnant, index) => {
-                const div = document.createElement('div');
-                div.className = 'member-card p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 fade-in-up';
-                div.style.animationDelay = `${index * 0.1}s`;
-                div.innerHTML = `
-                    <div class="flex justify-between items-center">
-                        <span class="font-semibold text-gray-800">🏆 ${gagnant.nom}</span>
-                        <span class="text-sm bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-medium">${new Date(gagnant.date).toLocaleDateString('fr-FR')}</span>
-                    </div>
-                `;
-                liste.appendChild(div);
-            });
-        }
-
-        function afficherInfosTirage() {
-            const infoDiv = document.getElementById('infoTirage');
-            const btnTirage = document.getElementById('btnTirage');
-            
-            const eligibles = tontineActive.membres.filter(m => !m.aGagne);
-            
-            // 🔴 GRIS - Tontine terminée
-            if (eligibles.length === 0) {
-                infoDiv.innerHTML = `
-                    <div class="bg-gradient-to-r from-gray-400 to-gray-500 p-6 rounded-xl text-white">
-                        <div class="text-xl font-bold mb-2">🏁 Tontine Terminée</div>
-                        <div class="text-sm opacity-90">Tous les membres ont déjà gagné</div>
-                        <div class="text-sm opacity-75 mt-2">Aucun tirage possible</div>
-                    </div>
-                `;
-                btnTirage.style.display = 'none';
-                return;
-            }
-            
-            const cotisationsCompletes = verifierCotisationsCompletes(tontineActive);
-            const tiragePossible = verifierDateTiragePossible(tontineActive);
-           const membresEnRetard = tontineActive.membres.filter(m => 
-    !m.aGagne && estEnRetardPeriode(m, tontineActive)
-);
-
-            // 🔴 ROUGE - Cotisations incomplètes
-            if (!cotisationsCompletes) {
-                infoDiv.innerHTML = `
-                    <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-xl text-white">
-                        <div class="text-xl font-bold mb-2">❌ Tirage Impossible</div>
-                        <div class="text-sm opacity-90 mb-3">Cotisations incomplètes</div>
-                        <div class="bg-red-600 bg-opacity-50 p-3 rounded-lg text-sm">
-                            <div class="font-semibold mb-1">📋 Membres en retard:</div>
-                            ${membresEnRetard.map(m => `• ${m.nom}`).join('<br>')}
-                        </div>
-                        <div class="text-xs opacity-75 mt-3">Tous les membres éligibles doivent cotiser</div>
-                    </div>
-                `;
-                btnTirage.disabled = true;
-                btnTirage.style.opacity = '0.3';
-                btnTirage.style.background = 'linear-gradient(135deg, #9ca3af, #6b7280)';
-                btnTirage.style.cursor = 'not-allowed';
-                btnTirage.style.display = 'inline-block';
-                return;
-            }
-            
-            // 🟠 ORANGE - Intervalle non respecté
-            if (!tiragePossible) {
-                const joursRestants = obtenirJoursRestantsAvantTirage(tontineActive);
-                const prochaineTirage = obtenirProchaineDateTirage(tontineActive);
-                const intervalles = {
-                    'hebdomadaire': '7 jours',
-                    'mensuel': '30 jours',
-                    'trimestriel': '90 jours'
-                };
-                
-                const couleurOrange = joursRestants <= 3 ? 'from-yellow-500 to-orange-500' : 'from-orange-500 to-orange-600';
-                
-                infoDiv.innerHTML = `
-                    <div class="bg-gradient-to-r ${couleurOrange} p-6 rounded-xl text-white">
-                        <div class="text-xl font-bold mb-2">⏳ Tirage en Attente</div>
-                        <div class="text-sm opacity-90 mb-3">Intervalle de temps non respecté</div>
-                        <div class="bg-orange-600 bg-opacity-50 p-3 rounded-lg text-sm space-y-1">
-                            <div><span class="font-semibold">Fréquence:</span> ${intervalles[tontineActive.frequenceTirage] || '30 jours'}</div>
-                            <div><span class="font-semibold">Temps restant:</span> ${joursRestants} jour(s)</div>
-                            <div><span class="font-semibold">Disponible le:</span> ${prochaineTirage.toLocaleDateString('fr-FR')}</div>
-                        </div>
-                        <div class="text-xs opacity-75 mt-3">
-                            ${joursRestants <= 3 ? '🔥 Bientôt disponible !' : 'Patience requise pour respecter l\'intervalle'}
-                        </div>
-                    </div>
-                `;
-                btnTirage.disabled = true;
-                btnTirage.style.opacity = '0.6';
-                btnTirage.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-                btnTirage.style.cursor = 'not-allowed';
-                btnTirage.style.display = 'inline-block';
-                btnTirage.innerHTML = `⏳ Disponible dans ${joursRestants}j`;
-                return;
-            }
-            
-            // 🟢 VERT - Tirage possible
-            const estPremierTirage = tontineActive.tirages.length === 0;
-            const montantTotal = tontineActive.montant * tontineActive.membres.length;
-            
-            infoDiv.innerHTML = `
-                <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white">
-                    <div class="text-xl font-bold mb-2">
-                        ${estPremierTirage ? '🎯 Premier Tirage Disponible !' : '✅ Nouveau Tirage Disponible !'}
-                    </div>
-                    <div class="text-sm opacity-90 mb-3">Toutes les conditions sont remplies</div>
-                    <div class="bg-green-600 bg-opacity-50 p-3 rounded-lg text-sm space-y-1">
-                        <div><span class="font-semibold">Membres éligibles:</span> ${eligibles.length}</div>
-                        <div><span class="font-semibold">Montant à gagner:</span> ${montantTotal.toLocaleString()} FCFA</div>
-                        <div><span class="font-semibold">Cotisations:</span> ✅ Toutes complètes</div>
-                        ${estPremierTirage ? 
-                            '<div class="font-semibold text-yellow-200">🎉 Premier tirage de cette tontine !</div>' : 
-                            '<div><span class="font-semibold">Intervalle:</span> ✅ Respecté</div>'
-                        }
-                    </div>
-                </div>
-            `;
-            
-            btnTirage.disabled = false;
-            btnTirage.style.opacity = '1';
-            btnTirage.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-            btnTirage.style.cursor = 'pointer';
-            btnTirage.style.display = 'inline-block';
-            btnTirage.innerHTML = '🎲 Effectuer le Tirage';
-        }
-
-        async function effectuerTirage() {
-  if (!tontineActive) return;
-
-  const participants = tontineActive.membres.filter(m => !m.aGagne);
-  if (participants.length === 0) {
-    return alert("Tous les membres ont déjà gagné.");
+  if (eligibles.length === 0) {
+    liste.innerHTML = '<p class="text-gray-600 text-center py-4">Aucun membre éligible</p>';
+    return;
   }
 
-  // Tirage aléatoire
-  const gagnant = participants[Math.floor(Math.random() * participants.length)];
-
-  // 🔹 Insérer dans Supabase
-  const { data, error } = await sb.from('tirages')
-    .insert({ tontine_id: tontineActive.id, membre_id: gagnant.id })
-    .select()
-    .single();
-
-  if (error) return alert('Erreur lors du tirage : ' + error.message);
-
-  // 🔹 MAJ locale pour l’UI
-  tontineActive.tirages.push({
-    id: data.id,
-    gagnantId: gagnant.id,
-    date: new Date(data.date_tirage).toISOString()
+  eligibles.forEach((membre, index) => {
+    const div = document.createElement('div');
+    div.className = 'member-card p-4 bg-gradient-to-r from-blue-50 to-purple-50 fade-in-up';
+    div.style.animationDelay = `${index * 0.1}s`;
+    div.innerHTML = `
+      <div class="flex justify-between items-center">
+        <span class="font-semibold text-gray-800">${membre.nom}</span>
+        <span class="text-sm bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-medium">
+          ${membre.cotisationsPayees.length} cotisations
+        </span>
+      </div>
+    `;
+    liste.appendChild(div);
   });
+}
 
-  tontineActive.gagnants.push({
-    gagnantId: gagnant.id,
-    date: new Date(data.date_tirage).toISOString()
+        function afficherHistoriqueGagnants() {
+  const liste = document.getElementById('historiqueGagnants');
+  liste.innerHTML = '';
+
+  if (!tontineActive.gagnants || tontineActive.gagnants.length === 0) {
+    liste.innerHTML = '<p class="text-gray-600 text-center py-4">Aucun tirage encore effectué</p>';
+    return;
+  }
+
+  tontineActive.gagnants.forEach((gagnant, index) => {
+    const div = document.createElement('div');
+    div.className = 'member-card p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 fade-in-up flex justify-between items-center';
+    div.style.animationDelay = `${index * 0.1}s`;
+
+    const date = new Date(gagnant.date).toLocaleDateString('fr-FR');
+
+    div.innerHTML = `
+      <div>
+        <span class="font-semibold text-gray-800">🏆 ${gagnant.nom}</span><br>
+        <span class="text-sm text-gray-600">Ordre ${gagnant.ordre} - ${date}</span>
+      </div>
+      <button onclick="supprimerTirage('${gagnant.id}')" 
+              class="ml-4 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm">
+        🗑️
+      </button>
+    `;
+
+    liste.appendChild(div);
   });
+}
 
-  // Marquer le membre comme gagnant
-  gagnant.aGagne = true;
 
-  // Rafraîchir l’affichage
-  afficherInfosTontine();
-  mettreAJourAlertes();
+        function afficherInfosTirage() {
+  const infoDiv = document.getElementById('infoTirage');
+  const btnTirage = document.getElementById('btnTirage');
 
-  alert(`🎉 Tirage effectué !\n\nLe gagnant est : ${gagnant.nom}`);
+  const eligibles = tontineActive.membres.filter(m => !m.aGagne);
+
+  // 🔴 Tontine terminée
+  if (eligibles.length === 0) {
+    infoDiv.innerHTML = `
+      <div class="bg-gradient-to-r from-gray-400 to-gray-500 p-6 rounded-xl text-white">
+        <div class="text-xl font-bold mb-2">🏁 Tontine Terminée</div>
+        <div class="text-sm opacity-90">Tous les membres ont déjà gagné</div>
+      </div>
+    `;
+    btnTirage.style.display = 'none';
+    return;
+  }
+
+  // Vérifier conditions métiers (tu avais déjà ces helpers)
+  const cotisationsCompletes = verifierCotisationsCompletes(tontineActive);
+  const tiragePossible = verifierDateTiragePossible(tontineActive);
+  const membresEnRetard = tontineActive.membres.filter(m =>
+    !m.aGagne && estEnRetardPeriode(m, tontineActive)
+  );
+
+  // 🔴 Cotisations incomplètes
+  if (!cotisationsCompletes) {
+    infoDiv.innerHTML = `
+      <div class="bg-gradient-to-r from-red-500 to-red-600 p-6 rounded-xl text-white">
+        <div class="text-xl font-bold mb-2">❌ Tirage Impossible</div>
+        <div class="text-sm opacity-90 mb-3">Cotisations incomplètes</div>
+        <div class="bg-red-600 bg-opacity-50 p-3 rounded-lg text-sm">
+          <div class="font-semibold mb-1">📋 Membres en retard:</div>
+          ${membresEnRetard.map(m => `• ${m.nom}`).join('<br>')}
+        </div>
+      </div>
+    `;
+    btnTirage.disabled = true;
+    btnTirage.style.opacity = '0.3';
+    btnTirage.style.cursor = 'not-allowed';
+    btnTirage.style.display = 'inline-block';
+    return;
+  }
+
+  // 🟠 Intervalle non respecté
+  if (!tiragePossible) {
+    const joursRestants = obtenirJoursRestantsAvantTirage(tontineActive);
+    const prochaineTirage = obtenirProchaineDateTirage(tontineActive);
+
+    infoDiv.innerHTML = `
+      <div class="bg-gradient-to-r from-orange-500 to-orange-600 p-6 rounded-xl text-white">
+        <div class="text-xl font-bold mb-2">⏳ Tirage en Attente</div>
+        <div class="text-sm opacity-90 mb-3">Intervalle de temps non respecté</div>
+        <div class="bg-orange-600 bg-opacity-50 p-3 rounded-lg text-sm space-y-1">
+          <div><span class="font-semibold">Temps restant:</span> ${joursRestants} jour(s)</div>
+          <div><span class="font-semibold">Disponible le:</span> ${prochaineTirage.toLocaleDateString('fr-FR')}</div>
+        </div>
+      </div>
+    `;
+    btnTirage.disabled = true;
+    btnTirage.style.opacity = '0.6';
+    btnTirage.style.cursor = 'not-allowed';
+    btnTirage.innerHTML = `⏳ Disponible dans ${joursRestants}j`;
+    return;
+  }
+
+  // 🟢 Tirage possible
+  const montantTotal = tontineActive.montant * tontineActive.membres.length;
+
+  infoDiv.innerHTML = `
+    <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white">
+      <div class="text-xl font-bold mb-2">✅ Tirage Disponible !</div>
+      <div class="text-sm opacity-90 mb-3">Toutes les conditions sont remplies</div>
+      <div class="bg-green-600 bg-opacity-50 p-3 rounded-lg text-sm space-y-1">
+        <div><span class="font-semibold">Membres éligibles:</span> ${eligibles.length}</div>
+        <div><span class="font-semibold">Montant à gagner:</span> ${montantTotal.toLocaleString()} FCFA</div>
+        <div><span class="font-semibold">Cotisations:</span> ✅ Toutes complètes</div>
+      </div>
+    </div>
+  `;
+
+  btnTirage.disabled = false;
+  btnTirage.style.opacity = '1';
+  btnTirage.style.cursor = 'pointer';
+  btnTirage.style.display = 'inline-block';
+  btnTirage.innerHTML = '🎲 Effectuer le Tirage';
+}
+
+       async function effectuerTirage() {
+  if (!tontineActive) return;
+
+  const tontineId = tontineActive.id;
+
+  // Animation 🎲
+  document.getElementById("animationDe").classList.remove("hidden");
+  document.getElementById("resultatTirage").classList.add("hidden");
+
+  try {
+    // 🔹 Appel backend Express
+    const res = await apiFetch(`${API_BASE}/tirages/run/${tontineId}`, {
+      method: "POST"
+    });
+    const gagnant = await res.json();
+
+    if (!res.ok) {
+      alert(gagnant.error || "Erreur lors du tirage");
+      return;
+    }
+
+    // Attente pour l’animation
+    setTimeout(() => {
+      document.getElementById("animationDe").classList.add("hidden");
+      document.getElementById("resultatTirage").classList.remove("hidden");
+
+      // Afficher gagnant
+      document.getElementById("gagnantTirage").textContent = 
+        `🎉 ${gagnant.membre_prenom} ${gagnant.membre_nom}`;
+      document.getElementById("montantGagne").textContent = 
+        `Montant gagné: ${tontineActive.montant.toLocaleString()} FCFA`;
+
+      // Recharger données pour mettre à jour l’UI
+      chargerTontineTirage();
+    }, 2000);
+  } catch (err) {
+    console.error("❌ Erreur tirage:", err);
+    alert("Erreur réseau");
+  }
 }
 
         // Statistiques et graphiques
