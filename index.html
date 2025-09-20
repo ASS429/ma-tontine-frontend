@@ -2094,6 +2094,11 @@ async function afficherMembresTontine() {
         </div>
       </div>
       <div class="flex gap-3 mt-6 pt-4 border-t">
+        <button onclick="ouvrirModaleEditionMembre('${membre.id}')" 
+        class="flex-1 btn-gradient py-3 rounded-xl font-medium" 
+        style="background: var(--warning-gradient)">
+  ✏️ Éditer
+</button>
         <button onclick="retirerMembreTontine('${membre.id}', '${tontineId}')" 
                 class="flex-1 btn-gradient btn-danger py-3 rounded-xl font-medium">
           🗑️ Retirer
@@ -2217,6 +2222,11 @@ function afficherMembresTontineGestion() {
         </div>
       </div>
       <div class="flex gap-2 mt-4 pt-3 border-t">
+        <button onclick="ouvrirModaleEditionMembre('${m.id}')"
+                class="flex-1 btn-gradient py-2 rounded-lg text-sm font-medium"
+                style="background: var(--warning-gradient)">
+          ✏️ Éditer
+        </button>
         <button onclick="retirerMembreTontine('${m.id}', '${tontineActive.id}')" 
                 class="flex-1 btn-gradient btn-danger py-2 rounded-lg text-sm font-medium">
           🗑️ Retirer
@@ -2236,7 +2246,6 @@ function afficherMembresTontineGestion() {
     });
   }
 }
-
 
 // ➤ Supprimer un membre (via backend + synchro locale)
 async function supprimerMembreTontine(membreId) {
@@ -3525,37 +3534,54 @@ async function supprimerTontine(id) {
             document.getElementById('modaleEditionTontine').classList.add('hidden');
         }
         
-        async function sauvegarderEditionTontine() {
-  if (!tontineActive) return;
-  const id = tontineActive.id;
-  const nom = document.getElementById('editNomTontine').value.trim();
-  const type = document.getElementById('editTypeTontine').value;
-  const montant = parseFloat(document.getElementById('editMontantCotisation').value);
-  const frequenceCot = document.getElementById('editFrequenceCotisation').value;
-  const jourCot = document.getElementById('editJourCotisation').value;
-  const frequenceTir = document.getElementById('editFrequenceTirage').value;
-  const nbMembres = parseInt(document.getElementById('editNombreMembres').value, 10);
-  const description = document.getElementById('editDescriptionTontine').value.trim();
+        async function sauvegarderEditionMembre() {
+  if (!membreEnEdition) return;
+  
+  const nom = document.getElementById('editNomMembre').value.trim();
+  const dateAjout = document.getElementById('editDateAjoutMembre').value;
 
-  const { error } = await sb.from('tontines').update({
-    nom, type, montant_cotisation: montant, frequence_cotisation: frequenceCot,
-    jour_cotisation: jourCot, frequence_tirage: frequenceTir,
-    nombre_membres: nbMembres, description
-  }).eq('id', id);
+  if (!nom || !dateAjout) {
+    alert('Veuillez remplir tous les champs');
+    return;
+  }
 
-  if (error) return alert('Modification impossible: ' + error.message);
+  try {
+    const res = await apiFetch(`${API_BASE}/membres/${membreEnEdition.id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        nom,
+        dateAjout: new Date(dateAjout).toISOString()
+      })
+    });
 
-  // MAJ state local pour l’UI (comme avant)
-  Object.assign(tontineActive, {
-    nom, type, montant, frequenceCotisation: frequenceCot,
-    jourCotisation: jourCot, frequenceTirage: frequenceTir,
-    nombreMembresMax: nbMembres, description
-  });
-  fermerModaleEdition?.();
-  afficherInfosTontine?.();
-  mettreAJourAffichage?.();
-  alert('✅ Tontine modifiée avec succès !');
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || "Erreur lors de la modification du membre");
+    }
+
+    const updated = await res.json();
+
+    // 🔄 Mettre à jour localement
+    membreEnEdition.nom = updated.nom;
+    membreEnEdition.dateAjout = updated.cree_le;
+
+    fermerModaleEditionMembre();
+
+    if (pageActuelle === 'gestion') {
+      afficherMembresTontineGestion?.();
+      mettreAJourSelectMembres?.();
+    } else if (pageActuelle === 'membres') {
+      afficherMembresTontine?.();
+    }
+
+    alert(`✅ Membre "${updated.nom}" modifié avec succès !`);
+  } catch (err) {
+    console.error("❌ Erreur édition membre:", err);
+    alert("❌ Impossible de modifier le membre: " + err.message);
+  }
 }
+
         
         async function supprimerTontineActive() {
   if (!tontineActive) return;
