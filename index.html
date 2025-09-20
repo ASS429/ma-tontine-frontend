@@ -1135,6 +1135,29 @@ label { font-size: 0.95rem; font-weight: 600; }
         </div>
     </div>
 
+    <!-- Modale confirmation suppression -->
+<div id="modaleSuppressionTontine" 
+     class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-2xl p-6 max-w-md w-full card-premium">
+    <h3 class="text-2xl font-bold text-red-600 mb-4">⚠️ Supprimer la Tontine</h3>
+    <p id="texteSuppression" class="text-gray-700 mb-6">
+      Êtes-vous sûr de vouloir supprimer cette tontine ?<br>
+      Cette action est <strong>irréversible</strong>.
+    </p>
+    <div class="flex gap-4">
+      <button onclick="fermerModaleSuppression()" 
+              class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-4 rounded-xl font-medium">
+        Annuler
+      </button>
+      <button id="btnConfirmerSuppression"
+              class="flex-1 bg-red-500 hover:bg-red-600 text-white py-3 px-4 rounded-xl font-medium">
+        🗑️ Supprimer
+      </button>
+    </div>
+  </div>
+</div>
+
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
     
@@ -1835,9 +1858,11 @@ async function creerTontine() {
                         <button onclick="editerTontineAccueil('${tontine.id}')" class="btn-gradient text-sm py-3 px-4 rounded-xl font-medium" style="background: var(--warning-gradient)">
                             ✏️ Éditer
                         </button>
-                        <button onclick="supprimerTontine('${tontine.id}')" class="btn-gradient btn-danger text-sm py-3 px-4 rounded-xl font-medium">
-                            🗑️ Supprimer
-                        </button>
+                        <button onclick="demanderSuppressionTontine('${tontine.id}')"
+        class="btn-gradient btn-danger text-sm py-3 px-4 rounded-xl font-medium">
+  🗑️ Supprimer
+</button>
+
                     </div>
                 `;
         liste.appendChild(div);
@@ -2301,6 +2326,31 @@ async function sauvegarderEditionTontine() {
 function fermerModaleEditionTontine() {
   document.getElementById("modaleEditionTontine").classList.add("hidden");
 }
+
+let tontineASupprimer = null;
+
+function demanderSuppressionTontine(id) {
+  tontineASupprimer = id;
+  const tontine = tontines.find(t => t.id === id);
+  if (tontine) {
+    document.getElementById("texteSuppression").innerHTML =
+      `Voulez-vous vraiment supprimer <strong>${tontine.nom}</strong> ?<br>
+       Tous les membres, cotisations et tirages associés seront effacés.`;
+  }
+  document.getElementById("modaleSuppressionTontine").classList.remove("hidden");
+}
+
+function fermerModaleSuppression() {
+  document.getElementById("modaleSuppressionTontine").classList.add("hidden");
+  tontineASupprimer = null;
+}
+
+document.getElementById("btnConfirmerSuppression").addEventListener("click", async () => {
+  if (!tontineASupprimer) return;
+  await supprimerTontine(tontineASupprimer);
+  fermerModaleSuppression();
+});
+
 
 // ➤ Mettre à jour la liste des membres dans le select cotisation
 function mettreAJourSelectMembres() {
