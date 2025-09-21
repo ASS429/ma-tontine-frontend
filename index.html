@@ -1792,7 +1792,7 @@ async function creerTontine() {
   alert('✅ Tontine créée avec succès !');
 }
 
-    // Affichage des tontines
+    // ✅ Affichage des tontines sécurisé
 function afficherTontines() {
   const liste = document.getElementById('listeTontines');
   liste.innerHTML = '';
@@ -1816,7 +1816,7 @@ function afficherTontines() {
     liste.appendChild(guide);
   }
 
-  if (tontines.length === 0) {
+  if (!tontines || tontines.length === 0) {
     liste.innerHTML += `
       <div class="col-span-full text-center py-16">
         <div class="text-8xl mb-6 floating-animation">🎯</div>
@@ -1831,7 +1831,12 @@ function afficherTontines() {
   }
 
   tontines.forEach((tontine, index) => {
-    console.log("Tontine reçue:", tontine); // 🔍 debug
+    // ✅ Sécurité : toujours des tableaux
+    const membres = tontine.membres || [];
+    const cotisations = tontine.cotisations || [];
+    const tirages = tontine.tirages || [];
+
+    console.log("Tontine reçue:", tontine);
 
     const typeIcon = {
       argent: '💰',
@@ -1847,11 +1852,11 @@ function afficherTontines() {
       annuel: 'Annuel'
     };
 
-    const progression = (tontine.membres.length / tontine.nombreMembresMax) * 100;
-    const cotisationsCompletes = verifierCotisationsCompletes(tontine);
-    const tiragePossible = verifierDateTiragePossible(tontine);
+    const progression = (membres.length / tontine.nombreMembresMax) * 100;
+    const cotisationsCompletes = verifierCotisationsCompletes({ ...tontine, membres, cotisations });
+    const tiragePossible = verifierDateTiragePossible({ ...tontine, membres, cotisations, tirages });
     const prochaineTirage = obtenirProchaineDateTirage(tontine);
-    const eligibles = tontine.membres.filter(m => !m.aGagne);
+    const eligibles = membres.filter(m => !m.aGagne);
 
     // 🔹 Sécurisation du statut
     const statut = tontine.statut ?? "active";
@@ -1863,11 +1868,12 @@ function afficherTontines() {
     div.innerHTML = `
       <div class="flex justify-between items-start mb-6">
         <div class="flex items-center space-x-4">
-          <div class="text-5xl floating-animation">${typeIcon[tontine.type]}</div>
+          <div class="text-5xl floating-animation">${typeIcon[tontine.type] || '🎁'}</div>
           <div>
             <h3 class="font-bold text-xl text-gray-800">${tontine.nom}</h3>
             <p class="text-gray-600 font-medium">
-              ${frequenceText[tontine.frequenceCotisation]} - ${tontine.montant.toLocaleString()} FCFA
+              ${frequenceText[tontine.frequenceCotisation] || tontine.frequenceCotisation} - 
+              ${tontine.montant.toLocaleString()} FCFA
             </p>
           </div>
         </div>
@@ -1878,7 +1884,7 @@ function afficherTontines() {
 
       <div class="mb-6">
         <div class="flex justify-between text-sm text-gray-600 mb-2 font-medium">
-          <span>Membres: ${tontine.membres.length}/${tontine.nombreMembresMax}</span>
+          <span>Membres: ${membres.length}/${tontine.nombreMembresMax}</span>
           <span>${Math.round(progression)}%</span>
         </div>
         <div class="w-full bg-gray-200 rounded-full h-3">
@@ -1889,13 +1895,13 @@ function afficherTontines() {
       ${
         eligibles.length === 0
           ? `<div class="bg-gradient-to-r from-gray-400 to-gray-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl"> 🏁 Tontine terminée </div>`
-          : tontine.membres.length === 0
+          : membres.length === 0
           ? `<div class="bg-gradient-to-r from-blue-400 to-blue-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl"> 👥 En attente de membres </div>`
-          : tontine.cotisations.length === 0
+          : cotisations.length === 0
           ? `<div class="bg-gradient-to-r from-purple-400 to-purple-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl"> 💰 En attente de cotisations </div>`
           : (cotisationsCompletes && tiragePossible)
           ? `<div class="alert-notification text-center px-4 py-3 mb-6 text-white font-semibold">
-              ${tontine.tirages.length === 0 ? '🎯 Premier tirage disponible !' : '🎲 Tirage disponible !'}
+              ${tirages.length === 0 ? '🎯 Premier tirage disponible !' : '🎲 Tirage disponible !'}
             </div>`
           : (cotisationsCompletes && !tiragePossible)
           ? `<div class="bg-gradient-to-r from-orange-400 to-orange-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
@@ -1903,9 +1909,9 @@ function afficherTontines() {
             </div>`
           : !cotisationsCompletes
           ? `<div class="bg-gradient-to-r from-red-400 to-red-500 text-center px-4 py-3 mb-6 text-white font-semibold rounded-xl">
-              ❌ Cotisations incomplètes (${tontine.membres.filter(m => {
+              ❌ Cotisations incomplètes (${membres.filter(m => {
                 const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
-                return !m.cotisationsPayees.some(c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle);
+                return !(m.cotisationsPayees || []).some(c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle);
               }).length} membre(s) en retard)
             </div>`
           : ''
@@ -1925,7 +1931,6 @@ function afficherTontines() {
     liste.appendChild(div);
   });
 }
-
 
 function masquerGuide() {
     localStorage.setItem('guideMasque', 'true'); // Sauvegarde le choix
