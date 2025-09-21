@@ -2382,12 +2382,21 @@ async function sauvegarderEditionTontine() {
 
     const updated = await res.json();
 
-    // MAJ locale
-    tontines = tontines.map(t => t.id === updated.id ? updated : t);
+    // ✅ Sécuriser l'objet retourné (ajouter les tableaux si manquants)
+    const tontineComplete = {
+      ...updated,
+      membres: updated.membres || [],
+      cotisations: updated.cotisations || [],
+      tirages: updated.tirages || [],
+      gagnants: updated.gagnants || []
+    };
+
+    // ✅ Mettre à jour la liste locale
+    tontines = tontines.map(t => t.id === tontineComplete.id ? tontineComplete : t);
 
     afficherTontines();
     fermerModaleEditionTontine();
-    alert(`✅ Tontine "${updated.nom}" mise à jour avec succès !`);
+    alert(`✅ Tontine "${tontineComplete.nom}" mise à jour avec succès !`);
   } catch (err) {
     console.error("Erreur sauvegarde édition:", err);
     alert("❌ Impossible de modifier la tontine: " + err.message);
