@@ -2090,18 +2090,21 @@ function normaliserCotisation(c) {
   };
 }
 
-// ✅ Normalise un membre venant du backend
+// ✅ Normalise un membre venant du backend / Supabase
 function normaliserMembre(m) {
   return {
     id: m.id,
     nom: m.nom,
-    dateAjout: m.cree_le || m.date_ajout, // compatibilité Supabase
+    telephone: m.telephone || null,
+    adresse: m.adresse || null,
+    dateAjout: m.dateAjout || m.cree_le || m.date_ajout || null,
     aGagne: m.aGagne || false,
     cotisationsPayees: (m.cotisations || []).map(normaliserCotisation)
   };
 }
 
-        /// ➤ Afficher les membres d'une tontine avec cotisations (hybride)
+
+       /// ➤ Afficher les membres d'une tontine avec cotisations (hybride)
 async function afficherMembresTontine() {
   const tontineId = document.getElementById('selectTontineMembres').value;
   if (!tontineId) {
@@ -2325,7 +2328,7 @@ function afficherMembresTontineGestion() {
           <span>Total cotisé:</span><span class="font-bold text-green-600">${totalCotise.toLocaleString()} FCFA</span>
         </div>
         <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-          <span>Membre depuis:</span><span>${m.cree_le ? new Date(m.cree_le).toLocaleDateString("fr-FR") : "-"}</span>
+          <span>Membre depuis:</span><span>${m.dateAjout ? new Date(m.dateAjout).toLocaleDateString("fr-FR") : "-"}</span>
         </div>
       </div>
 
@@ -2353,6 +2356,7 @@ function afficherMembresTontineGestion() {
     });
   }
 }
+
 
 // ➤ Supprimer un membre (via backend + synchro locale)
 async function supprimerMembreTontine(membreId) {
