@@ -3007,15 +3007,13 @@ function remplirTableauPerformance(performance) {
   }
 }
         
-        // 📊 Générer le résumé des alertes (données backend)
+       // 📊 Générer le résumé des alertes
 async function genererResumeAlertes() {
   try {
-    const alertesActuelles = await mettreAJourAlertes(); // récupère depuis /alertes
+    const alertesActuelles = await mettreAJourAlertes();
     const resume = document.getElementById('resumeAlertes');
-
     if (!Array.isArray(alertesActuelles)) return;
 
-    // 🔹 Compter par type
     const retards = alertesActuelles.filter(a => a.type === 'retard');
     const tirages = alertesActuelles.filter(a => a.type === 'tirage');
     const cyclesRetard = alertesActuelles.filter(a => a.type === 'cycle_retard');
@@ -3023,24 +3021,20 @@ async function genererResumeAlertes() {
 
     resume.innerHTML = `
       <div class="bg-gradient-to-r from-red-100 to-red-200 p-4 rounded-xl text-center">
-          <div class="text-2xl font-bold text-red-600">${retards.length}</div>
-          <div class="text-sm text-red-700 font-medium">⚠️ Retards de paiement</div>
-          <div class="text-xs text-red-600 mt-1">${retards.filter(r => r.urgence === 'haute').length} urgents</div>
+        <div class="text-2xl font-bold text-red-600">${retards.length}</div>
+        <div class="text-sm text-red-700 font-medium">⚠️ Retards de paiement</div>
       </div>
       <div class="bg-gradient-to-r from-yellow-100 to-yellow-200 p-4 rounded-xl text-center">
-          <div class="text-2xl font-bold text-yellow-600">${cyclesRetard.length}</div>
-          <div class="text-sm text-yellow-700 font-medium">⏳ Cycles en retard</div>
-          <div class="text-xs text-yellow-600 mt-1">Tirages en attente</div>
+        <div class="text-2xl font-bold text-yellow-600">${cyclesRetard.length}</div>
+        <div class="text-sm text-yellow-700 font-medium">⏳ Cycles en retard</div>
       </div>
       <div class="bg-gradient-to-r from-blue-100 to-blue-200 p-4 rounded-xl text-center">
-          <div class="text-2xl font-bold text-blue-600">${paiementsAttente.length}</div>
-          <div class="text-sm text-blue-700 font-medium">💳 Paiements en attente</div>
-          <div class="text-xs text-blue-600 mt-1">Membres à jour</div>
+        <div class="text-2xl font-bold text-blue-600">${paiementsAttente.length}</div>
+        <div class="text-sm text-blue-700 font-medium">💳 Paiements en attente</div>
       </div>
       <div class="bg-gradient-to-r from-green-100 to-green-200 p-4 rounded-xl text-center">
-          <div class="text-2xl font-bold text-green-600">${tirages.length}</div>
-          <div class="text-sm text-green-700 font-medium">🎲 Tirages disponibles</div>
-          <div class="text-xs text-green-600 mt-1">${tirages.filter(t => t.estPremierTirage).length || 0} premiers tirages</div>
+        <div class="text-2xl font-bold text-green-600">${tirages.length}</div>
+        <div class="text-sm text-green-700 font-medium">🎲 Tirages disponibles</div>
       </div>
     `;
   } catch (err) {
@@ -3167,6 +3161,11 @@ function verifierAlertes() {
       class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all w-full sm:w-auto text-center">
       ❌ Ignorer
     </button>
+    <button onclick="resoudreAlerte('${alerte.id}')"
+  class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all w-full sm:w-auto text-center">
+  ✅ Résolue
+</button>
+
   </div>
 
 </div>
@@ -3181,7 +3180,39 @@ function verifierAlertes() {
     console.error("❌ Erreur afficherAlertes:", err);
   }
 }
-        
+      
+async function resoudreAlerte(alerteId) {
+  try {
+    const res = await apiFetch(`${API_BASE}/alertes/${alerteId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ estResolue: true })
+    });
+
+    if (!res.ok) throw new Error("Erreur résolution alerte");
+
+    // 🔄 Retirer visuellement l'alerte de la liste
+    const el = document.querySelector(`[data-alerte-id="${alerteId}"]`);
+    if (el) el.remove();
+
+    // ✅ Mettre à jour badge
+    const badge = document.getElementById("badgeAlertes");
+    const actuel = parseInt(badge.textContent || "0", 10);
+
+    if (actuel > 1) {
+      badge.textContent = actuel - 1;
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+
+    console.log(`✅ Alerte ${alerteId} marquée comme résolue`);
+  } catch (err) {
+    console.error("❌ Erreur résolution alerte:", err);
+    alert("Impossible de marquer l’alerte comme résolue");
+  }
+}
+
       async function supprimerAlerte(alerteId) {
   try {
     const res = await apiFetch(`${API_BASE}/alertes/${alerteId}`, { method: "DELETE" });
