@@ -540,7 +540,7 @@ label { font-size: 0.95rem; font-weight: 600; }
   <button type="submit" class="btn-gradient w-full py-4 rounded-xl text-lg font-bold">
     🔐 Se connecter
   </button>
-  
+
 </form>
 
                         
@@ -3142,25 +3142,32 @@ function verifierAlertes() {
       div.setAttribute("data-alerte-id", alerte.id); // pour suppression
 
       div.innerHTML = `
-        <div class="flex items-start justify-between">
-            <div class="flex items-start flex-1">
-                <span class="text-4xl mr-4 floating-animation">${icone}</span>
-                <div class="flex-1">
-                    <div class="font-bold text-xl mb-1">${alerte.message}</div>
-                    <div class="text-sm opacity-75 mb-2">📋 Tontine ID: ${alerte.tontineId}</div>
-                    ${details}
-                    <div class="text-xs opacity-60 mt-3">
-                        🕒 Créée le ${new Date(alerte.dateCreation).toLocaleDateString("fr-FR")} à ${new Date(alerte.dateCreation).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                    </div>
-                </div>
-            </div>
-            <div class="flex flex-col gap-2 ml-4">
-                <button onclick="supprimerAlerte('${alerte.id}')"
-                        class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                    ❌ Ignorer
-                </button>
-            </div>
-        </div>
+        <div class="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-white/70 backdrop-blur shadow-md">
+
+  <!-- Icône + texte -->
+  <div class="flex items-start flex-1 gap-3">
+    <span class="text-3xl sm:text-4xl floating-animation">${icone}</span>
+    <div class="flex-1">
+      <div class="font-bold text-lg sm:text-xl mb-1">${alerte.message}</div>
+      <div class="text-xs sm:text-sm opacity-75 mb-2">📋 Tontine ID: ${alerte.tontineId}</div>
+      ${details}
+      <div class="text-xs opacity-60 mt-2 sm:mt-3">
+        🕒 Créée le ${new Date(alerte.dateCreation).toLocaleDateString("fr-FR")} à 
+        ${new Date(alerte.dateCreation).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+      </div>
+    </div>
+  </div>
+
+  <!-- Boutons -->
+  <div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
+    <button onclick="supprimerAlerte('${alerte.id}')"
+      class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all w-full sm:w-auto text-center">
+      ❌ Ignorer
+    </button>
+  </div>
+
+</div>
+
       `;
       liste.appendChild(div);
     });
