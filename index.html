@@ -445,48 +445,58 @@ label { font-size: 0.95rem; font-weight: 600; }
 </head>
 
 <body>
+  
     <!-- En-tête avec effet glass -->
-    <header class="header-glass sticky top-0 z-50 mb-4 md:mb-8">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
-            <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2 sm:space-x-4">
-                    <div class="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-xl sm:rounded-2xl flex items-center justify-center floating-animation">
-                        <span class="text-white font-bold text-lg sm:text-2xl">🎯</span>
-                    </div>
-                    <div>
-                        <h1 class="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                            SAMAY TONTINES
-                        </h1>
-                        <p class="text-gray-600 font-medium text-xs sm:text-sm">Gestionnaire Premium</p>
-                    </div>
-                </div>
-                <div class="flex items-center space-x-2 sm:space-x-4 md:space-x-6">
-                    <!-- Bannière de statut réseau -->
-                    <div id="banniereReseau" class="hidden fixed top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-sm font-medium z-50">
-                        📡 Mode hors ligne - Données locales utilisées
-                    </div>
-                    
-                    <div id="infoUtilisateur" class="text-right hidden sm:block">
-                        <p class="text-xs sm:text-sm text-gray-600 font-medium">Connecté en tant que</p>
-                        <p class="text-sm sm:text-base font-bold text-gray-800" id="nomUtilisateur">-</p>
-                    </div>
-                    
-                    <div class="text-right hidden sm:block">
-                        <p class="text-xs sm:text-sm text-gray-600 font-medium">Tontines Actives</p>
-                        <p class="text-xl sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent" id="nombreTontines">0</p>
-                    </div>
-                    
-                    <button id="btnDeconnexion" onclick="seDeconnecter()" class="btn-gradient btn-danger text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-3 hidden">
-                        🚪 Déconnexion
-                    </button>
-                    
-                    <button id="btnRetour" onclick="retourAccueil()" class="hidden btn-gradient text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-3">
-                        ← Retour
-                    </button>
-                </div>
-            </div>
+<header class="header-glass sticky top-0 z-50 mb-3 sm:mb-6">
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-5">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-6">
+
+      <!-- Logo + titre -->
+      <div class="flex items-center space-x-2 sm:space-x-4">
+        <div class="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center floating-animation">
+          <span class="text-white font-bold text-base sm:text-xl">🎯</span>
         </div>
-    </header>
+        <div class="text-center sm:text-left">
+          <h1 class="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+            SAMAY TONTINES
+          </h1>
+          <p class="text-gray-600 font-medium text-xs sm:text-sm">Gestionnaire Premium</p>
+        </div>
+      </div>
+
+      <!-- Zone droite -->
+      <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4 md:gap-6">
+
+        <!-- Bannière réseau -->
+        <div id="banniereReseau" class="hidden fixed top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-xs sm:text-sm font-medium z-50">
+          📡 Mode hors ligne - Données locales utilisées
+        </div>
+
+        <!-- Infos utilisateur -->
+        <div id="infoUtilisateur" class="hidden sm:block text-center sm:text-right">
+          <p class="text-xs sm:text-sm text-gray-600 font-medium">Connecté en tant que</p>
+          <p class="text-sm sm:text-base font-bold text-gray-800" id="nomUtilisateur">-</p>
+        </div>
+
+        <!-- Nombre tontines -->
+        <div class="hidden sm:block text-center sm:text-right">
+          <p class="text-xs sm:text-sm text-gray-600 font-medium">Tontines Actives</p>
+          <p class="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent" id="nombreTontines">0</p>
+        </div>
+
+        <!-- Boutons -->
+        <button id="btnDeconnexion" onclick="seDeconnecter()" class="btn-gradient btn-danger text-xs sm:text-base px-2 sm:px-4 py-1.5 sm:py-2 hidden">
+          🚪 Déconnexion
+        </button>
+
+        <button id="btnRetour" onclick="retourAccueil()" class="btn-gradient text-xs sm:text-base px-2 sm:px-4 py-1.5 sm:py-2 hidden">
+          ← Retour
+        </button>
+
+      </div>
+    </div>
+  </div>
+</header>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <!-- PAGE CONNEXION -->
