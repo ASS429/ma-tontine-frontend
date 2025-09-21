@@ -2013,7 +2013,7 @@ function afficherInfosTontine() {
 
   // 🔹 Calcul du cycle actuel
   const totalCotisations = tontine.cotisations?.length || 0;
-  const totalMembres = tontine.nombre_membres || 0;
+  const totalMembres = tontine.nombreMembresMax || 0;
   const cycleActuel = totalCotisations > 0 && totalMembres > 0
     ? Math.ceil(totalCotisations / totalMembres)
     : 1;
@@ -2034,7 +2034,7 @@ function afficherInfosTontine() {
       <!-- Montant par cotisation -->
       <div class="text-center">
         <div class="text-3xl font-bold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent">
-          ${Number(tontine.montant_cotisation || 0).toLocaleString()}
+          ${Number(tontine.montant || 0).toLocaleString()}
         </div>
         <div class="text-sm text-gray-600 font-medium">FCFA par cotisation</div>
       </div>
@@ -2042,7 +2042,7 @@ function afficherInfosTontine() {
       <!-- Membres -->
       <div class="text-center">
         <div class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent">
-          ${(tontine.membres?.length || 0)}/${tontine.nombre_membres || 0}
+          ${(tontine.membres?.length || 0)}/${tontine.nombreMembresMax || 0}
         </div>
         <div class="text-sm text-gray-600 font-medium">Membres</div>
       </div>
@@ -2050,7 +2050,7 @@ function afficherInfosTontine() {
       <!-- Cycle actuel -->
       <div class="text-center">
         <div class="text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
-          ${cycleActuel}/${totalMembres || '?'}
+          ${cycleActuel}/${totalMembres || "?"}
         </div>
         <div class="text-sm text-gray-600 font-medium">Cycle actuel</div>
         <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
@@ -2245,6 +2245,7 @@ function afficherMembresTontineGestion() {
 
   container.innerHTML = "";
 
+  // ⚠️ Aucun membre
   if (!tontineActive || !tontineActive.membres || tontineActive.membres.length === 0) {
     container.innerHTML = `
       <div class="col-span-full text-center py-12">
@@ -2255,9 +2256,15 @@ function afficherMembresTontineGestion() {
     return;
   }
 
+  // 🔄 Afficher chaque membre
   tontineActive.membres.forEach((m, index) => {
-    const cotisationsCount = m.cotisationsPayees.length;
-    const totalCotise = m.cotisationsPayees.reduce((s, c) => s + c.montant, 0);
+    // ✅ Cotisations liées à ce membre
+    const cotisationsMembre = (tontineActive.cotisations || []).filter(c => c.membre_id === m.id);
+    const cotisationsCount = cotisationsMembre.length;
+    const totalCotise = cotisationsMembre.reduce((s, c) => s + Number(c.montant || 0), 0);
+
+    // ✅ Vérifier si le membre a déjà gagné
+    const aGagne = (tontineActive.tirages || []).some(t => t.membre_id === m.id);
 
     const div = document.createElement("div");
     div.className = "member-card p-6 fade-in-up";
@@ -2269,8 +2276,10 @@ function afficherMembresTontineGestion() {
           <span class="text-white text-2xl">👤</span>
         </div>
         <h3 class="font-bold text-lg mb-1">${m.nom}</h3>
-        <span class="px-3 py-1 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full text-xs font-semibold">
-          ${m.aGagne ? "Gagnant" : "Actif"}
+        <span class="px-3 py-1 ${aGagne 
+          ? "bg-gradient-to-r from-yellow-400 to-yellow-500" 
+          : "bg-gradient-to-r from-green-400 to-green-500"} text-white rounded-full text-xs font-semibold">
+          ${aGagne ? "🎉 Gagnant" : "Actif"}
         </span>
       </div>
       <div class="space-y-2 text-sm">
@@ -2281,7 +2290,7 @@ function afficherMembresTontineGestion() {
           <span>Total cotisé:</span><span class="font-bold text-green-600">${totalCotise.toLocaleString()} FCFA</span>
         </div>
         <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-          <span>Membre depuis:</span><span>${m.dateAjout ? new Date(m.dateAjout).toLocaleDateString("fr-FR") : "-"}</span>
+          <span>Membre depuis:</span><span>${m.cree_le ? new Date(m.cree_le).toLocaleDateString("fr-FR") : "-"}</span>
         </div>
       </div>
       <div class="flex gap-2 mt-4 pt-3 border-t">
@@ -2309,6 +2318,7 @@ function afficherMembresTontineGestion() {
     });
   }
 }
+
 
 // ➤ Supprimer un membre (via backend + synchro locale)
 async function supprimerMembreTontine(membreId) {
@@ -2505,11 +2515,11 @@ async function enregistrerCotisationTontine() {
   const membreId = document.getElementById('selectMembreCotisation').value;
   if (!membreId) return alert("⚠️ Sélectionne un membre !");
 
-  const montant = tontineActive.montant_cotisation;
+  const montant = tontineActive.montant_cotisation; // ✅ cohérent avec backend
   const date = document.getElementById('dateCotisation').value || new Date().toISOString().split('T')[0];
 
   try {
-    // 🔹 Appel backend sécurisé → en camelCase
+    // 🔹 Appel backend sécurisé
     const res = await apiFetch(`${API_BASE}/cotisations`, {
       method: "POST",
       body: JSON.stringify({
@@ -2530,22 +2540,16 @@ async function enregistrerCotisationTontine() {
     // ✅ Normalisation uniforme
     const cotisation = {
       id: data.id,
-      membreId: data.membre_id,  // la DB renvoie snake_case
+      membre_id: data.membre_id,  // reste en snake_case pour cohérence
       montant: Number(data.montant),
-      date: new Date(data.date_cotisation).toISOString()
+      date_cotisation: data.date_cotisation
     };
 
+    // 🔄 Mise à jour locale
     if (!tontineActive.cotisations) tontineActive.cotisations = [];
     tontineActive.cotisations.push(cotisation);
 
-    // ✅ Mise à jour du membre concerné
-    const membre = tontineActive.membres?.find(m => m.id === data.membre_id);
-    if (membre) {
-      if (!membre.cotisationsPayees) membre.cotisationsPayees = [];
-      membre.cotisationsPayees.push(cotisation);
-    }
-
-    // 🔄 Rafraîchir l’affichage
+    // ✅ Rafraîchir l’affichage
     afficherHistoriqueCotisations?.();
     afficherMembresTontineGestion?.();
     mettreAJourAlertes?.();
@@ -2556,7 +2560,6 @@ async function enregistrerCotisationTontine() {
     alert("❌ Impossible d’enregistrer la cotisation : " + err.message);
   }
 }
-
 
         // ➤ Afficher l’historique des cotisations (backend → frontend)
 function afficherHistoriqueCotisations() {
@@ -2575,19 +2578,21 @@ function afficherHistoriqueCotisations() {
     return;
   }
 
-  // 🔄 Trier par date décroissante
+  // 🔄 Trier par date décroissante (date_cotisation)
   const cotisationsTriees = [...tontineActive.cotisations].sort((a, b) => 
-    new Date(b.date) - new Date(a.date)
+    new Date(b.date_cotisation) - new Date(a.date_cotisation)
   );
 
   // Limiter aux 10 plus récentes
   const cotisationsRecentes = cotisationsTriees.slice(0, 10);
 
   cotisationsRecentes.forEach((cotisation, index) => {
-    const membre = tontineActive.membres?.find(m => m.id === cotisation.membreId);
+    // 🔎 Trouver le membre associé
+    const membre = tontineActive.membres?.find(m => m.id === cotisation.membre_id);
     const nomMembre = membre ? membre.nom : "Membre supprimé";
-    const dateCotisation = cotisation.date
-      ? new Date(cotisation.date).toLocaleDateString('fr-FR')
+
+    const dateCotisation = cotisation.date_cotisation
+      ? new Date(cotisation.date_cotisation).toLocaleDateString('fr-FR')
       : "-";
 
     const div = document.createElement('div');
@@ -2606,7 +2611,7 @@ function afficherHistoriqueCotisations() {
         </div>
         <div class="flex items-center gap-3">
           <span class="font-bold text-green-600 text-lg">
-            +${cotisation.montant.toLocaleString()} FCFA
+            +${Number(cotisation.montant).toLocaleString()} FCFA
           </span>
         </div>
       </div>`;
@@ -2614,7 +2619,6 @@ function afficherHistoriqueCotisations() {
     liste.appendChild(div);
   });
 }
-
 
         // Fonctions de gestion des cotisations et membres
 // ➤ Retirer un membre d’une tontine via backend Express
@@ -2624,14 +2628,14 @@ async function retirerMembreTontine(membreId, tontineId) {
   if (!membre) return;
 
   // 🔹 Calcul du résumé avant suppression
-  const cotisations = tontineActive.cotisations?.filter(c => c.membreId === membreId) || [];
+  const cotisations = (tontineActive.cotisations || []).filter(c => c.membre_id === membreId);
   const cotisationsCount = cotisations.length;
-  const totalCotise = cotisations.reduce((s, c) => s + c.montant, 0);
+  const totalCotise = cotisations.reduce((s, c) => s + Number(c.montant || 0), 0);
 
   const message = `⚠️ RETRAIT DE MEMBRE ⚠️\n\n` +
                   `👤 Membre: "${membre.nom}"\n` +
                   `📌 Tontine: "${tontineActive.nom}"\n` +
-                  `📅 Depuis: ${membre.dateAjout ? new Date(membre.dateAjout).toLocaleDateString('fr-FR') : '-'}\n\n` +
+                  `📅 Depuis: ${membre.cree_le ? new Date(membre.cree_le).toLocaleDateString('fr-FR') : '-'}\n\n` +
                   `💰 Cotisations enregistrées: ${cotisationsCount}\n` +
                   `💵 Total cotisé: ${totalCotise.toLocaleString()} FCFA\n\n` +
                   `⚠️ Toutes ses cotisations seront supprimées définitivement.\n\n` +
@@ -2652,12 +2656,11 @@ async function retirerMembreTontine(membreId, tontineId) {
 
     // 2️⃣ Mise à jour locale (optimiste)
     tontineActive.membres = tontineActive.membres.filter(m => m.id !== membreId);
-    tontineActive.cotisations = tontineActive.cotisations?.filter(c => c.membreId !== membreId) || [];
+    tontineActive.cotisations = (tontineActive.cotisations || []).filter(c => c.membre_id !== membreId);
 
-    if (membre.aGagne) {
-      tontineActive.gagnants = tontineActive.gagnants?.filter(g => g.gagnantId !== membreId) || [];
-      tontineActive.tirages = tontineActive.tirages?.filter(t => t.gagnantId !== membreId) || [];
-    }
+    // Vérifier si ce membre était déjà gagnant
+    tontineActive.gagnants = (tontineActive.gagnants || []).filter(g => g.membre_id !== membreId);
+    tontineActive.tirages = (tontineActive.tirages || []).filter(t => t.membre_id !== membreId);
 
     // 3️⃣ Rafraîchir affichages
     if (pageActuelle === 'gestion') {
