@@ -445,7 +445,7 @@ label { font-size: 0.95rem; font-weight: 600; }
 </head>
 
 <body>
-  
+
     <!-- En-tête avec effet glass -->
 <header class="header-glass sticky top-0 z-50 mb-3 sm:mb-6">
   <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-5">
@@ -540,14 +540,7 @@ label { font-size: 0.95rem; font-weight: 600; }
   <button type="submit" class="btn-gradient w-full py-4 rounded-xl text-lg font-bold">
     🔐 Se connecter
   </button>
-
-  <button 
-    type="button" 
-    onclick="testerBackend()" 
-    class="btn-gradient w-full py-3 rounded-xl font-medium bg-blue-600 hover:bg-blue-700 text-white"
-  >
-    ⚡ Tester Backend
-  </button>
+  
 </form>
 
                         
@@ -1202,34 +1195,6 @@ async function apiFetch(url, options = {}) {
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZjZWZzYnBxeXlteGdqYWlqYmthIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU4MjQ2NTQsImV4cCI6MjA3MTQwMDY1NH0.B_Ys0FuZv5FPkFs8LkX_hNxW-MrXcKvI36owIE-eO8M';
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  async function testerBackend() {
-  // 1. Connexion (ou inscription si le compte n’existe pas encore)
-  const { data, error } = await sb.auth.signInWithPassword({
-    email: "testuser@example.com",   // remplace par un vrai email
-    password: "motdepasse123"        // remplace par ton mot de passe
-  });
-
-  if (error) {
-    console.error("Erreur connexion:", error);
-    alert("❌ Connexion impossible: " + error.message);
-    return;
-  }
-
-  // 2. Récupérer le token JWT
-  const token = data.session.access_token;
-  console.log("✅ Token JWT:", token);
-
-  // 3. Appeler ton backend Render
-  const res = await fetch("https://ma-tontine-backend.onrender.com/api/tontines", {
-    headers: {
-      "Authorization": `Bearer ${token}`
-    }
-  });
-
-  const json = await res.json();
-  console.log("📡 Réponse backend:", json);
-  alert("Backend OK ! Réponse: " + JSON.stringify(json));
-}
 
 </script>
 
@@ -3042,306 +3007,203 @@ function remplirTableauPerformance(performance) {
   }
 }
         
-        async function genererResumeAlertes() {
-  const alertesActuelles = await mettreAJourAlertes();
-  const resume = document.getElementById('resumeAlertes');
+        // 📊 Générer le résumé des alertes (données backend)
+async function genererResumeAlertes() {
+  try {
+    const alertesActuelles = await mettreAJourAlertes(); // récupère depuis /alertes
+    const resume = document.getElementById('resumeAlertes');
 
-  if (!Array.isArray(alertesActuelles)) return; // sécurité
+    if (!Array.isArray(alertesActuelles)) return;
 
-  const retards = alertesActuelles.filter(a => a.type === 'retard');
-  const tirages = alertesActuelles.filter(a => a.type === 'tirage');
-  
-            const cyclesRetard = tontines.filter(t => {
-                const eligibles = t.membres.filter(m => !m.aGagne);
-                return eligibles.length > 0 && !verifierDateTiragePossible(t) && verifierCotisationsCompletes(t);
-            }).length;
-            
-            const paiementsAttente = tontines.reduce((sum, t) => {
-                const tousOntGagne = t.membres.every(m => m.aGagne);
-                if (tousOntGagne) return sum;
-                
-                const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], t.frequenceCotisation);
-                return sum + t.membres.filter(m => {
-                    return !m.cotisationsPayees.some(c => {
-                        const periodeCotisation = obtenirPeriodeCotisation(c.date, t.frequenceCotisation);
-                        return periodeCotisation === periodeActuelle;
-                    });
-                }).length;
-            }, 0);
-            
-            resume.innerHTML = `
-                <div class="bg-gradient-to-r from-red-100 to-red-200 p-4 rounded-xl text-center">
-                    <div class="text-2xl font-bold text-red-600">${retards.length}</div>
-                    <div class="text-sm text-red-700 font-medium">⚠️ Retards de paiement</div>
-                    <div class="text-xs text-red-600 mt-1">${retards.filter(r => r.urgence === 'haute').length} urgents</div>
-                </div>
-                <div class="bg-gradient-to-r from-yellow-100 to-yellow-200 p-4 rounded-xl text-center">
-                    <div class="text-2xl font-bold text-yellow-600">${cyclesRetard}</div>
-                    <div class="text-sm text-yellow-700 font-medium">⏳ Cycles en retard</div>
-                    <div class="text-xs text-yellow-600 mt-1">Tirages en attente</div>
-                </div>
-                <div class="bg-gradient-to-r from-blue-100 to-blue-200 p-4 rounded-xl text-center">
-                    <div class="text-2xl font-bold text-blue-600">${paiementsAttente}</div>
-                    <div class="text-sm text-blue-700 font-medium">💳 Paiements en attente</div>
-                    <div class="text-xs text-blue-600 mt-1">Membres à jour</div>
-                </div>
-                <div class="bg-gradient-to-r from-green-100 to-green-200 p-4 rounded-xl text-center">
-                    <div class="text-2xl font-bold text-green-600">${tirages.length}</div>
-                    <div class="text-sm text-green-700 font-medium">🎲 Tirages disponibles</div>
-                    <div class="text-xs text-green-600 mt-1">${tirages.filter(t => t.estPremierTirage).length} premiers tirages</div>
-                </div>
-            `;
-        }
+    // 🔹 Compter par type
+    const retards = alertesActuelles.filter(a => a.type === 'retard');
+    const tirages = alertesActuelles.filter(a => a.type === 'tirage');
+    const cyclesRetard = alertesActuelles.filter(a => a.type === 'cycle_retard');
+    const paiementsAttente = alertesActuelles.filter(a => a.type === 'paiement_attente');
+
+    resume.innerHTML = `
+      <div class="bg-gradient-to-r from-red-100 to-red-200 p-4 rounded-xl text-center">
+          <div class="text-2xl font-bold text-red-600">${retards.length}</div>
+          <div class="text-sm text-red-700 font-medium">⚠️ Retards de paiement</div>
+          <div class="text-xs text-red-600 mt-1">${retards.filter(r => r.urgence === 'haute').length} urgents</div>
+      </div>
+      <div class="bg-gradient-to-r from-yellow-100 to-yellow-200 p-4 rounded-xl text-center">
+          <div class="text-2xl font-bold text-yellow-600">${cyclesRetard.length}</div>
+          <div class="text-sm text-yellow-700 font-medium">⏳ Cycles en retard</div>
+          <div class="text-xs text-yellow-600 mt-1">Tirages en attente</div>
+      </div>
+      <div class="bg-gradient-to-r from-blue-100 to-blue-200 p-4 rounded-xl text-center">
+          <div class="text-2xl font-bold text-blue-600">${paiementsAttente.length}</div>
+          <div class="text-sm text-blue-700 font-medium">💳 Paiements en attente</div>
+          <div class="text-xs text-blue-600 mt-1">Membres à jour</div>
+      </div>
+      <div class="bg-gradient-to-r from-green-100 to-green-200 p-4 rounded-xl text-center">
+          <div class="text-2xl font-bold text-green-600">${tirages.length}</div>
+          <div class="text-sm text-green-700 font-medium">🎲 Tirages disponibles</div>
+          <div class="text-xs text-green-600 mt-1">${tirages.filter(t => t.estPremierTirage).length || 0} premiers tirages</div>
+      </div>
+    `;
+  } catch (err) {
+    console.error("❌ Erreur résumé alertes:", err);
+  }
+}
 
         // Système d'alertes intelligentes automatiques
-        // 🔔 Système d'alertes intelligentes automatiques
+       // 🔔 Mettre à jour les alertes en appelant ton backend
 async function mettreAJourAlertes() {
-  if (!utilisateurConnecte) return [];
+  try {
+    const res = await apiFetch(`${API_BASE}/alertes`);
+    if (!res.ok) throw new Error("Erreur récupération alertes");
 
-  // 1. Charger les alertes existantes depuis Supabase
-  const { data: alertesExistantes, error: errLoad } = await sb
-    .from('alertes')
-    .select('*')
-    .eq('utilisateurId', utilisateurConnecte.id);
+    const alertes = await res.json();
 
-  if (errLoad) {
-    console.error("❌ Erreur chargement alertes:", errLoad);
+    // ✅ mettre à jour badge
+    mettreAJourBadgeAlertes(alertes);
+
+    return alertes;
+  } catch (err) {
+    console.error("❌ Erreur mettreAJourAlertes:", err);
     return [];
   }
-
-  let nouvellesAlertes = [];
-
-  // 2. Vérifier les tontines actives
-  tontines.forEach(tontine => {
-    if (tontine.statut !== 'active') return;
-
-    const tousOntGagne = tontine.membres.every(m => m.aGagne);
-
-    // ⚠️ Retards cotisations
-    if (!tousOntGagne) {
-      tontine.membres.forEach(membre => {
-        const periodeActuelle = obtenirPeriodeCotisation(
-          new Date().toISOString().split('T')[0],
-          tontine.frequenceCotisation
-        );
-
-        const aCotise = membre.cotisationsPayees.some(
-          c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle
-        );
-
-        const dejaAlerte = alertesExistantes?.some(
-          a => a.type === 'retard' && a.membreId === membre.id && a.tontineId === tontine.id
-        );
-
-        if (!aCotise && !dejaAlerte) {
-          const joursRetard = membre.cotisationsPayees.length === 0
-            ? Math.floor((new Date() - new Date(membre.dateAjout)) / 86400000)
-            : Math.floor((new Date() - new Date(membre.cotisationsPayees.at(-1).date)) / 86400000);
-
-          nouvellesAlertes.push({
-            type: 'retard',
-            tontineId: tontine.id,
-            membreId: membre.id,
-            message: `${membre.nom} est en retard de ${joursRetard} jour(s) pour "${tontine.nom}"`,
-            urgence: joursRetard > 7 ? 'haute' : 'moyenne',
-            utilisateurId: utilisateurConnecte.id,
-            dateCreation: new Date().toISOString()
-          });
-        }
-      });
-    }
-
-    // 🎲 Tirages disponibles
-    const cotisationsOK = tontine.membres.every(m => {
-      const periodeActuelle = obtenirPeriodeCotisation(new Date().toISOString().split('T')[0], tontine.frequenceCotisation);
-      return m.cotisationsPayees.some(c => obtenirPeriodeCotisation(c.date, tontine.frequenceCotisation) === periodeActuelle);
-    });
-
-    if (cotisationsOK) {
-      const dejaAlerteTirage = alertesExistantes?.some(
-        a => a.type === 'tirage' && a.tontineId === tontine.id
-      );
-      if (!dejaAlerteTirage) {
-        nouvellesAlertes.push({
-          type: 'tirage',
-          tontineId: tontine.id,
-          message: `Tirage possible pour "${tontine.nom}"`,
-          urgence: 'basse',
-          utilisateurId: utilisateurConnecte.id,
-          dateCreation: new Date().toISOString()
-        });
-      }
-    }
-  });
-
-  // 3. Insérer les nouvelles alertes dans Supabase
-  if (nouvellesAlertes.length > 0) {
-    const { error: errInsert } = await sb.from('alertes').insert(nouvellesAlertes);
-    if (errInsert) console.error("❌ Erreur insertion alertes:", errInsert);
-  }
-
-  // 4. Retourner l’ensemble
-  return [...(alertesExistantes || []), ...nouvellesAlertes];
 }
         
-       function mettreAJourBadgeAlertes(alertesActuelles = []) {
-  const badge = document.getElementById('badgeAlertes');
+      // 🎯 Badge dynamique
+function mettreAJourBadgeAlertes(alertesActuelles = []) {
+  const badge = document.getElementById("badgeAlertes");
   if (alertesActuelles && alertesActuelles.length > 0) {
     badge.textContent = alertesActuelles.length;
-    badge.classList.remove('hidden');
+    badge.classList.remove("hidden");
   } else {
-    badge.classList.add('hidden');
+    badge.classList.add("hidden");
   }
 }
 
-
-        function verifierAlertes() {
-            return mettreAJourAlertes();
-        }
-
-       async function afficherAlertes() {
-  if (!utilisateurConnecte) return;
-
-  // Charger les alertes de Supabase
-  const { data: alertesActuelles, error } = await sb
-    .from('alertes')
-    .select('*')
-    .eq('utilisateurId', utilisateurConnecte.id)
-    .order('datecreation', { ascending: false });
-
-  if (error) {
-    console.error("Erreur récupération alertes:", error);
-    return;
-  }
-
-  const liste = document.getElementById('listeAlertes');
-  liste.innerHTML = '';
-
-  if (!alertesActuelles || alertesActuelles.length === 0) {
-    liste.innerHTML = `
-      <div class="text-center py-16">
-          <div class="text-8xl mb-6 floating-animation">✅</div>
-          <h3 class="text-3xl font-bold text-gray-700 mb-4">Aucune alerte active</h3>
-          <p class="text-gray-600 text-lg mb-4">Toutes les tontines sont bien gérées !</p>
-          <div class="bg-gradient-to-r from-green-100 to-blue-100 p-6 rounded-xl max-w-md mx-auto">
-              <div class="text-sm text-gray-700">
-                  <div class="font-semibold mb-2">🎯 Système d'alertes intelligent :</div>
-                  <div class="space-y-1 text-left">
-                      <div>• Validation automatique des tirages</div>
-                      <div>• Nettoyage des alertes obsolètes</div>
-                      <div>• Suivi des membres éligibles uniquement</div>
-                  </div>
-              </div>
-          </div>
-      </div>
-    `;
-    // ✅ Badge à zéro
-    document.getElementById('badgeAlertes').classList.add('hidden');
-    return;
-  }
-
-  // Trier par urgence puis par type
-  const urgenceOrder = { 'haute': 4, 'moyenne': 3, 'basse': 2 };
-  const typeOrder = { 'tirage': 4, 'retard': 3, 'cycle_retard': 2, 'paiement_attente': 1 };
-
-  alertesActuelles.sort((a, b) => {
-    if (urgenceOrder[a.urgence] !== urgenceOrder[b.urgence]) {
-      return urgenceOrder[b.urgence] - urgenceOrder[a.urgence];
-    }
-    return typeOrder[b.type] - typeOrder[a.type];
-  });
-
-  // Affichage
-  alertesActuelles.forEach((alerte, index) => {
-    let couleur, icone, details = '';
-
-    if (alerte.type === 'retard') {
-      couleur = alerte.urgence === 'haute' ? 'from-red-600 to-red-700' : 'from-orange-500 to-red-500';
-      icone = alerte.urgence === 'haute' ? '🚨' : '⚠️';
-      details = `<div class="text-sm opacity-90 mt-2">⏰ Urgence: ${alerte.urgence}</div>`;
-    } 
-    else if (alerte.type === 'tirage') {
-      couleur = 'from-blue-500 to-green-500';
-      icone = '🎲';
-      details = `<div class="text-sm opacity-90 mt-2">🎉 Tirage disponible</div>`;
-    } 
-    else if (alerte.type === 'cycle_retard') {
-      couleur = 'from-yellow-500 to-orange-500';
-      icone = '⏳';
-      details = `<div class="text-sm opacity-90 mt-2">📊 Cycle en retard</div>`;
-    } 
-    else {
-      couleur = 'from-gray-500 to-gray-600';
-      icone = 'ℹ️';
-    }
-
-    const div = document.createElement('div');
-    div.className = `bg-gradient-to-r ${couleur} p-6 rounded-2xl text-white fade-in-up mb-6 shadow-lg`;
-    div.style.animationDelay = `${index * 0.1}s`;
-
-    // ✅ on ajoute l'attribut data-alerte-id
-    div.setAttribute("data-alerte-id", alerte.id);
-
-    div.innerHTML = `
-      <div class="flex items-start justify-between">
-          <div class="flex items-start flex-1">
-              <span class="text-4xl mr-4 floating-animation" style="animation-delay: ${index * 0.2}s">${icone}</span>
-              <div class="flex-1">
-                  <div class="font-bold text-xl mb-1">${alerte.message}</div>
-                  <div class="text-sm opacity-75 mb-2">📋 Tontine ID: ${alerte.tontineId}</div>
-                  ${details}
-                  <div class="text-xs opacity-60 mt-3">
-                      🕒 Créée le ${new Date(alerte.dateCreation).toLocaleDateString('fr-FR')} à ${new Date(alerte.dateCreation).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}
-                  </div>
-              </div>
-          </div>
-          <div class="flex flex-col gap-2 ml-4">
-              <button onclick="supprimerAlerte('${alerte.id}')" 
-                      class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
-                  ❌ Ignorer
-              </button>
-          </div>
-      </div>
-    `;
-    liste.appendChild(div);
-  });
-
-  // ✅ Mise à jour badge (une seule fois)
-  const badge = document.getElementById('badgeAlertes');
-  badge.textContent = alertesActuelles.length;
-  badge.classList.remove('hidden');
+// 🔎 Vérifier les alertes (simple proxy)
+function verifierAlertes() {
+  return mettreAJourAlertes();
 }
 
-        function allerAuTirage(tontineId) {
+      async function afficherAlertes() {
+  try {
+    const res = await apiFetch(`${API_BASE}/alertes`);
+    if (!res.ok) throw new Error("Erreur récupération alertes");
+    const alertesActuelles = await res.json();
+
+    const liste = document.getElementById("listeAlertes");
+    liste.innerHTML = "";
+
+    if (!alertesActuelles || alertesActuelles.length === 0) {
+      liste.innerHTML = `
+        <div class="text-center py-16">
+            <div class="text-8xl mb-6 floating-animation">✅</div>
+            <h3 class="text-3xl font-bold text-gray-700 mb-4">Aucune alerte active</h3>
+            <p class="text-gray-600 text-lg mb-4">Toutes les tontines sont bien gérées !</p>
+        </div>
+      `;
+      document.getElementById("badgeAlertes").classList.add("hidden");
+      return;
+    }
+
+    // Trier par urgence puis type
+    const urgenceOrder = { haute: 4, moyenne: 3, basse: 2 };
+    const typeOrder = { tirage: 4, retard: 3, cycle_retard: 2, paiement_attente: 1 };
+
+    alertesActuelles.sort((a, b) => {
+      if (urgenceOrder[a.urgence] !== urgenceOrder[b.urgence]) {
+        return urgenceOrder[b.urgence] - urgenceOrder[a.urgence];
+      }
+      return (typeOrder[b.type] || 0) - (typeOrder[a.type] || 0);
+    });
+
+    // Affichage
+    alertesActuelles.forEach((alerte, index) => {
+      let couleur, icone, details = "";
+
+      if (alerte.type === "retard") {
+        couleur = alerte.urgence === "haute" ? "from-red-600 to-red-700" : "from-orange-500 to-red-500";
+        icone = alerte.urgence === "haute" ? "🚨" : "⚠️";
+        details = `<div class="text-sm opacity-90 mt-2">⏰ Urgence: ${alerte.urgence}</div>`;
+      } else if (alerte.type === "tirage") {
+        couleur = "from-blue-500 to-green-500";
+        icone = "🎲";
+        details = `<div class="text-sm opacity-90 mt-2">🎉 Tirage disponible</div>`;
+      } else if (alerte.type === "cycle_retard") {
+        couleur = "from-yellow-500 to-orange-500";
+        icone = "⏳";
+        details = `<div class="text-sm opacity-90 mt-2">📊 Cycle en retard</div>`;
+      } else {
+        couleur = "from-gray-500 to-gray-600";
+        icone = "ℹ️";
+      }
+
+      const div = document.createElement("div");
+      div.className = `bg-gradient-to-r ${couleur} p-6 rounded-2xl text-white fade-in-up mb-6 shadow-lg`;
+      div.style.animationDelay = `${index * 0.1}s`;
+      div.setAttribute("data-alerte-id", alerte.id); // pour suppression
+
+      div.innerHTML = `
+        <div class="flex items-start justify-between">
+            <div class="flex items-start flex-1">
+                <span class="text-4xl mr-4 floating-animation">${icone}</span>
+                <div class="flex-1">
+                    <div class="font-bold text-xl mb-1">${alerte.message}</div>
+                    <div class="text-sm opacity-75 mb-2">📋 Tontine ID: ${alerte.tontineId}</div>
+                    ${details}
+                    <div class="text-xs opacity-60 mt-3">
+                        🕒 Créée le ${new Date(alerte.dateCreation).toLocaleDateString("fr-FR")} à ${new Date(alerte.dateCreation).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col gap-2 ml-4">
+                <button onclick="supprimerAlerte('${alerte.id}')"
+                        class="bg-white bg-opacity-20 hover:bg-opacity-30 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap">
+                    ❌ Ignorer
+                </button>
+            </div>
+        </div>
+      `;
+      liste.appendChild(div);
+    });
+
+    // ✅ Badge
+    mettreAJourBadgeAlertes(alertesActuelles);
+  } catch (err) {
+    console.error("❌ Erreur afficherAlertes:", err);
+  }
+}
+        
+      async function supprimerAlerte(alerteId) {
+  try {
+    const res = await apiFetch(`${API_BASE}/alertes/${alerteId}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Erreur suppression alerte");
+
+    // ✅ Retirer du DOM directement
+    const el = document.querySelector(`[data-alerte-id="${alerteId}"]`);
+    if (el) el.remove();
+
+    // ✅ Mettre à jour le badge
+    const badge = document.getElementById("badgeAlertes");
+    const actuel = parseInt(badge.textContent || "0", 10);
+
+    if (actuel > 1) {
+      badge.textContent = actuel - 1;
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+
+    console.log(`✅ Alerte ${alerteId} supprimée`);
+  } catch (err) {
+    console.error("❌ Erreur suppression alerte:", err);
+    alert("Impossible de supprimer l’alerte");
+  }
+}
+
+ function allerAuTirage(tontineId) {
             ouvrirPage('tirages');
             document.getElementById('selectTontineTirage').value = tontineId;
             chargerTontineTirage();
         }
-        
-       async function supprimerAlerte(alerteId) {
-  const { error } = await sb.from('alertes').delete().eq('id', alerteId);
-  if (error) {
-    alert("Erreur suppression: " + error.message);
-    return;
-  }
-
-  // ✅ Retirer du DOM directement
-  const el = document.querySelector(`[data-alerte-id="${alerteId}"]`);
-  if (el) el.remove();
-
-  // ✅ Mettre à jour le badge en décrémentant
-  const badge = document.getElementById('badgeAlertes');
-  const actuel = parseInt(badge.textContent || "0", 10);
-
-  if (actuel > 1) {
-    badge.textContent = actuel - 1;
-    badge.classList.remove('hidden');
-  } else {
-    badge.classList.add('hidden');
-  }
-
-  console.log(`✅ Alerte ${alerteId} supprimée`);
-}
 
         // Fonction pour calculer le cycle actuel
         function obtenirCycleActuel(tontine) {
