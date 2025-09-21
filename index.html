@@ -1696,27 +1696,34 @@ function afficherErreur(msg) {
   setTimeout(() => div.remove(), 3000);
 }
 
+async function getUserProfile() {
+  try {
+    const res = await fetch(`${API_BASE}/utilisateurs/me`, {
+      credentials: "include"
+    });
+    if (!res.ok) throw new Error("Non connecté");
+    return await res.json();
+  } catch (err) {
+    console.error("❌ Erreur profil:", err);
+    return { nom_complet: "Utilisateur" };
+  }
+}
+
 async function majEntete() {
   try {
-    const token = localStorage.getItem("token"); // si tu utilises JWT
-    const res = await fetch(`${API_BASE}/stats/overview`, {
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": token ? `Bearer ${token}` : ""
-      }
-    });
+    // 🔹 Charger stats
+    const stats = await getStatsOverview();
 
-    if (!res.ok) throw new Error("Erreur chargement stats");
+    // 🔹 Charger profil utilisateur
+    const user = await getUserProfile();
 
-    const stats = await res.json();
-
-    // ✅ Mettre à jour l'affichage
-    document.getElementById("nombreTontines").textContent = stats.tontines_actives || 0;
-    document.getElementById("nomUtilisateur").textContent = localStorage.getItem("username") || "Utilisateur";
-
+    // Mettre à jour DOM
+    document.getElementById("nomUtilisateur").textContent =
+      user.nom_complet || "Utilisateur";
+    document.getElementById("nombreTontines").textContent =
+      stats.tontines_actives || 0;
   } catch (err) {
-    console.error("❌ Erreur mise à jour en-tête:", err);
-    document.getElementById("nombreTontines").textContent = "0";
+    console.error("❌ Erreur mise à jour entête:", err);
   }
 }
 
