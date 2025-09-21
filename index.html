@@ -1698,8 +1698,12 @@ function afficherErreur(msg) {
 
 async function getUserProfile() {
   try {
+    const token = localStorage.getItem("token"); 
     const res = await fetch(`${API_BASE}/utilisateurs/me`, {
-      credentials: "include"
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`
+      }
     });
     if (!res.ok) throw new Error("Non connecté");
     return await res.json();
@@ -1708,6 +1712,7 @@ async function getUserProfile() {
     return { nom_complet: "Utilisateur" };
   }
 }
+
 
 async function majEntete() {
   try {
