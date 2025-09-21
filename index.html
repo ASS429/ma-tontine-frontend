@@ -1263,6 +1263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await chargerDepuisSupabase();
       initialiserApplication();
       afficherInterfaceConnectee();
+      majEntete();
     } catch (err) {
       console.warn("⚠️ Token invalide:", err.message);
       await seDeconnecter(true);
@@ -1693,6 +1694,30 @@ function afficherErreur(msg) {
   parent.insertBefore(div, parent.firstChild);
 
   setTimeout(() => div.remove(), 3000);
+}
+
+async function majEntete() {
+  try {
+    const token = localStorage.getItem("token"); // si tu utilises JWT
+    const res = await fetch(`${API_BASE}/stats/overview`, {
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": token ? `Bearer ${token}` : ""
+      }
+    });
+
+    if (!res.ok) throw new Error("Erreur chargement stats");
+
+    const stats = await res.json();
+
+    // ✅ Mettre à jour l'affichage
+    document.getElementById("nombreTontines").textContent = stats.tontines_actives || 0;
+    document.getElementById("nomUtilisateur").textContent = localStorage.getItem("username") || "Utilisateur";
+
+  } catch (err) {
+    console.error("❌ Erreur mise à jour en-tête:", err);
+    document.getElementById("nombreTontines").textContent = "0";
+  }
 }
 
 // Création finale (uniquement à l’étape 4)
