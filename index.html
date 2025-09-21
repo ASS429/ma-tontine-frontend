@@ -3049,15 +3049,19 @@ async function genererResumeAlertes() {
 }
 
         // Système d'alertes intelligentes automatiques
-       // 🔔 Mettre à jour les alertes en appelant ton backend
+// 🔔 Mettre à jour les alertes depuis le backend (génération + récupération)
 async function mettreAJourAlertes() {
   try {
+    // Étape 1️⃣ : Générer les alertes dynamiques en DB
+    await apiFetch(`${API_BASE}/alertes/generer`, { method: "POST" });
+
+    // Étape 2️⃣ : Récupérer les alertes persistées
     const res = await apiFetch(`${API_BASE}/alertes`);
     if (!res.ok) throw new Error("Erreur récupération alertes");
 
     const alertes = await res.json();
 
-    // ✅ mettre à jour badge
+    // ✅ Mettre à jour le badge
     mettreAJourBadgeAlertes(alertes);
 
     return alertes;
@@ -3066,6 +3070,7 @@ async function mettreAJourAlertes() {
     return [];
   }
 }
+
         
       // 🎯 Badge dynamique
 function mettreAJourBadgeAlertes(alertesActuelles = []) {
@@ -3083,11 +3088,9 @@ function verifierAlertes() {
   return mettreAJourAlertes();
 }
 
-      async function afficherAlertes() {
+     async function afficherAlertes() {
   try {
-    const res = await apiFetch(`${API_BASE}/alertes`);
-    if (!res.ok) throw new Error("Erreur récupération alertes");
-    const alertesActuelles = await res.json();
+    const alertesActuelles = await mettreAJourAlertes(); // maintenant génère + récupère
 
     const liste = document.getElementById("listeAlertes");
     liste.innerHTML = "";
