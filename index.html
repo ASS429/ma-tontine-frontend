@@ -1082,32 +1082,42 @@ label { font-size: 0.95rem; font-weight: 600; }
     </div>
 
     <!-- Modale d'édition de membre -->
-    <div id="modaleEditionMembre" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
-        <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 max-w-md w-full card-premium">
-            <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">✏️ Éditer le Membre</h3>
-            
-            <div class="space-y-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Nom du membre</label>
-                    <input type="text" id="editNomMembre" class="form-input w-full">
-                </div>
-                
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Date d'ajout</label>
-                    <input type="date" id="editDateAjoutMembre" class="form-input w-full">
-                </div>
-            </div>
-            
-            <div class="flex gap-4 mt-8">
-                <button onclick="fermerModaleEditionMembre()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-6 rounded-xl font-medium transition-colors">
-                    Annuler
-                </button>
-                <button onclick="sauvegarderEditionMembre()" class="flex-1 btn-gradient btn-success py-3 px-6 rounded-xl font-medium">
-                    ✅ Sauvegarder
-                </button>
-            </div>
-        </div>
+<div id="modaleEditionMembre" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
+  <div class="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-6 md:p-8 max-w-md w-full card-premium">
+    <h3 class="text-2xl font-bold text-gray-800 mb-6 text-center">✏️ Éditer le Membre</h3>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Nom du membre</label>
+        <input type="text" id="editNomMembre" class="form-input w-full">
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Téléphone</label>
+        <input type="text" id="editTelephoneMembre" class="form-input w-full" placeholder="+221 77 123 45 67">
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Adresse</label>
+        <input type="text" id="editAdresseMembre" class="form-input w-full" placeholder="Dakar, Sénégal">
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-2">Date d'ajout</label>
+        <input type="date" id="editDateAjoutMembre" class="form-input w-full">
+      </div>
     </div>
+
+    <div class="flex gap-4 mt-8">
+      <button onclick="fermerModaleEditionMembre()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-6 rounded-xl font-medium transition-colors">
+        Annuler
+      </button>
+      <button onclick="sauvegarderEditionMembre()" class="flex-1 btn-gradient btn-success py-3 px-6 rounded-xl font-medium">
+        ✅ Sauvegarder
+      </button>
+    </div>
+  </div>
+</div>
 
     <!-- Modale d'édition de cotisation -->
     <div id="modaleEditionCotisation" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
@@ -2102,7 +2112,7 @@ async function afficherMembresTontine() {
   // 🔹 Charger membres + cotisations
   const { data, error } = await sb
     .from('membres')
-    .select('id, nom, cree_le, cotisations (id, montant, date_cotisation)')
+    .select('id, nom, telephone, adresse, cree_le, cotisations (id, montant, date_cotisation)')
     .eq('tontine_id', tontineId);
 
   if (error) {
@@ -2142,26 +2152,29 @@ async function afficherMembresTontine() {
         <h3 class="font-bold text-xl text-gray-800 mb-2">${membre.nom}</h3>
         <span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full text-sm font-semibold">Actif</span>
       </div>
-      <div class="space-y-4">
-        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-          <span class="text-gray-600 font-medium">Cotisations:</span>
-          <span class="font-bold text-lg">${cotisationsCount}</span>
+      <div class="space-y-4 text-sm">
+        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+          <span>📞 Téléphone:</span><span class="font-medium">${membre.telephone || "-"}</span>
         </div>
-        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-          <span class="text-gray-600 font-medium">Total cotisé:</span>
-          <span class="font-bold text-lg text-green-600">${totalCotise.toLocaleString()} FCFA</span>
+        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+          <span>📍 Adresse:</span><span class="font-medium">${membre.adresse || "-"}</span>
         </div>
-        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-          <span class="text-gray-600 font-medium">Membre depuis:</span>
-          <span class="font-bold">${membre.dateAjout ? new Date(membre.dateAjout).toLocaleDateString('fr-FR') : '-'}</span>
+        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+          <span>Cotisations:</span><span class="font-bold">${cotisationsCount}</span>
+        </div>
+        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+          <span>Total cotisé:</span><span class="font-bold text-green-600">${totalCotise.toLocaleString()} FCFA</span>
+        </div>
+        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+          <span>Membre depuis:</span><span>${membre.dateAjout ? new Date(membre.dateAjout).toLocaleDateString('fr-FR') : '-'}</span>
         </div>
       </div>
       <div class="flex gap-3 mt-6 pt-4 border-t">
         <button onclick="ouvrirModaleEditionMembre('${membre.id}')" 
-        class="flex-1 btn-gradient py-3 rounded-xl font-medium" 
-        style="background: var(--warning-gradient)">
-  ✏️ Éditer
-</button>
+                class="flex-1 btn-gradient py-3 rounded-xl font-medium" 
+                style="background: var(--warning-gradient)">
+          ✏️ Éditer
+        </button>
         <button onclick="retirerMembreTontine('${membre.id}', '${tontineId}')" 
                 class="flex-1 btn-gradient btn-danger py-3 rounded-xl font-medium">
           🗑️ Retirer
@@ -2180,15 +2193,20 @@ async function ajouterMembreTontine() {
     return alert("⚠️ Aucune tontine active !");
   }
 
-  const input = document.getElementById("nomMembre");
-  const nom = input.value.trim();
-  if (!nom) return alert("⚠️ Veuillez entrer un nom de membre");
+  const nom = document.getElementById("nomMembre").value.trim();
+  const telephone = document.getElementById("telephoneMembre").value.trim();
+  const adresse = document.getElementById("adresseMembre").value.trim();
+
+  if (!nom || !telephone || !adresse) {
+    return alert("⚠️ Veuillez remplir tous les champs (nom, téléphone, adresse)");
+  }
 
   try {
     // 1️⃣ Ajout côté backend Express
     const res = await apiFetch(`${API_BASE}/membres`, {
       method: "POST",
-      body: JSON.stringify({ tontineId: tontineActive.id, nom })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ tontineId: tontineActive.id, nom, telephone, adresse })
     });
 
     if (!res.ok) {
@@ -2202,6 +2220,8 @@ async function ajouterMembreTontine() {
     tontineActive.membres.push({
       id: newMembre.id,
       nom: newMembre.nom,
+      telephone: newMembre.telephone,
+      adresse: newMembre.adresse,
       dateAjout: newMembre.cree_le
         ? new Date(newMembre.cree_le).toISOString()
         : null,
@@ -2210,7 +2230,10 @@ async function ajouterMembreTontine() {
     });
 
     // 3️⃣ Rafraîchir affichages
-    input.value = "";
+    document.getElementById("nomMembre").value = "";
+    document.getElementById("telephoneMembre").value = "";
+    document.getElementById("adresseMembre").value = "";
+
     afficherMembresTontineGestion?.();
     alert(`✅ Membre "${nom}" ajouté avec succès !`);
   } catch (err) {
@@ -2245,7 +2268,6 @@ function afficherMembresTontineGestion() {
 
   container.innerHTML = "";
 
-  // ⚠️ Aucun membre
   if (!tontineActive || !tontineActive.membres || tontineActive.membres.length === 0) {
     container.innerHTML = `
       <div class="col-span-full text-center py-12">
@@ -2256,14 +2278,10 @@ function afficherMembresTontineGestion() {
     return;
   }
 
-  // 🔄 Afficher chaque membre
   tontineActive.membres.forEach((m, index) => {
-    // ✅ Cotisations liées à ce membre
     const cotisationsMembre = (tontineActive.cotisations || []).filter(c => c.membre_id === m.id);
     const cotisationsCount = cotisationsMembre.length;
     const totalCotise = cotisationsMembre.reduce((s, c) => s + Number(c.montant || 0), 0);
-
-    // ✅ Vérifier si le membre a déjà gagné
     const aGagne = (tontineActive.tirages || []).some(t => t.membre_id === m.id);
 
     const div = document.createElement("div");
@@ -2282,7 +2300,14 @@ function afficherMembresTontineGestion() {
           ${aGagne ? "🎉 Gagnant" : "Actif"}
         </span>
       </div>
+
       <div class="space-y-2 text-sm">
+        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+          <span>📞 Téléphone:</span><span class="font-medium">${m.telephone || "-"}</span>
+        </div>
+        <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+          <span>📍 Adresse:</span><span class="font-medium">${m.adresse || "-"}</span>
+        </div>
         <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
           <span>Cotisations:</span><span class="font-bold">${cotisationsCount}</span>
         </div>
@@ -2293,13 +2318,14 @@ function afficherMembresTontineGestion() {
           <span>Membre depuis:</span><span>${m.cree_le ? new Date(m.cree_le).toLocaleDateString("fr-FR") : "-"}</span>
         </div>
       </div>
+
       <div class="flex gap-2 mt-4 pt-3 border-t">
         <button onclick="ouvrirModaleEditionMembre('${m.id}')"
                 class="flex-1 btn-gradient py-2 rounded-lg text-sm font-medium"
                 style="background: var(--warning-gradient)">
-          ✏️ Éditer
+          ✏️ Modifier
         </button>
-        <button onclick="retirerMembreTontine('${m.id}', '${tontineActive.id}')" 
+        <button onclick="retirerMembreTontine('${m.id}', '${tontineActive.id}')"
                 class="flex-1 btn-gradient btn-danger py-2 rounded-lg text-sm font-medium">
           🗑️ Retirer
         </button>
@@ -2309,7 +2335,6 @@ function afficherMembresTontineGestion() {
     container.appendChild(div);
   });
 
-  // 🔄 Remplir aussi le <select> pour cotisations
   const select = document.getElementById("selectMembreCotisation");
   if (select) {
     select.innerHTML = '<option value="">Choisir un membre</option>';
@@ -2318,7 +2343,6 @@ function afficherMembresTontineGestion() {
     });
   }
 }
-
 
 // ➤ Supprimer un membre (via backend + synchro locale)
 async function supprimerMembreTontine(membreId) {
@@ -3634,7 +3658,7 @@ async function supprimerTontine(id) {
     const tontine = tontines.find(t => t.id === tontineId);
     if (tontine) {
       membre = tontine.membres.find(m => m.id === membreId);
-      tontineActive = tontine; // on garde la référence
+      tontineActive = tontine;
     }
   }
 
@@ -3642,9 +3666,11 @@ async function supprimerTontine(id) {
 
   membreEnEdition = membre;
 
-  document.getElementById('editNomMembre').value = membre.nom;
+  document.getElementById('editNomMembre').value = membre.nom || "";
+  document.getElementById('editTelephoneMembre').value = membre.telephone || "";
+  document.getElementById('editAdresseMembre').value = membre.adresse || "";
   document.getElementById('editDateAjoutMembre').value =
-    membre.dateAjout ? membre.dateAjout.split('T')[0] : '';
+    membre.cree_le ? membre.cree_le.split('T')[0] : '';
 
   document.getElementById('modaleEditionMembre').classList.remove('hidden');
 }
@@ -3654,43 +3680,60 @@ async function supprimerTontine(id) {
             membreEnEdition = null;
         }
         
-        function sauvegarderEditionMembre() {
-            if (!membreEnEdition) return;
-            
-            const nom = document.getElementById('editNomMembre').value.trim();
-            const dateAjout = document.getElementById('editDateAjoutMembre').value;
-            
-            if (!nom || !dateAjout) {
-                alert('Veuillez remplir tous les champs');
-                return;
-            }
-            
-            // Vérifier que le nom n'existe pas déjà (sauf pour le membre actuel)
-            const nomExiste = tontineActive.membres.some(m => 
-                m.id !== membreEnEdition.id && m.nom.toLowerCase() === nom.toLowerCase()
-            );
-            
-            if (nomExiste) {
-                alert('Un membre avec ce nom existe déjà dans cette tontine');
-                return;
-            }
-            
-            // Mettre à jour le membre
-            membreEnEdition.nom = nom;
-            membreEnEdition.dateAjout = new Date(dateAjout).toISOString();
-            
-            fermerModaleEditionMembre();
-            
-            // Rafraîchir l'affichage selon la page actuelle
-            if (pageActuelle === 'gestion') {
-                afficherMembresTontineGestion();
-                mettreAJourSelectMembres();
-            } else if (pageActuelle === 'membres') {
-                afficherMembresTontine();
-            }
-            
-            alert('✅ Membre modifié avec succès !');
-        }
+        async function sauvegarderEditionMembre() {
+  if (!membreEnEdition) return;
+
+  const nom = document.getElementById('editNomMembre').value.trim();
+  const telephone = document.getElementById('editTelephoneMembre').value.trim();
+  const adresse = document.getElementById('editAdresseMembre').value.trim();
+  const dateAjout = document.getElementById('editDateAjoutMembre').value;
+
+  if (!nom || !dateAjout) {
+    alert('⚠️ Veuillez remplir au moins le nom et la date');
+    return;
+  }
+
+  try {
+    // 🔹 Appel backend
+    const res = await apiFetch(`${API_BASE}/membres/${membreEnEdition.id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        nom,
+        telephone,
+        adresse,
+        dateAjout
+      })
+    });
+
+    if (!res.ok) {
+      const errData = await res.json();
+      throw new Error(errData.error || "Erreur API");
+    }
+
+    const updated = await res.json();
+
+    // 🔹 Mise à jour locale
+    membreEnEdition.nom = updated.nom;
+    membreEnEdition.telephone = updated.telephone;
+    membreEnEdition.adresse = updated.adresse;
+    membreEnEdition.cree_le = updated.cree_le;
+
+    fermerModaleEditionMembre();
+
+    // 🔄 Rafraîchir l’affichage
+    if (pageActuelle === 'gestion') {
+      afficherMembresTontineGestion();
+      mettreAJourSelectMembres?.();
+    } else if (pageActuelle === 'membres') {
+      afficherMembresTontine();
+    }
+
+    alert('✅ Membre modifié avec succès !');
+  } catch (err) {
+    console.error("❌ Erreur édition membre:", err);
+    alert("Impossible de modifier le membre: " + err.message);
+  }
+}
 
         // Fonctions d'édition de cotisation
         function editerCotisation(cotisationId, tontineId) {
