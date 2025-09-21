@@ -2116,7 +2116,7 @@ async function afficherMembresTontine() {
     .eq('tontine_id', tontineId);
 
   if (error) {
-    console.error('Erreur chargement membres:', error);
+    console.error('❌ Erreur chargement membres:', error);
     return alert('Impossible de charger les membres ❌');
   }
 
@@ -2152,23 +2152,30 @@ async function afficherMembresTontine() {
         <h3 class="font-bold text-xl text-gray-800 mb-2">${membre.nom}</h3>
         <span class="px-4 py-2 bg-gradient-to-r from-green-400 to-green-500 text-white rounded-full text-sm font-semibold">Actif</span>
       </div>
-      <div class="space-y-4 text-sm">
+
+      <div class="space-y-3 text-sm">
         <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-          <span>📞 Téléphone:</span><span class="font-medium">${membre.telephone || "-"}</span>
+          <span>📞 Téléphone:</span>
+          <span class="font-medium">${membre.telephone || "-"}</span>
         </div>
         <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-          <span>📍 Adresse:</span><span class="font-medium">${membre.adresse || "-"}</span>
+          <span>📍 Adresse:</span>
+          <span class="font-medium">${membre.adresse || "-"}</span>
         </div>
         <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-          <span>Cotisations:</span><span class="font-bold">${cotisationsCount}</span>
+          <span>Cotisations:</span>
+          <span class="font-bold">${cotisationsCount}</span>
         </div>
         <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-          <span>Total cotisé:</span><span class="font-bold text-green-600">${totalCotise.toLocaleString()} FCFA</span>
+          <span>Total cotisé:</span>
+          <span class="font-bold text-green-600">${totalCotise.toLocaleString()} FCFA</span>
         </div>
         <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
-          <span>Membre depuis:</span><span>${membre.dateAjout ? new Date(membre.dateAjout).toLocaleDateString('fr-FR') : '-'}</span>
+          <span>Membre depuis:</span>
+          <span>${membre.dateAjout ? new Date(membre.dateAjout).toLocaleDateString('fr-FR') : '-'}</span>
         </div>
       </div>
+
       <div class="flex gap-3 mt-6 pt-4 border-t">
         <button onclick="ouvrirModaleEditionMembre('${membre.id}')" 
                 class="flex-1 btn-gradient py-3 rounded-xl font-medium" 
@@ -2180,14 +2187,14 @@ async function afficherMembresTontine() {
           🗑️ Retirer
         </button>
       </div>`;
-
+    
     cartes.appendChild(div);
   });
 }
 
         // Gestion des membres
 
-// ➤ Ajouter un membre à la tontine active (backend Express)
+// ➤ Ajouter un membre à la tontine active
 async function ajouterMembreTontine() {
   if (!tontineActive) {
     return alert("⚠️ Aucune tontine active !");
@@ -2206,7 +2213,12 @@ async function ajouterMembreTontine() {
     const res = await apiFetch(`${API_BASE}/membres`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tontineId: tontineActive.id, nom, telephone, adresse })
+      body: JSON.stringify({
+        tontineId: tontineActive.id,
+        nom,
+        telephone,
+        adresse
+      })
     });
 
     if (!res.ok) {
@@ -2216,15 +2228,13 @@ async function ajouterMembreTontine() {
 
     const newMembre = await res.json();
 
-    // 2️⃣ Mettre à jour localement tontineActive
+    // 2️⃣ Mettre à jour localement
     tontineActive.membres.push({
       id: newMembre.id,
       nom: newMembre.nom,
       telephone: newMembre.telephone,
       adresse: newMembre.adresse,
-      dateAjout: newMembre.cree_le
-        ? new Date(newMembre.cree_le).toISOString()
-        : null,
+      dateAjout: newMembre.cree_le ? new Date(newMembre.cree_le).toISOString() : null,
       aGagne: false,
       cotisationsPayees: []
     });
@@ -3647,8 +3657,8 @@ async function supprimerTontine(id) {
   ouvrirPage('accueil');
 }
         
-        // Fonctions d'édition de membre
-        function ouvrirModaleEditionMembre(membreId) {
+       // ➤ Ouvrir la modale d'édition d'un membre
+function ouvrirModaleEditionMembre(membreId) {
   let membre;
 
   if (tontineActive) {
@@ -3666,12 +3676,14 @@ async function supprimerTontine(id) {
 
   membreEnEdition = membre;
 
+  // Pré-remplir les champs
   document.getElementById('editNomMembre').value = membre.nom || "";
   document.getElementById('editTelephoneMembre').value = membre.telephone || "";
   document.getElementById('editAdresseMembre').value = membre.adresse || "";
   document.getElementById('editDateAjoutMembre').value =
-    membre.cree_le ? membre.cree_le.split('T')[0] : '';
+    membre.cree_le ? new Date(membre.cree_le).toISOString().split('T')[0] : '';
 
+  // Afficher la modale
   document.getElementById('modaleEditionMembre').classList.remove('hidden');
 }
         
@@ -3680,7 +3692,8 @@ async function supprimerTontine(id) {
             membreEnEdition = null;
         }
         
-        async function sauvegarderEditionMembre() {
+        // ➤ Sauvegarder les modifications d'un membre
+async function sauvegarderEditionMembre() {
   if (!membreEnEdition) return;
 
   const nom = document.getElementById('editNomMembre').value.trim();
@@ -3688,8 +3701,8 @@ async function supprimerTontine(id) {
   const adresse = document.getElementById('editAdresseMembre').value.trim();
   const dateAjout = document.getElementById('editDateAjoutMembre').value;
 
-  if (!nom || !dateAjout) {
-    alert('⚠️ Veuillez remplir au moins le nom et la date');
+  if (!nom || !telephone || !adresse || !dateAjout) {
+    alert('⚠️ Veuillez remplir tous les champs');
     return;
   }
 
@@ -3697,17 +3710,18 @@ async function supprimerTontine(id) {
     // 🔹 Appel backend
     const res = await apiFetch(`${API_BASE}/membres/${membreEnEdition.id}`, {
       method: "PUT",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         nom,
         telephone,
         adresse,
-        dateAjout
+        dateAjout: new Date(dateAjout).toISOString()
       })
     });
 
     if (!res.ok) {
       const errData = await res.json();
-      throw new Error(errData.error || "Erreur API");
+      throw new Error(errData.error || "Erreur lors de la modification du membre");
     }
 
     const updated = await res.json();
@@ -3728,10 +3742,10 @@ async function supprimerTontine(id) {
       afficherMembresTontine();
     }
 
-    alert('✅ Membre modifié avec succès !');
+    alert(`✅ Membre "${updated.nom}" modifié avec succès !`);
   } catch (err) {
     console.error("❌ Erreur édition membre:", err);
-    alert("Impossible de modifier le membre: " + err.message);
+    alert("❌ Impossible de modifier le membre: " + err.message);
   }
 }
 
