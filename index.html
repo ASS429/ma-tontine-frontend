@@ -1321,6 +1321,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         async function sInscrire(event) {
   event.preventDefault();
+
   const nom = document.getElementById('nomInscription').value.trim();
   const email = document.getElementById('emailInscription').value.trim();
   const motPasse = document.getElementById('motPasseInscription').value;
@@ -1330,30 +1331,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (motPasse !== confirm) return alert('Les mots de passe ne correspondent pas.');
   if (motPasse.length < 6) return alert('Mot de passe trop court.');
 
+  // 🔹 Inscription via Supabase Auth
   const { data, error } = await sb.auth.signUp({
     email,
     password: motPasse,
-    options: { data: { nom_complet: nom } }
+    options: { data: { nom_complet: nom } } // ceci remplit déjà metadata
   });
 
-  if (error) return alert('Inscription impossible: ' + error.message);
+  if (error) {
+    alert('Inscription impossible: ' + error.message);
+    return;
+  }
 
   const { user, session } = data;
 
-  if (session) {
-    // 🔹 Sauvegarde immédiate du token JWT
+  // 🔹 Sauvegarde immédiate du token JWT
+  if (session?.access_token) {
     localStorage.setItem("token", session.access_token);
   }
 
-  if (user) {
-    await sb.from('utilisateurs').insert({
-      id: user.id,
-      nom_complet: nom,
-      email: email
-    }).catch(e => console.warn('⚠️ Profil non créé (utilisateurs):', e.message));
-  }
+  // ✅ PAS BESOIN de réinsérer dans "utilisateurs" : ton trigger SQL `handle_new_user` s’en charge automatiquement.
 
-  alert('✅ Compte créé ! Vérifie tes mails si la confirmation est activée.');
+  alert('✅ Compte créé avec succès !');
+  
+  // 🔹 Rediriger l’utilisateur vers l’accueil
+  ouvrirPageConnexion(); // ou accueil si tu veux le connecter direct
 }
 
        async function seDeconnecter(silencieux = false) {
