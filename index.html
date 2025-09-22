@@ -2831,7 +2831,7 @@ async function afficherInfosTirage() {
 
   try {
     // Appel au backend en mode "preview"
-    const res = await apiFetch(`${API_BASE}/tirages/run/${tontineActive.id}`);
+    const res = await apiFetch(`${API_BASE}/tirages/run/${tontineActive.id}`, { method: "POST" });
     const data = await res.json();
 
     if (!data.possible) {
