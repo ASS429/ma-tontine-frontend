@@ -2099,7 +2099,7 @@ function normaliserMembre(m) {
   };
 }
 
-       /// ➤ Afficher les membres d'une tontine avec cotisations (via backend Express)
+      // ➤ Afficher les membres d'une tontine avec cotisations (via backend Express) 
 async function afficherMembresTontine() {
   const tontineId = document.getElementById('selectTontineMembres').value;
   const panneau = document.getElementById('panneauMembres');
@@ -2111,14 +2111,19 @@ async function afficherMembresTontine() {
   }
 
   try {
-    // 🔹 Charger membres + cotisations depuis ton backend
-    const res = await apiFetch(`${API_BASE}/membres/${tontineId}/avec-cotisations`);
+    // 🔹 Charger la tontine (avec membres + cotisations)
+    const res = await apiFetch(`${API_BASE}/membres/${tontineId}`);
     if (!res.ok) {
-      const errData = await res.json();
-      throw new Error(errData.error || "Erreur lors du chargement des membres");
+      let message = `Erreur ${res.status}: ${res.statusText}`;
+      try {
+        const errData = await res.json();
+        message = errData.error || message;
+      } catch (e) {}
+      throw new Error(message);
     }
 
-    const membres = await res.json();
+    const tontineData = await res.json();
+    const membres = tontineData.membres || [];
 
     panneau.classList.remove('hidden');
     cartes.innerHTML = '';
@@ -2192,7 +2197,6 @@ async function afficherMembresTontine() {
     alert("Impossible de charger les membres ❌");
   }
 }
-
         // Gestion des membres
 
 // ➤ Ajouter un membre à la tontine active (backend Express)
