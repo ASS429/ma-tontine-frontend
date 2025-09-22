@@ -792,15 +792,24 @@ label { font-size: 0.95rem; font-weight: 600; }
                 
                 <!-- Gestion des membres -->
 <div class="card-premium p-8 slide-in-right" style="animation-delay: 0.2s">
-    <div class="flex justify-between items-center mb-6">
-        <h3 class="text-2xl font-bold text-gray-800">👥 Membres</h3>
-    </div>
-    <div class="flex gap-4 mb-6">
-        <!-- ✅ renommé en id="nomMembre" -->
-        <input type="text" id="nomMembre" placeholder="Nom du nouveau membre" class="form-input flex-1">
-        <button onclick="ajouterMembreTontine()" class="btn-gradient btn-success px-8 py-3 rounded-xl">Ajouter</button>
-    </div>
-    <div id="listeMembresTontineGestion" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"></div>
+  <div class="flex justify-between items-center mb-6">
+    <h3 class="text-2xl font-bold text-gray-800">👥 Membres</h3>
+  </div>
+
+  <!-- ✅ Formulaire d’ajout complet -->
+  <div class="grid md:grid-cols-3 gap-4 mb-6">
+    <input type="text" id="nomMembre" placeholder="Nom du nouveau membre" class="form-input">
+    <input type="text" id="telephoneMembre" placeholder="Téléphone du membre" class="form-input">
+    <input type="text" id="adresseMembre" placeholder="Adresse du membre" class="form-input">
+  </div>
+
+  <div class="flex justify-end mb-6">
+    <button onclick="ajouterMembreTontine()" class="btn-gradient btn-success px-8 py-3 rounded-xl">
+      ➕ Ajouter
+    </button>
+  </div>
+
+  <div id="listeMembresTontineGestion" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"></div>
 </div>
 
                 
