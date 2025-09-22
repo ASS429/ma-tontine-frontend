@@ -2790,36 +2790,62 @@ function afficherMembresEligibles() {
   });
 }
 
-// ➤ Afficher historique gagnants
-function afficherHistoriqueGagnants() {
-  const liste = document.getElementById('historiqueGagnants');
-  liste.innerHTML = '';
+// ➤ Afficher historique des gagnants regroupés par cycle
+async function afficherHistoriqueGagnants() {
+  const liste = document.getElementById("historiqueGagnants");
+  if (!tontineActive) return;
 
-  if (!tontineActive.gagnants || tontineActive.gagnants.length === 0) {
-    liste.innerHTML = '<p class="text-gray-600 text-center py-4">Aucun tirage encore effectué</p>';
-    return;
+  try {
+    const res = await apiFetch(`${API_BASE}/tirages/${tontineActive.id}`);
+    if (!res.ok) throw new Error("Erreur API historique tirages");
+
+    const tirages = await res.json();
+
+    if (tirages.length === 0) {
+      liste.innerHTML = "<p class='text-gray-500 italic'>Aucun tirage effectué pour le moment.</p>";
+      return;
+    }
+
+    // 🔹 Regrouper par cycle
+    const tiragesParCycle = {};
+    for (const t of tirages) {
+      if (!tiragesParCycle[t.numero_cycle]) {
+        tiragesParCycle[t.numero_cycle] = [];
+      }
+      tiragesParCycle[t.numero_cycle].push(t);
+    }
+
+    // 🔹 Construire le HTML
+    liste.innerHTML = Object.entries(tiragesParCycle)
+      .map(([cycle, tirages]) => `
+        <div class="mb-4">
+          <h3 class="text-md font-bold text-blue-600 mb-2">Cycle ${cycle}</h3>
+          <div class="space-y-2">
+            ${tirages.map(t => `
+              <div class="flex items-center justify-between p-2 border-b border-gray-200">
+                <div>
+                  <p class="font-semibold">${t.nom_membre}</p>
+                  <p class="text-xs text-gray-500">
+                    Tirage du ${new Date(t.date_tirage).toLocaleDateString("fr-FR", {
+                      day: "2-digit", month: "long", year: "numeric"
+                    })}
+                  </p>
+                </div>
+                <div class="text-right">
+                  <p class="text-green-600 font-bold">
+                    +${Number(t.montant_gagne).toLocaleString()} CFA
+                  </p>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `)
+      .join("");
+  } catch (err) {
+    console.error("❌ Erreur affichage historique gagnants:", err);
+    liste.innerHTML = "<p class='text-red-500'>Impossible de charger l’historique.</p>";
   }
-
-  tontineActive.gagnants.forEach((gagnant, index) => {
-    const div = document.createElement('div');
-    div.className = 'member-card p-4 bg-gradient-to-r from-yellow-50 to-yellow-100 fade-in-up flex justify-between items-center';
-    div.style.animationDelay = `${index * 0.1}s`;
-
-    const date = new Date(gagnant.date).toLocaleDateString('fr-FR');
-
-    div.innerHTML = `
-      <div>
-        <span class="font-semibold text-gray-800">🏆 ${gagnant.nom}</span><br>
-        <span class="text-sm text-gray-600">Ordre ${gagnant.ordre} - ${date}</span>
-      </div>
-      <button onclick="supprimerTirage('${gagnant.id}')" 
-              class="ml-4 bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-sm">
-        🗑️
-      </button>
-    `;
-
-    liste.appendChild(div);
-  });
 }
 
 // ➤ Afficher infos tirage (via preview backend)
