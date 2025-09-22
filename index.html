@@ -2901,29 +2901,47 @@ async function effectuerTirage() {
 
   try {
     const res = await apiFetch(`${API_BASE}/tirages/run/${tontineId}`, { method: "POST" });
-    const gagnant = await res.json();
+    const data = await res.json();
 
     if (!res.ok) {
-      alert(gagnant.error || "Erreur lors du tirage");
+      // ✅ Cas particulier: retardataires
+      if (data.error && data.manquants) {
+        const infoDiv = document.getElementById('infoTirage');
+        infoDiv.innerHTML = `
+          <div class="bg-gradient-to-r from-red-600 to-red-700 p-6 rounded-xl text-white">
+            <div class="text-xl font-bold mb-2">❌ Tirage Impossible</div>
+            <div class="text-sm opacity-90 mb-3">${data.error}</div>
+            <div class="bg-red-700 bg-opacity-50 p-3 rounded-lg text-sm">
+              <div class="font-semibold mb-2">📋 Membres en retard :</div>
+              ${data.manquants.map(m => `• ${m}`).join("<br>")}
+            </div>
+          </div>
+        `;
+      } else {
+        alert(data.error || "Erreur lors du tirage");
+      }
+
+      document.getElementById("animationDe").classList.add("hidden"); // stop animation
       return;
     }
 
+    // ✅ Succès
     setTimeout(() => {
       document.getElementById("animationDe").classList.add("hidden");
       document.getElementById("resultatTirage").classList.remove("hidden");
 
-      document.getElementById("gagnantTirage").textContent = `🎉 ${gagnant.membre_nom}`;
+      document.getElementById("gagnantTirage").textContent = `🎉 ${data.membre_nom}`;
       document.getElementById("montantGagne").textContent = 
-        `Montant gagné: ${gagnant.montant_total.toLocaleString()} FCFA`;
+        `Montant gagné: ${data.montant_total.toLocaleString()} FCFA`;
 
       chargerTontineTirage();
     }, 2000);
   } catch (err) {
     console.error("❌ Erreur tirage:", err);
     alert("Erreur réseau");
+    document.getElementById("animationDe").classList.add("hidden");
   }
 }
-
 // 📊 Graphiques
 let chartTypes = null;
 let chartCotisations = null;
