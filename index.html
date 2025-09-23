@@ -3112,18 +3112,20 @@ function remplirTableauPerformance(performance) {
   }
 }
         
-       // 📊 Générer le résumé des alertes
+       // 📊 Générer le résumé des alertes + mettre à jour le dashboard premium
 async function genererResumeAlertes() {
   try {
     const alertesActuelles = await mettreAJourAlertes();
     const resume = document.getElementById('resumeAlertes');
     if (!Array.isArray(alertesActuelles)) return;
 
+    // 🔹 Filtrage par type
     const retards = alertesActuelles.filter(a => a.type === 'retard');
     const tirages = alertesActuelles.filter(a => a.type === 'tirage');
     const cyclesRetard = alertesActuelles.filter(a => a.type === 'cycle_retard');
     const paiementsAttente = alertesActuelles.filter(a => a.type === 'paiement_attente');
 
+    // 🔹 Mise à jour du résumé intégré
     resume.innerHTML = `
       <div class="bg-gradient-to-r from-red-100 to-red-200 p-4 rounded-xl text-center">
         <div class="text-2xl font-bold text-red-600">${retards.length}</div>
@@ -3142,6 +3144,13 @@ async function genererResumeAlertes() {
         <div class="text-sm text-green-700 font-medium">🎲 Tirages disponibles</div>
       </div>
     `;
+
+    // 🔹 Mise à jour du tableau premium (statistiques globales)
+    document.getElementById("statRetards").textContent = retards.length;
+    document.getElementById("statCyclesRetard").textContent = cyclesRetard.length;
+    document.getElementById("statPaiementsAttente").textContent = paiementsAttente.length;
+    document.getElementById("statTiragesDisponibles").textContent = tirages.length;
+
   } catch (err) {
     console.error("❌ Erreur résumé alertes:", err);
   }
