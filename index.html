@@ -2052,20 +2052,26 @@ function masquerGuide() {
         }
 
         function chargerSelectsTontines() {
-            const selects = ['selectTontineGestion', 'selectTontineMembres', 'selectTontineTirage'];
-            selects.forEach(selectId => {
-                const select = document.getElementById(selectId);
-                if (select) {
-                    select.innerHTML = '<option value="">Choisir une tontine...</option>';
-                    tontines.forEach(tontine => {
-                        const option = document.createElement('option');
-                        option.value = tontine.id;
-                        option.textContent = tontine.nom;
-                        select.appendChild(option);
-                    });
-                }
+    const selects = [
+        "selectTontineGestion",
+        "selectTontineMembres",
+        "selectTontineTirage",
+        "selectTontinePaiements" 
+    ];
+
+    selects.forEach(selectId => {
+        const select = document.getElementById(selectId);
+        if (select) {
+            select.innerHTML = '<option value="">Choisir une tontine...</option>';
+            tontines.forEach(tontine => {
+                const option = document.createElement("option");
+                option.value = tontine.id;
+                option.textContent = tontine.nom;
+                select.appendChild(option);
             });
         }
+    });
+}
 
        // ➤ Charger la tontine pour la gestion
 async function chargerTontineGestion() {
