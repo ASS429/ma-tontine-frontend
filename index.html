@@ -1003,52 +1003,73 @@ label { font-size: 0.95rem; font-weight: 600; }
         </div>
     </div>
 
-    <!-- PAGE PAIEMENTS -->
-    <div id="page-paiements" class="page hidden">
-  <h2 class="text-2xl font-bold mb-6">💳 Gestion des Paiements & Comptes</h2>
-
-  <!-- Section Comptes -->
-  <div class="mb-6">
-    <h3 class="text-xl font-semibold mb-3">📂 Mes Comptes</h3>
-    <div id="listeComptes" class="space-y-3"></div>
-
-    <div class="mt-4 p-4 border rounded bg-gray-50">
-      <h4 class="font-medium mb-2">➕ Ajouter un compte</h4>
-      <select id="nouveauTypeCompte" class="border rounded p-2 mr-2">
-        <option value="wave">Wave</option>
-        <option value="orange_money">Orange Money</option>
-        <option value="especes">Espèces</option>
-      </select>
-      <input id="nouveauSolde" type="number" placeholder="Solde initial"
-             class="border rounded p-2 w-32 mr-2">
-      <button onclick="ajouterCompte()" class="px-4 py-2 bg-blue-600 text-white rounded">Ajouter</button>
-    </div>
+   <!-- PAGE PAIEMENTS -->
+<div id="page-paiements" class="page">
+  <div class="card-premium p-8 mb-8 fade-in-up">
+    <h2
+      class="text-3xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent mb-6 text-center">
+      💳 Gestion des Paiements & Comptes
+    </h2>
   </div>
 
-  <!-- Section Paiements -->
-  <div>
-    <h3 class="text-xl font-semibold mb-3">📜 Paiements</h3>
-    <div class="mb-4">
-      <label for="selectTontinePaiements" class="font-medium">Choisir une tontine :</label>
-      <select id="selectTontinePaiements" class="w-full border rounded p-2" onchange="chargerPaiements()"></select>
+  <div class="space-y-8">
+    <!-- Section Comptes -->
+    <div class="card-premium p-8 slide-in-right">
+      <h3 class="text-2xl font-bold text-gray-800 mb-6">📂 Mes Comptes</h3>
+
+      <div id="listeComptes" class="space-y-3 mb-6">
+        <!-- Comptes listés ici -->
+      </div>
+
+      <div class="p-6 border rounded-xl bg-gray-50">
+        <h4 class="text-lg font-semibold mb-4">➕ Ajouter un compte</h4>
+        <div class="grid md:grid-cols-3 gap-4">
+          <select id="nouveauTypeCompte" class="form-input">
+            <option value="wave">🌊 Wave</option>
+            <option value="orange_money">🟧 Orange Money</option>
+            <option value="especes">💵 Espèces</option>
+          </select>
+          <input id="nouveauSolde" type="number" placeholder="Solde initial" class="form-input">
+          <button onclick="ajouterCompte()" class="btn-gradient btn-success py-3 rounded-xl">
+            ➕ Ajouter
+          </button>
+        </div>
+      </div>
     </div>
 
-    <div class="mb-6 p-4 border rounded bg-gray-50">
-  <h4 class="font-medium mb-2">➕ Enregistrer un paiement</h4>
-  <select id="paiementMembre" class="border rounded p-2 mr-2"></select>
-  <select id="paiementType" class="border rounded p-2 mr-2">
-    <option value="cotisation">Cotisation</option>
-    <option value="gain">Gain</option>
-  </select>
-  <input id="paiementMontant" type="number" placeholder="Montant"
-         class="border rounded p-2 w-32 mr-2">
-  <select id="paiementMoyen" class="border rounded p-2 mr-2"></select>
-  <button onclick="ajouterPaiement()" 
-          class="px-4 py-2 bg-blue-600 text-white rounded">Ajouter</button>
-</div>
+    <!-- Section Paiements -->
+    <div class="card-premium p-8 slide-in-right" style="animation-delay:0.2s">
+      <h3 class="text-2xl font-bold text-gray-800 mb-6">📜 Suivi des Paiements</h3>
 
-    <div id="listePaiements" class="space-y-4">
-      <!-- Paiements listés ici -->
+      <!-- Sélecteur de tontine -->
+      <div class="mb-6">
+        <label for="selectTontinePaiements" class="font-medium text-gray-700">Choisir une tontine :</label>
+        <select id="selectTontinePaiements" class="form-input w-full text-lg mt-2" onchange="chargerPaiements()">
+          <option value="">Sélectionne une tontine...</option>
+        </select>
+      </div>
+
+      <!-- Formulaire d’ajout de paiement -->
+      <div class="p-6 border rounded-xl bg-gray-50 mb-6">
+        <h4 class="text-lg font-semibold mb-4">➕ Enregistrer un paiement</h4>
+        <div class="grid md:grid-cols-5 gap-4 mb-4">
+          <select id="paiementMembre" class="form-input"></select>
+          <select id="paiementType" class="form-input">
+            <option value="cotisation">💰 Cotisation</option>
+            <option value="gain">🎉 Gain</option>
+          </select>
+          <input id="paiementMontant" type="number" placeholder="Montant" class="form-input">
+          <select id="paiementMoyen" class="form-input"></select>
+          <button onclick="ajouterPaiement()" class="btn-gradient btn-success py-3 rounded-xl">
+            ➕ Ajouter
+          </button>
+        </div>
+      </div>
+
+      <!-- Liste des paiements -->
+      <div id="listePaiements" class="grid gap-4">
+        <!-- Paiements listés ici -->
+      </div>
     </div>
   </div>
 </div>
@@ -1465,6 +1486,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     alert('✅ Déconnexion réussie !');
   }
 }
+
 
         function ouvrirPageConnexion() {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -4004,7 +4026,18 @@ console.log("🔎 Script bouton d’installation chargé !");
   });
       /// gestionnaire des paiements
 
-  async function chargerPaiements() {
+// Utilitaire pour labels moyens
+function formatMoyen(type) {
+  switch (type) {
+    case "wave": return "🌊 Wave";
+    case "orange_money": return "🟧 Orange Money";
+    case "especes": return "💵 Espèces";
+    default: return type;
+  }
+}
+
+// Charger paiements
+async function chargerPaiements() {
   const tontineId = document.getElementById("selectTontinePaiements").value;
   if (!tontineId) return;
 
@@ -4017,32 +4050,30 @@ console.log("🔎 Script bouton d’installation chargé !");
     liste.innerHTML = "";
 
     paiements.forEach(p => {
-      // format visuel du moyen
-      let moyenLabel = "";
-      if (p.moyen === "wave") moyenLabel = "🌊 Wave";
-      else if (p.moyen === "orange_money") moyenLabel = "🟧 Orange Money";
-      else if (p.moyen === "especes") moyenLabel = "💵 Espèces";
-      else moyenLabel = p.moyen;
-
       const div = document.createElement("div");
       div.className = "p-4 border rounded bg-white shadow";
       div.innerHTML = `
         <div class="font-semibold">${p.membre_nom}</div>
         <div>${p.type === "cotisation" ? "💰 Cotisation" : "🎉 Gain"} — <b>${p.montant} FCFA</b></div>
-        <div>Moyen : <b>${moyenLabel}</b></div>
+        <div>Moyen : <b>${formatMoyen(p.moyen)}</b></div>
         <div>Statut : ${p.statut === "effectue" ? "✅ Effectué" : "⏳ En attente"}</div>
-        ${p.statut !== "effectue" ? `
-          <button onclick="validerPaiement('${p.id}')" 
-                  class="mt-2 px-3 py-1 bg-green-500 text-white rounded">✅ Marquer payé</button>
-        ` : ""}
+        <div class="mt-2 flex gap-2">
+          ${p.statut !== "effectue" ? `
+            <button onclick="validerPaiement('${p.id}')"
+                    class="px-3 py-1 bg-green-500 text-white rounded">✅ Marquer payé</button>
+          ` : ""}
+          <button onclick="supprimerPaiement('${p.id}')"
+                  class="px-3 py-1 bg-red-500 text-white rounded">🗑️ Supprimer</button>
+        </div>
       `;
       liste.appendChild(div);
     });
+
+    await chargerSelectsPaiements(); // mettre à jour selects
   } catch (err) {
     console.error("❌ Erreur charger paiements:", err);
   }
 }
-
 
 async function validerPaiement(id) {
   try {
@@ -4053,8 +4084,21 @@ async function validerPaiement(id) {
     });
     if (!res.ok) throw new Error("Erreur validation paiement");
     await chargerPaiements();
+    await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur valider paiement:", err);
+  }
+}
+
+async function supprimerPaiement(id) {
+  if (!confirm("Supprimer ce paiement ?")) return;
+  try {
+    const res = await apiFetch(`${API_BASE}/paiements/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Erreur suppression paiement");
+    await chargerPaiements();
+    await chargerComptes();
+  } catch (err) {
+    console.error("❌ Erreur suppression paiement:", err);
   }
 }
 
@@ -4071,11 +4115,11 @@ async function chargerComptes() {
       const div = document.createElement("div");
       div.className = "p-3 border rounded bg-white shadow flex justify-between items-center";
       div.innerHTML = `
-        <div><b>${c.type}</b> — Solde: ${c.solde} FCFA</div>
+        <div><b>${formatMoyen(c.type)}</b> — Solde: ${c.solde} FCFA</div>
         <div class="flex gap-2">
-          <button onclick="modifierSoldeCompte('${c.id}', ${c.solde})" 
+          <button onclick="modifierSoldeCompte('${c.id}', ${c.solde})"
                   class="px-3 py-1 bg-yellow-500 text-white rounded">✏️ Modifier</button>
-          <button onclick="supprimerCompte('${c.id}')" 
+          <button onclick="supprimerCompte('${c.id}')"
                   class="px-3 py-1 bg-red-500 text-white rounded">🗑️ Supprimer</button>
         </div>
       `;
@@ -4146,7 +4190,7 @@ async function chargerSelectsPaiements() {
   const resC = await apiFetch(`${API_BASE}/comptes`);
   const comptes = await resC.json();
   const selC = document.getElementById("paiementMoyen");
-  selC.innerHTML = comptes.map(c => `<option value="${c.type}">${c.type} (solde: ${c.solde})</option>`).join("");
+  selC.innerHTML = comptes.map(c => `<option value="${c.type}">${formatMoyen(c.type)} (solde: ${c.solde})</option>`).join("");
 }
 
 async function ajouterPaiement() {
@@ -4171,7 +4215,7 @@ async function ajouterPaiement() {
         type,
         montant,
         moyen,
-        statut: "effectue" // direct validé
+        statut: (type === "gain") ? "en_attente" : "effectue"
       })
     });
     if (!res.ok) throw new Error("Erreur ajout paiement");
