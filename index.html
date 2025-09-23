@@ -4059,23 +4059,49 @@ async function chargerPaiements() {
     const liste = document.getElementById("listePaiements");
     liste.innerHTML = "";
 
+    if (paiements.length === 0) {
+      liste.innerHTML = `<p class="text-gray-500 italic">Aucun paiement enregistré pour cette tontine.</p>`;
+      return;
+    }
+
     paiements.forEach(p => {
       const div = document.createElement("div");
-      div.className = "p-4 border rounded bg-white shadow";
+      div.className =
+        "p-4 border rounded-xl bg-white shadow-md hover:shadow-lg transition flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3";
+
       div.innerHTML = `
-        <div class="font-semibold">${p.membre_nom}</div>
-        <div>${p.type === "cotisation" ? "💰 Cotisation" : "🎉 Gain"} — <b>${p.montant} FCFA</b></div>
-        <div>Moyen : <b>${formatMoyen(p.moyen)}</b></div>
-        <div>Statut : ${p.statut === "effectue" ? "✅ Effectué" : "⏳ En attente"}</div>
-        <div class="mt-2 flex gap-2">
-          ${p.statut !== "effectue" ? `
+        <!-- Infos paiement -->
+        <div class="flex-1">
+          <p class="text-lg font-semibold text-gray-800">${p.membre_nom}</p>
+          <p class="text-gray-700">
+            ${p.type === "cotisation" ? "💰 Cotisation" : "🎉 Gain"} — 
+            <span class="font-medium text-green-600">${p.montant} FCFA</span>
+          </p>
+          <p class="text-sm text-gray-600">Moyen : <b>${formatMoyen(p.moyen)}</b></p>
+          <p class="text-sm ${p.statut === "effectue" ? "text-green-600" : "text-yellow-600"} font-medium">
+            ${p.statut === "effectue" ? "✅ Effectué" : "⏳ En attente"}
+          </p>
+        </div>
+
+        <!-- Boutons actions -->
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          ${
+            p.statut !== "effectue"
+              ? `
             <button onclick="validerPaiement('${p.id}')"
-                    class="px-3 py-1 bg-green-500 text-white rounded">✅ Marquer payé</button>
-          ` : ""}
+              class="flex items-center justify-center px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg w-full sm:w-auto transition">
+              ✅ Marquer payé
+            </button>
+          `
+              : ""
+          }
           <button onclick="supprimerPaiement('${p.id}')"
-                  class="px-3 py-1 bg-red-500 text-white rounded">🗑️ Supprimer</button>
+            class="flex items-center justify-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg w-full sm:w-auto transition">
+            🗑️ Supprimer
+          </button>
         </div>
       `;
+
       liste.appendChild(div);
     });
 
@@ -4084,6 +4110,7 @@ async function chargerPaiements() {
     console.error("❌ Erreur charger paiements:", err);
   }
 }
+
 
 async function validerPaiement(id) {
   try {
