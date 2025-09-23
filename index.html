@@ -3124,10 +3124,18 @@ async function afficherStatistiques() {
   try {
     // Stats globales
     const stats = await getStatsOverview();
+
+    // 🔹 Top metrics
     document.getElementById('statTotalTontines').textContent = stats.tontines_actives;
     document.getElementById('statTotalMembres').textContent = stats.membres_total;
     document.getElementById('statTotalCotisations').textContent = stats.montant_collecte.toLocaleString();
     document.getElementById('statTotalTirages').textContent = stats.tirages_effectues;
+
+    // 🔹 Alertes/statistiques additionnelles
+    document.getElementById('statRetards').textContent = stats.retards;
+    document.getElementById('statCyclesRetard').textContent = stats.cycles_retard;
+    document.getElementById('statPaiementsAttente').textContent = stats.paiements_attente;
+    document.getElementById('statTiragesDisponibles').textContent = stats.tirages_disponibles;
 
     // Stats détaillées
     const details = await getStatsDetails();
