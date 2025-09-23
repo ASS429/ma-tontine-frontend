@@ -672,6 +672,10 @@ label { font-size: 0.95rem; font-weight: 600; }
                     <div class="font-semibold text-xs sm:text-sm md:text-base">Alertes</div>
                     <div id="badgeAlertes" class="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center font-bold hidden pulse-glow">0</div>
                 </button>
+                <button onclick="ouvrirPage('paiements')" class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
+                    <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce" style="animation-delay: 1.2s">💳</div>
+                     <div class="font-semibold text-xs sm:text-sm md:text-base">Paiements</div>
+                </button>
             </div>
 
             <!-- Liste des tontines avec design premium -->
@@ -998,6 +1002,57 @@ label { font-size: 0.95rem; font-weight: 600; }
             </div>
         </div>
     </div>
+
+    <!-- PAGE PAIEMENTS -->
+    <div id="page-paiements" class="page hidden">
+  <h2 class="text-2xl font-bold mb-6">💳 Gestion des Paiements & Comptes</h2>
+
+  <!-- Section Comptes -->
+  <div class="mb-6">
+    <h3 class="text-xl font-semibold mb-3">📂 Mes Comptes</h3>
+    <div id="listeComptes" class="space-y-3"></div>
+
+    <div class="mt-4 p-4 border rounded bg-gray-50">
+      <h4 class="font-medium mb-2">➕ Ajouter un compte</h4>
+      <select id="nouveauTypeCompte" class="border rounded p-2 mr-2">
+        <option value="wave">Wave</option>
+        <option value="orange_money">Orange Money</option>
+        <option value="especes">Espèces</option>
+      </select>
+      <input id="nouveauSolde" type="number" placeholder="Solde initial"
+             class="border rounded p-2 w-32 mr-2">
+      <button onclick="ajouterCompte()" class="px-4 py-2 bg-blue-600 text-white rounded">Ajouter</button>
+    </div>
+  </div>
+
+  <!-- Section Paiements -->
+  <div>
+    <h3 class="text-xl font-semibold mb-3">📜 Paiements</h3>
+    <div class="mb-4">
+      <label for="selectTontinePaiements" class="font-medium">Choisir une tontine :</label>
+      <select id="selectTontinePaiements" class="w-full border rounded p-2" onchange="chargerPaiements()"></select>
+    </div>
+
+    <div class="mb-6 p-4 border rounded bg-gray-50">
+  <h4 class="font-medium mb-2">➕ Enregistrer un paiement</h4>
+  <select id="paiementMembre" class="border rounded p-2 mr-2"></select>
+  <select id="paiementType" class="border rounded p-2 mr-2">
+    <option value="cotisation">Cotisation</option>
+    <option value="gain">Gain</option>
+  </select>
+  <input id="paiementMontant" type="number" placeholder="Montant"
+         class="border rounded p-2 w-32 mr-2">
+  <select id="paiementMoyen" class="border rounded p-2 mr-2"></select>
+  <button onclick="ajouterPaiement()" 
+          class="px-4 py-2 bg-blue-600 text-white rounded">Ajouter</button>
+</div>
+
+    <div id="listePaiements" class="space-y-4">
+      <!-- Paiements listés ici -->
+    </div>
+  </div>
+</div>
+
 
     <!-- Modale d'édition de tontine -->
     <div id="modaleEditionTontine" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden p-4">
@@ -1657,7 +1712,12 @@ const gagnants = tirages.map(tr => {
                 case 'alertes':
                     afficherAlertes();
                     break;
+                case 'paiements':
+                    chargerComptes();
+                    chargerSelectsTontines(); 
+                    break;
             }
+                
         }
 
 
@@ -3942,6 +4002,186 @@ console.log("🔎 Script bouton d’installation chargé !");
       document.getElementById("registerGuideOverlay").style.display = "none";
     }
   });
+      /// gestionnaire des paiements
+
+  async function chargerPaiements() {
+  const tontineId = document.getElementById("selectTontinePaiements").value;
+  if (!tontineId) return;
+
+  try {
+    const res = await apiFetch(`${API_BASE}/paiements/${tontineId}`);
+    if (!res.ok) throw new Error("Erreur récupération paiements");
+    const paiements = await res.json();
+
+    const liste = document.getElementById("listePaiements");
+    liste.innerHTML = "";
+
+    paiements.forEach(p => {
+      // format visuel du moyen
+      let moyenLabel = "";
+      if (p.moyen === "wave") moyenLabel = "🌊 Wave";
+      else if (p.moyen === "orange_money") moyenLabel = "🟧 Orange Money";
+      else if (p.moyen === "especes") moyenLabel = "💵 Espèces";
+      else moyenLabel = p.moyen;
+
+      const div = document.createElement("div");
+      div.className = "p-4 border rounded bg-white shadow";
+      div.innerHTML = `
+        <div class="font-semibold">${p.membre_nom}</div>
+        <div>${p.type === "cotisation" ? "💰 Cotisation" : "🎉 Gain"} — <b>${p.montant} FCFA</b></div>
+        <div>Moyen : <b>${moyenLabel}</b></div>
+        <div>Statut : ${p.statut === "effectue" ? "✅ Effectué" : "⏳ En attente"}</div>
+        ${p.statut !== "effectue" ? `
+          <button onclick="validerPaiement('${p.id}')" 
+                  class="mt-2 px-3 py-1 bg-green-500 text-white rounded">✅ Marquer payé</button>
+        ` : ""}
+      `;
+      liste.appendChild(div);
+    });
+  } catch (err) {
+    console.error("❌ Erreur charger paiements:", err);
+  }
+}
+
+
+async function validerPaiement(id) {
+  try {
+    const res = await apiFetch(`${API_BASE}/paiements/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ statut: "effectue" })
+    });
+    if (!res.ok) throw new Error("Erreur validation paiement");
+    await chargerPaiements();
+  } catch (err) {
+    console.error("❌ Erreur valider paiement:", err);
+  }
+}
+
+async function chargerComptes() {
+  try {
+    const res = await apiFetch(`${API_BASE}/comptes`);
+    if (!res.ok) throw new Error("Erreur récupération comptes");
+    const comptes = await res.json();
+
+    const liste = document.getElementById("listeComptes");
+    liste.innerHTML = "";
+
+    comptes.forEach(c => {
+      const div = document.createElement("div");
+      div.className = "p-3 border rounded bg-white shadow flex justify-between items-center";
+      div.innerHTML = `
+        <div><b>${c.type}</b> — Solde: ${c.solde} FCFA</div>
+        <div class="flex gap-2">
+          <button onclick="modifierSoldeCompte('${c.id}', ${c.solde})" 
+                  class="px-3 py-1 bg-yellow-500 text-white rounded">✏️ Modifier</button>
+          <button onclick="supprimerCompte('${c.id}')" 
+                  class="px-3 py-1 bg-red-500 text-white rounded">🗑️ Supprimer</button>
+        </div>
+      `;
+      liste.appendChild(div);
+    });
+  } catch (err) {
+    console.error("❌ Erreur charger comptes:", err);
+  }
+}
+
+async function ajouterCompte() {
+  const type = document.getElementById("nouveauTypeCompte").value;
+  const solde = document.getElementById("nouveauSolde").value || 0;
+
+  try {
+    const res = await apiFetch(`${API_BASE}/comptes`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type, solde })
+    });
+    if (!res.ok) throw new Error("Erreur ajout compte");
+    await chargerComptes();
+  } catch (err) {
+    console.error("❌ Erreur ajouter compte:", err);
+  }
+}
+
+async function modifierSoldeCompte(id, soldeActuel) {
+  const nouveauSolde = prompt("Nouveau solde :", soldeActuel);
+  if (nouveauSolde === null) return;
+
+  try {
+    const res = await apiFetch(`${API_BASE}/comptes/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ solde: Number(nouveauSolde) })
+    });
+    if (!res.ok) throw new Error("Erreur modification solde");
+    await chargerComptes();
+  } catch (err) {
+    console.error("❌ Erreur modification compte:", err);
+  }
+}
+
+async function supprimerCompte(id) {
+  if (!confirm("Supprimer ce compte ?")) return;
+
+  try {
+    const res = await apiFetch(`${API_BASE}/comptes/${id}`, { method: "DELETE" });
+    if (!res.ok) throw new Error("Erreur suppression compte");
+    await chargerComptes();
+  } catch (err) {
+    console.error("❌ Erreur suppression compte:", err);
+  }
+}
+
+async function chargerSelectsPaiements() {
+  const tontineId = document.getElementById("selectTontinePaiements").value;
+  if (!tontineId) return;
+
+  // membres
+  const resM = await apiFetch(`${API_BASE}/membres/${tontineId}`);
+  const membres = await resM.json();
+  const selM = document.getElementById("paiementMembre");
+  selM.innerHTML = membres.map(m => `<option value="${m.id}">${m.nom}</option>`).join("");
+
+  // comptes
+  const resC = await apiFetch(`${API_BASE}/comptes`);
+  const comptes = await resC.json();
+  const selC = document.getElementById("paiementMoyen");
+  selC.innerHTML = comptes.map(c => `<option value="${c.type}">${c.type} (solde: ${c.solde})</option>`).join("");
+}
+
+async function ajouterPaiement() {
+  const tontineId = document.getElementById("selectTontinePaiements").value;
+  const membreId = document.getElementById("paiementMembre").value;
+  const type = document.getElementById("paiementType").value;
+  const montant = Number(document.getElementById("paiementMontant").value);
+  const moyen = document.getElementById("paiementMoyen").value;
+
+  if (!membreId || !montant || !moyen) {
+    alert("Remplis tous les champs");
+    return;
+  }
+
+  try {
+    const res = await apiFetch(`${API_BASE}/paiements`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tontine_id: tontineId,
+        membre_id: membreId,
+        type,
+        montant,
+        moyen,
+        statut: "effectue" // direct validé
+      })
+    });
+    if (!res.ok) throw new Error("Erreur ajout paiement");
+
+    await chargerPaiements();
+    await chargerComptes();
+  } catch (err) {
+    console.error("❌ Erreur ajout paiement:", err);
+  }
+}
 
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
