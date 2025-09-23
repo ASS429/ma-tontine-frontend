@@ -1004,33 +1004,33 @@ label { font-size: 0.95rem; font-weight: 600; }
     </div>
 
    <!-- PAGE PAIEMENTS -->
-<div id="page-paiements" class="page">
-  <div class="card-premium p-8 mb-8 fade-in-up">
+<div id="page-paiements" class="page px-4 sm:px-6 lg:px-8">
+  <div class="card-premium p-6 sm:p-8 mb-8 fade-in-up">
     <h2
-      class="text-3xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent mb-6 text-center">
+      class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-600 to-teal-600 bg-clip-text text-transparent mb-4 sm:mb-6 text-center">
       💳 Gestion des Paiements & Comptes
     </h2>
   </div>
 
   <div class="space-y-8">
     <!-- Section Comptes -->
-    <div class="card-premium p-8 slide-in-right">
-      <h3 class="text-2xl font-bold text-gray-800 mb-6">📂 Mes Comptes</h3>
+    <div class="card-premium p-6 sm:p-8 slide-in-right">
+      <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">📂 Mes Comptes</h3>
 
       <div id="listeComptes" class="space-y-3 mb-6">
         <!-- Comptes listés ici -->
       </div>
 
-      <div class="p-6 border rounded-xl bg-gray-50">
-        <h4 class="text-lg font-semibold mb-4">➕ Ajouter un compte</h4>
-        <div class="grid md:grid-cols-3 gap-4">
-          <select id="nouveauTypeCompte" class="form-input">
+      <div class="p-4 sm:p-6 border rounded-xl bg-gray-50">
+        <h4 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4">➕ Ajouter un compte</h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+          <select id="nouveauTypeCompte" class="form-input w-full">
             <option value="wave">🌊 Wave</option>
             <option value="orange_money">🟧 Orange Money</option>
             <option value="especes">💵 Espèces</option>
           </select>
-          <input id="nouveauSolde" type="number" placeholder="Solde initial" class="form-input">
-          <button onclick="ajouterCompte()" class="btn-gradient btn-success py-3 rounded-xl">
+          <input id="nouveauSolde" type="number" placeholder="Solde initial" class="form-input w-full">
+          <button onclick="ajouterCompte()" class="btn-gradient btn-success py-2 sm:py-3 rounded-xl w-full">
             ➕ Ajouter
           </button>
         </div>
@@ -1038,29 +1038,33 @@ label { font-size: 0.95rem; font-weight: 600; }
     </div>
 
     <!-- Section Paiements -->
-    <div class="card-premium p-8 slide-in-right" style="animation-delay:0.2s">
-      <h3 class="text-2xl font-bold text-gray-800 mb-6">📜 Suivi des Paiements</h3>
+    <div class="card-premium p-6 sm:p-8 slide-in-right" style="animation-delay:0.2s">
+      <h3 class="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">📜 Suivi des Paiements</h3>
 
       <!-- Sélecteur de tontine -->
-      <div class="mb-6">
-        <label for="selectTontinePaiements" class="font-medium text-gray-700">Choisir une tontine :</label>
-         <select id="selectTontinePaiements" class="form-input w-full text-lg mt-2" onchange="chargerPaiements(); chargerSelectsPaiements()">
+      <div class="mb-4 sm:mb-6">
+        <label for="selectTontinePaiements" class="block text-sm sm:text-base font-medium text-gray-700">
+          Choisir une tontine :
+        </label>
+        <select id="selectTontinePaiements"
+                class="form-input w-full text-base sm:text-lg mt-2"
+                onchange="chargerPaiements(); chargerSelectsPaiements()">
           <option value="">Sélectionne une tontine...</option>
         </select>
       </div>
 
       <!-- Formulaire d’ajout de paiement -->
-      <div class="p-6 border rounded-xl bg-gray-50 mb-6">
-        <h4 class="text-lg font-semibold mb-4">➕ Enregistrer un paiement</h4>
-        <div class="grid md:grid-cols-5 gap-4 mb-4">
-          <select id="paiementMembre" class="form-input"></select>
-          <select id="paiementType" class="form-input">
+      <div class="p-4 sm:p-6 border rounded-xl bg-gray-50 mb-6">
+        <h4 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4">➕ Enregistrer un paiement</h4>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 mb-4">
+          <select id="paiementMembre" class="form-input w-full"></select>
+          <select id="paiementType" class="form-input w-full">
             <option value="cotisation">💰 Cotisation</option>
             <option value="gain">🎉 Gain</option>
           </select>
-          <input id="paiementMontant" type="number" placeholder="Montant" class="form-input">
-          <select id="paiementMoyen" class="form-input"></select>
-          <button onclick="ajouterPaiement()" class="btn-gradient btn-success py-3 rounded-xl">
+          <input id="paiementMontant" type="number" placeholder="Montant" class="form-input w-full">
+          <select id="paiementMoyen" class="form-input w-full"></select>
+          <button onclick="ajouterPaiement()" class="btn-gradient btn-success py-2 sm:py-3 rounded-xl w-full">
             ➕ Ajouter
           </button>
         </div>
