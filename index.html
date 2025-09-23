@@ -3171,7 +3171,7 @@ async function mettreAJourAlertes() {
 }
 
         
-      // 🎯 Badge dynamique amélioré avec son + flash
+// 🎯 Badge dynamique amélioré avec flash visuel (sans son)
 function mettreAJourBadgeAlertes(alertesActuelles = []) {
   const badge = document.getElementById("badgeAlertes");
 
@@ -3186,9 +3186,6 @@ function mettreAJourBadgeAlertes(alertesActuelles = []) {
       badge.classList.remove("bg-blue-600", "text-white");
       badge.classList.add("bg-red-600", "text-white", "animate-bounce");
 
-      // 🔔 Jouer un son d’alerte
-      jouerSonAlerte();
-
       // ⚡ Flash visuel de la page
       flashVisuel();
     } else {
@@ -3198,12 +3195,6 @@ function mettreAJourBadgeAlertes(alertesActuelles = []) {
   } else {
     badge.classList.add("hidden");
   }
-}
-
-// 🔊 Fonction pour jouer un son
-function jouerSonAlerte() {
-  const audio = new Audio("/sons/alerte.mp3"); // mets ton fichier son ici
-  audio.play().catch(err => console.warn("Impossible de jouer le son:", err));
 }
 
 // ⚡ Fonction pour flash visuel rapide
