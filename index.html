@@ -4121,30 +4121,44 @@ async function chargerComptes() {
     const liste = document.getElementById("listeComptes");
     liste.innerHTML = "";
 
+    if (comptes.length === 0) {
+      liste.innerHTML = `<p class="text-gray-500 italic">Aucun compte ajouté pour le moment.</p>`;
+      return;
+    }
+
     comptes.forEach(c => {
       const div = document.createElement("div");
-      div.className = "p-3 border rounded bg-white shadow flex justify-between items-center";
+      div.className =
+        "p-4 border rounded-xl bg-white shadow-md flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 hover:shadow-lg transition";
+
       div.innerHTML = `
-        <div><b>${formatMoyen(c.type)}</b> — Solde: ${c.solde} FCFA</div>
+        <!-- Infos du compte -->
+        <div class="flex-1">
+          <p class="text-lg font-semibold text-gray-800">${formatMoyen(c.type)}</p>
+          <p class="text-gray-600">💰 Solde : <span class="font-medium text-green-600">${c.solde} FCFA</span></p>
+        </div>
+
+        <!-- Boutons d'action -->
         <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-  <button onclick="modifierSoldeCompte('${c.id}', ${c.solde})"
-          class="flex items-center justify-center px-3 py-2 sm:px-4 sm:py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm sm:text-base font-medium rounded-lg w-full sm:w-auto transition">
-    ✏️ Modifier
-  </button>
+          <button onclick="modifierSoldeCompte('${c.id}', ${c.solde})"
+            class="flex items-center justify-center px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm font-medium rounded-lg w-full sm:w-auto transition">
+            ✏️ Modifier
+          </button>
 
-  <button onclick="supprimerCompte('${c.id}')"
-          class="flex items-center justify-center px-3 py-2 sm:px-4 sm:py-2 bg-red-500 hover:bg-red-600 text-white text-sm sm:text-base font-medium rounded-lg w-full sm:w-auto transition">
-    🗑️ Supprimer
-  </button>
-</div>
-
+          <button onclick="supprimerCompte('${c.id}')"
+            class="flex items-center justify-center px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-medium rounded-lg w-full sm:w-auto transition">
+            🗑️ Supprimer
+          </button>
+        </div>
       `;
+
       liste.appendChild(div);
     });
   } catch (err) {
     console.error("❌ Erreur charger comptes:", err);
   }
 }
+
 
 async function ajouterCompte() {
   const type = document.getElementById("nouveauTypeCompte").value;
