@@ -3171,16 +3171,67 @@ async function mettreAJourAlertes() {
 }
 
         
-      // 🎯 Badge dynamique
+      // 🎯 Badge dynamique amélioré avec son + flash
 function mettreAJourBadgeAlertes(alertesActuelles = []) {
   const badge = document.getElementById("badgeAlertes");
+
   if (alertesActuelles && alertesActuelles.length > 0) {
     badge.textContent = alertesActuelles.length;
     badge.classList.remove("hidden");
+
+    // Vérifier si au moins une alerte est urgente (haute)
+    const aHauteUrgence = alertesActuelles.some(a => a.urgence === "haute");
+
+    if (aHauteUrgence) {
+      badge.classList.remove("bg-blue-600", "text-white");
+      badge.classList.add("bg-red-600", "text-white", "animate-bounce");
+
+      // 🔔 Jouer un son d’alerte
+      jouerSonAlerte();
+
+      // ⚡ Flash visuel de la page
+      flashVisuel();
+    } else {
+      badge.classList.remove("bg-red-600", "animate-bounce");
+      badge.classList.add("bg-blue-600", "text-white");
+    }
   } else {
     badge.classList.add("hidden");
   }
 }
+
+// 🔊 Fonction pour jouer un son
+function jouerSonAlerte() {
+  const audio = new Audio("/sons/alerte.mp3"); // mets ton fichier son ici
+  audio.play().catch(err => console.warn("Impossible de jouer le son:", err));
+}
+
+// ⚡ Fonction pour flash visuel rapide
+function flashVisuel() {
+  const flash = document.createElement("div");
+  flash.style.position = "fixed";
+  flash.style.top = 0;
+  flash.style.left = 0;
+  flash.style.width = "100%";
+  flash.style.height = "100%";
+  flash.style.backgroundColor = "rgba(255,0,0,0.5)";
+  flash.style.zIndex = 9999;
+  flash.style.animation = "flashAnim 0.5s ease-in-out";
+  document.body.appendChild(flash);
+
+  setTimeout(() => flash.remove(), 500); // disparaît après 0,5s
+}
+
+// Animation CSS pour le flash
+const style = document.createElement("style");
+style.textContent = `
+@keyframes flashAnim {
+  0%   { opacity: 0; }
+  50%  { opacity: 1; }
+  100% { opacity: 0; }
+}`;
+document.head.appendChild(style);
+
 
 // 🔎 Vérifier les alertes (simple proxy)
 function verifierAlertes() {
@@ -3219,65 +3270,67 @@ function verifierAlertes() {
 
     // Affichage
     alertesActuelles.forEach((alerte, index) => {
-      let couleur, icone, details = "";
+  let couleur, icone, details = "";
 
-      if (alerte.type === "retard") {
-        couleur = alerte.urgence === "haute" ? "from-red-600 to-red-700" : "from-orange-500 to-red-500";
-        icone = alerte.urgence === "haute" ? "🚨" : "⚠️";
-        details = `<div class="text-sm opacity-90 mt-2">⏰ Urgence: ${alerte.urgence}</div>`;
-      } else if (alerte.type === "tirage") {
-        couleur = "from-blue-500 to-green-500";
-        icone = "🎲";
-        details = `<div class="text-sm opacity-90 mt-2">🎉 Tirage disponible</div>`;
-      } else if (alerte.type === "cycle_retard") {
-        couleur = "from-yellow-500 to-orange-500";
-        icone = "⏳";
-        details = `<div class="text-sm opacity-90 mt-2">📊 Cycle en retard</div>`;
-      } else {
-        couleur = "from-gray-500 to-gray-600";
-        icone = "ℹ️";
-      }
+  if (alerte.type === "retard") {
+    couleur = alerte.urgence === "haute" ? "from-red-600 to-red-700" : "from-orange-500 to-red-500";
+    icone = alerte.urgence === "haute" ? "🚨" : "⚠️";
+    details = `<div class="text-sm opacity-90 mt-2">⏰ Urgence: ${alerte.urgence}</div>`;
+  } else if (alerte.type === "tirage") {
+    couleur = "from-blue-500 to-green-500";
+    icone = "🎲";
+    details = `<div class="text-sm opacity-90 mt-2">🎉 Tirage disponible</div>`;
+  } else if (alerte.type === "cycle_retard") {
+    couleur = "from-yellow-500 to-orange-500";
+    icone = "⏳";
+    details = `<div class="text-sm opacity-90 mt-2">📊 Cycle en retard</div>`;
+  } else if (alerte.type === "resultat_tirage") {
+    couleur = "from-green-600 to-yellow-500";
+    icone = "🏆";
+    details = `<div class="text-sm opacity-90 mt-2">Résultat de tirage enregistré</div>`;
+  } else {
+    couleur = "from-gray-500 to-gray-600";
+    icone = "ℹ️";
+  }
 
-      const div = document.createElement("div");
-      div.className = `bg-gradient-to-r ${couleur} p-6 rounded-2xl text-white fade-in-up mb-6 shadow-lg`;
-      div.style.animationDelay = `${index * 0.1}s`;
-      div.setAttribute("data-alerte-id", alerte.id); // pour suppression
+  const div = document.createElement("div");
+  div.className = `bg-gradient-to-r ${couleur} p-6 rounded-2xl text-white fade-in-up mb-6 shadow-lg`;
+  div.style.animationDelay = `${index * 0.1}s`;
+  div.setAttribute("data-alerte-id", alerte.id); // pour suppression
 
-      div.innerHTML = `
-        <div class="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-white/70 backdrop-blur shadow-md">
+  div.innerHTML = `
+    <div class="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-white/70 backdrop-blur shadow-md">
 
-  <!-- Icône + texte -->
-  <div class="flex items-start flex-1 gap-3">
-    <span class="text-3xl sm:text-4xl floating-animation">${icone}</span>
-    <div class="flex-1">
-      <div class="font-bold text-lg sm:text-xl mb-1">${alerte.message}</div>
-      <div class="text-xs sm:text-sm opacity-75 mb-2">📋 Tontine ID: ${alerte.tontineId}</div>
-      ${details}
-      <div class="text-xs opacity-60 mt-2 sm:mt-3">
-        🕒 Créée le ${new Date(alerte.dateCreation).toLocaleDateString("fr-FR")} à 
-        ${new Date(alerte.dateCreation).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+      <!-- Icône + texte -->
+      <div class="flex items-start flex-1 gap-3">
+        <span class="text-3xl sm:text-4xl floating-animation">${icone}</span>
+        <div class="flex-1">
+          <div class="font-bold text-lg sm:text-xl mb-1">${alerte.message}</div>
+          <div class="text-xs sm:text-sm opacity-75 mb-2">📋 Tontine ID: ${alerte.tontineId}</div>
+          ${details}
+          <div class="text-xs opacity-60 mt-2 sm:mt-3">
+            🕒 Créée le ${new Date(alerte.dateCreation).toLocaleDateString("fr-FR")} à 
+            ${new Date(alerte.dateCreation).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+          </div>
+        </div>
       </div>
+
+      <!-- Boutons -->
+      <div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
+        <button onclick="supprimerAlerte('${alerte.id}')"
+          class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all w-full sm:w-auto text-center">
+          ❌ Ignorer
+        </button>
+        <button onclick="resoudreAlerte('${alerte.id}')"
+          class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all w-full sm:w-auto text-center">
+          ✅ Résolue
+        </button>
+      </div>
+
     </div>
-  </div>
-
-  <!-- Boutons -->
-  <div class="flex flex-row sm:flex-col gap-2 w-full sm:w-auto">
-    <button onclick="supprimerAlerte('${alerte.id}')"
-      class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all w-full sm:w-auto text-center">
-      ❌ Ignorer
-    </button>
-    <button onclick="resoudreAlerte('${alerte.id}')"
-  class="bg-white bg-opacity-20 hover:bg-opacity-30 px-3 sm:px-4 py-2 rounded-lg text-sm font-medium transition-all w-full sm:w-auto text-center">
-  ✅ Résolue
-</button>
-
-  </div>
-
-</div>
-
-      `;
-      liste.appendChild(div);
-    });
+  `;
+  liste.appendChild(div);
+});
 
     // ✅ Badge
     mettreAJourBadgeAlertes(alertesActuelles);
