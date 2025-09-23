@@ -4186,18 +4186,33 @@ async function chargerSelectsPaiements() {
   const tontineId = document.getElementById("selectTontinePaiements").value;
   if (!tontineId) return;
 
-  // membres
-  const resM = await apiFetch(`${API_BASE}/membres/${tontineId}`);
-  const membres = await resM.json();
-  const selM = document.getElementById("paiementMembre");
-  selM.innerHTML = membres.map(m => `<option value="${m.id}">${m.nom}</option>`).join("");
+  try {
+    // 🔹 Charger membres
+    const resM = await apiFetch(`${API_BASE}/membres/${tontineId}`);
+    const membres = await resM.json();
+    const selM = document.getElementById("paiementMembre");
 
-  // comptes
-  const resC = await apiFetch(`${API_BASE}/comptes`);
-  const comptes = await resC.json();
-  const selC = document.getElementById("paiementMoyen");
-  selC.innerHTML = comptes.map(c => `<option value="${c.type}">${formatMoyen(c.type)} (solde: ${c.solde})</option>`).join("");
+    if (!membres.length) {
+      selM.innerHTML = `<option value="">⚠️ Aucun membre trouvé</option>`;
+    } else {
+      selM.innerHTML = membres.map(m => `<option value="${m.id}">${m.nom}</option>`).join("");
+    }
+
+    // 🔹 Charger comptes
+    const resC = await apiFetch(`${API_BASE}/comptes`);
+    const comptes = await resC.json();
+    const selC = document.getElementById("paiementMoyen");
+
+    if (!comptes.length) {
+      selC.innerHTML = `<option value="">⚠️ Aucun compte disponible</option>`;
+    } else {
+      selC.innerHTML = comptes.map(c => `<option value="${c.type}">${formatMoyen(c.type)} (solde: ${c.solde})</option>`).join("");
+    }
+  } catch (err) {
+    console.error("❌ Erreur chargerSelectsPaiements:", err);
+  }
 }
+
 
 async function ajouterPaiement() {
   const tontineId = document.getElementById("selectTontinePaiements").value;
