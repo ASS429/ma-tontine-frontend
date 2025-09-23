@@ -4119,25 +4119,46 @@ async function validerPaiement(id) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ statut: "effectue" })
     });
-    if (!res.ok) throw new Error("Erreur validation paiement");
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(`❌ Erreur validation paiement: ${data.details || data.error}`, "error");
+      return;
+    }
+
+    showToast("✅ Paiement marqué comme effectué", "success");
+
     await chargerPaiements();
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur valider paiement:", err);
+    showToast("❌ Erreur validation paiement", "error");
   }
 }
 
 async function supprimerPaiement(id) {
   if (!confirm("Supprimer ce paiement ?")) return;
+
   try {
     const res = await apiFetch(`${API_BASE}/paiements/${id}`, { method: "DELETE" });
-    if (!res.ok) throw new Error("Erreur suppression paiement");
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(`❌ Erreur suppression paiement: ${data.details || data.error}`, "error");
+      return;
+    }
+
+    showToast("🗑️ Paiement supprimé avec succès", "success");
+
     await chargerPaiements();
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur suppression paiement:", err);
+    showToast("❌ Erreur suppression paiement", "error");
   }
 }
+
 
 async function chargerComptes() {
   try {
@@ -4274,7 +4295,7 @@ async function ajouterPaiement() {
   const moyen = document.getElementById("paiementMoyen").value;
 
   if (!membreId || !montant || !moyen) {
-    alert("Remplis tous les champs");
+    showToast("⚠️ Remplis tous les champs", "warning");
     return;
   }
 
@@ -4291,14 +4312,50 @@ async function ajouterPaiement() {
         statut: (type === "gain") ? "en_attente" : "effectue"
       })
     });
-    if (!res.ok) throw new Error("Erreur ajout paiement");
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(`❌ Erreur ajout paiement: ${data.details || data.error}`, "error");
+      return;
+    }
+
+    showToast("✅ Paiement enregistré avec succès", "success");
+
+    // Petit plus : indiquer si un compte a été créé automatiquement
+    if (data.details && data.details.includes("Aucun compte trouvé")) {
+      showToast("💡 Un compte a été créé automatiquement pour ce moyen", "info");
+    }
 
     await chargerPaiements();
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur ajout paiement:", err);
+    showToast("❌ Erreur ajout paiement", "error");
   }
 }
+
+// ✅ Fonction pour afficher un toast
+function showToast(message, type = "info") {
+  const colors = {
+    success: "bg-green-500",
+    error: "bg-red-500",
+    info: "bg-blue-500",
+    warning: "bg-yellow-500"
+  };
+
+  const toast = document.createElement("div");
+  toast.className = `fixed bottom-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white ${colors[type] || colors.info} z-50`;
+  toast.textContent = message;
+
+  document.body.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.add("opacity-0", "transition");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
 
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
