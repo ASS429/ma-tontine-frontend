@@ -4188,7 +4188,7 @@ async function chargerSelectsPaiements() {
 
   try {
     // 🔹 Charger membres
-    const resM = await apiFetch(`${API_BASE}/membres/${tontineId}`);
+    const resM = await apiFetch(`${API_BASE}/membres/tontine/${tontineId}`);
     const membres = await resM.json();
       console.log("👥 Membres reçus API:", membres);
     const selM = document.getElementById("paiementMembre");
