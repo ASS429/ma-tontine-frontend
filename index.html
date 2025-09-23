@@ -1044,7 +1044,7 @@ label { font-size: 0.95rem; font-weight: 600; }
       <!-- Sélecteur de tontine -->
       <div class="mb-6">
         <label for="selectTontinePaiements" class="font-medium text-gray-700">Choisir une tontine :</label>
-        <select id="selectTontinePaiements" class="form-input w-full text-lg mt-2" onchange="chargerPaiements()">
+         <select id="selectTontinePaiements" class="form-input w-full text-lg mt-2" onchange="chargerPaiements(); chargerSelectsPaiements()">
           <option value="">Sélectionne une tontine...</option>
         </select>
       </div>
