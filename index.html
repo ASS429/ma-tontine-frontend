@@ -4208,6 +4208,7 @@ async function chargerComptes() {
 }
 
 
+// ✅ Ajouter un compte
 async function ajouterCompte() {
   const type = document.getElementById("nouveauTypeCompte").value;
   const solde = document.getElementById("nouveauSolde").value || 0;
@@ -4219,12 +4220,16 @@ async function ajouterCompte() {
       body: JSON.stringify({ type, solde })
     });
     if (!res.ok) throw new Error("Erreur ajout compte");
+
+    showToast("✅ Compte ajouté avec succès", "success");
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur ajouter compte:", err);
+    showToast("❌ Impossible d’ajouter le compte", "error");
   }
 }
 
+// ✏️ Modifier solde d’un compte
 async function modifierSoldeCompte(id, soldeActuel) {
   const nouveauSolde = prompt("Nouveau solde :", soldeActuel);
   if (nouveauSolde === null) return;
@@ -4236,21 +4241,28 @@ async function modifierSoldeCompte(id, soldeActuel) {
       body: JSON.stringify({ solde: Number(nouveauSolde) })
     });
     if (!res.ok) throw new Error("Erreur modification solde");
+
+    showToast("✅ Solde mis à jour", "success");
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur modification compte:", err);
+    showToast("❌ Impossible de modifier le solde", "error");
   }
 }
 
+// 🗑️ Supprimer un compte
 async function supprimerCompte(id) {
   if (!confirm("Supprimer ce compte ?")) return;
 
   try {
     const res = await apiFetch(`${API_BASE}/comptes/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Erreur suppression compte");
+
+    showToast("✅ Compte supprimé", "success");
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur suppression compte:", err);
+    showToast("❌ Impossible de supprimer le compte", "error");
   }
 }
 
