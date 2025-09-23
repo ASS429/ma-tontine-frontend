@@ -2714,13 +2714,14 @@ async function chargerTontineTirage() {
     tontineActive = tontines.find(t => t.id == id);
     if (!tontineActive) throw new Error("Tontine non trouvée en mémoire");
 
-    // 3️⃣ Mapper les gagnants
+    // 3️⃣ Mapper les gagnants (backend renvoie déjà montant_gagne)
     tontineActive.gagnants = tirages.map((tr, i) => ({
       id: tr.id,
       membreId: tr.membre_id,
       nom: tr.membre_nom,
       ordre: i + 1,
-      date: tr.date_tirage || new Date().toISOString()
+      date: tr.date_tirage || new Date().toISOString(),
+      montant: tr.montant_gagne || 0
     }));
 
     // 4️⃣ Mettre à jour les flags "aGagne"
@@ -2740,7 +2741,6 @@ async function chargerTontineTirage() {
     alert("Impossible de charger la tontine sélectionnée");
   }
 }
-
 
 // ➤ Supprimer un tirage
 async function supprimerTirage(id) {
@@ -2809,10 +2809,10 @@ async function afficherHistoriqueGagnants() {
     // 🔹 Regrouper par cycle
     const tiragesParCycle = {};
     for (const t of tirages) {
-      if (!tiragesParCycle[t.numero_cycle]) {
-        tiragesParCycle[t.numero_cycle] = [];
+      if (!tiragesParCycle[t.cycle_numero]) {
+        tiragesParCycle[t.cycle_numero] = [];
       }
-      tiragesParCycle[t.numero_cycle].push(t);
+      tiragesParCycle[t.cycle_numero].push(t);
     }
 
     // 🔹 Construire le HTML
@@ -2824,7 +2824,7 @@ async function afficherHistoriqueGagnants() {
             ${tirages.map(t => `
               <div class="flex items-center justify-between p-2 border-b border-gray-200">
                 <div>
-                  <p class="font-semibold">${t.nom_membre}</p>
+                  <p class="font-semibold">🏆 ${t.membre_nom}</p>
                   <p class="text-xs text-gray-500">
                     Tirage du ${new Date(t.date_tirage).toLocaleDateString("fr-FR", {
                       day: "2-digit", month: "long", year: "numeric"
@@ -2833,7 +2833,7 @@ async function afficherHistoriqueGagnants() {
                 </div>
                 <div class="text-right">
                   <p class="text-green-600 font-bold">
-                    +${Number(t.montant_gagne).toLocaleString()} CFA
+                    +${Number(t.montant_gagne || 0).toLocaleString()} CFA
                   </p>
                 </div>
               </div>
@@ -2953,7 +2953,7 @@ async function effectuerTirage() {
 
       document.getElementById("gagnantTirage").textContent = `🎉 ${gagnant.membre_nom}`;
       document.getElementById("montantGagne").textContent = 
-        `Montant gagné: ${gagnant.montant_total.toLocaleString()} FCFA`;
+        `Montant gagné: ${Number(gagnant.montant_gagne || gagnant.montant_total).toLocaleString()} FCFA`;
 
       chargerTontineTirage(); // recharge affichages
     }, 2000);
@@ -2962,6 +2962,7 @@ async function effectuerTirage() {
     alert("Erreur réseau");
   }
 }
+
 
 // 📊 Graphiques
 let chartTypes = null;
