@@ -4126,12 +4126,18 @@ async function chargerComptes() {
       div.className = "p-3 border rounded bg-white shadow flex justify-between items-center";
       div.innerHTML = `
         <div><b>${formatMoyen(c.type)}</b> — Solde: ${c.solde} FCFA</div>
-        <div class="flex gap-2">
-          <button onclick="modifierSoldeCompte('${c.id}', ${c.solde})"
-                  class="px-3 py-1 bg-yellow-500 text-white rounded">✏️ Modifier</button>
-          <button onclick="supprimerCompte('${c.id}')"
-                  class="px-3 py-1 bg-red-500 text-white rounded">🗑️ Supprimer</button>
-        </div>
+        <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+  <button onclick="modifierSoldeCompte('${c.id}', ${c.solde})"
+          class="flex items-center justify-center px-3 py-2 sm:px-4 sm:py-2 bg-yellow-500 hover:bg-yellow-600 text-white text-sm sm:text-base font-medium rounded-lg w-full sm:w-auto transition">
+    ✏️ Modifier
+  </button>
+
+  <button onclick="supprimerCompte('${c.id}')"
+          class="flex items-center justify-center px-3 py-2 sm:px-4 sm:py-2 bg-red-500 hover:bg-red-600 text-white text-sm sm:text-base font-medium rounded-lg w-full sm:w-auto transition">
+    🗑️ Supprimer
+  </button>
+</div>
+
       `;
       liste.appendChild(div);
     });
