@@ -1,10 +1,18 @@
 {
+  "id": "com.samatontine.app",
   "name": "Sama Tontine",
   "short_name": "Tontine",
+  "description": "Application de gestion de tontines et commerces.",
+  "lang": "fr",
+  "dir": "ltr",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "fullscreen"],
+  "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",
+  "categories": ["finance", "productivity", "business"],
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -15,6 +23,20 @@
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Nouvelle Tontine",
+      "short_name": "Nouvelle",
+      "url": "/nouvelle-tontine",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Mes Tontines",
+      "short_name": "MesTontines",
+      "url": "/mes-tontines",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }
