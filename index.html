@@ -1344,6 +1344,13 @@ async function apiFetch(url, options = {}) {
 
 
     <script>
+
+       if ("serviceWorker" in navigator) {
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then(() => console.log("✅ Service Worker enregistré !"))
+      .catch(err => console.error("❌ Erreur SW:", err));
+  }
         // Système d'authentification
         let utilisateurConnecte = null; 
 
