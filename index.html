@@ -2871,8 +2871,8 @@ async function retirerMembreTontine(membreId, tontineId) {
     return;
   }
 
-  // Infos cotisations
-  const cotisations = (tontineActive.cotisations || []).filter(c => c.membre_id === membreId);
+  // ✅ Utiliser les cotisations directement liées au membre
+  const cotisations = membre.cotisationsPayees || [];
   const cotisationsCount = cotisations.length;
   const totalCotise = cotisations.reduce((s, c) => s + Number(c.montant || 0), 0);
 
@@ -2882,7 +2882,7 @@ async function retirerMembreTontine(membreId, tontineId) {
 
 👤 Membre: "${membre.nom}"
 📌 Tontine: "${tontineActive.nom}"
-📅 Depuis: ${membre.cree_le ? new Date(membre.cree_le).toLocaleDateString('fr-FR') : '-'}
+📅 Depuis: ${membre.dateAjout ? new Date(membre.dateAjout).toLocaleDateString('fr-FR') : '-'}
 
 💰 Cotisations enregistrées: ${cotisationsCount}
 💵 Total cotisé: ${totalCotise.toLocaleString()} FCFA
@@ -2904,7 +2904,6 @@ Confirmer le retrait ?
 
     // 🔥 Mets à jour la tontineActive après suppression
     tontineActive.membres = tontineActive.membres.filter(m => m.id !== membreId);
-    tontineActive.cotisations = (tontineActive.cotisations || []).filter(c => c.membre_id !== membreId);
     tontineActive.gagnants = (tontineActive.gagnants || []).filter(g => g.membre_id !== membreId);
     tontineActive.tirages = (tontineActive.tirages || []).filter(t => t.membre_id !== membreId);
 
