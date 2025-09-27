@@ -479,6 +479,93 @@ label { font-size: 0.95rem; font-weight: 600; }
   @keyframes fadeOut {
     to { opacity: 0; transform: translateX(100%); }
   }
+/* Overlay plein écran */
+#custom-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5); /* voile noir semi-transparent */
+  display: flex;
+  align-items: center; /* centrer verticalement */
+  justify-content: center; /* centrer horizontalement */
+  z-index: 10000;
+  padding: 1rem;
+}
+
+/* Boîte principale (confirm + prompt) */
+.custom-confirm-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  font-family: sans-serif;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  animation: popIn 0.3s ease;
+}
+
+/* Texte */
+.custom-confirm-box p {
+  margin-bottom: 16px;
+  font-size: 16px;
+  color: #333;
+}
+
+/* Input prompt */
+.custom-prompt-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 15px;
+  margin-bottom: 20px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.custom-prompt-input:focus {
+  border-color: #16a34a; /* vert sur focus */
+}
+
+/* Actions */
+.custom-confirm-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.custom-confirm-btn {
+  flex: 1;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+/* Boutons */
+.custom-confirm-yes {
+  background: #16a34a;
+  color: #fff;
+}
+.custom-confirm-yes:hover {
+  background: #15803d;
+}
+
+.custom-confirm-no {
+  background: #e5e7eb;
+  color: #111;
+}
+.custom-confirm-no:hover {
+  background: #d1d5db;
+}
+
+/* Animation */
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.85); }
+  to { opacity: 1; transform: scale(1); }
+}
 
     </style>
 
@@ -4399,22 +4486,28 @@ function showNotification(message, type = "info") {
   }, 4000);
 }
 
-// ✅ Remplace prompt par une version moderne
+// ✅ Prompt moderne en modale centrée
 function customPrompt(message, defaultValue = "") {
   return new Promise((resolve) => {
     // Overlay
     const overlay = document.createElement("div");
-    overlay.id = "custom-confirm-overlay";
+    overlay.id = "custom-prompt-overlay";
+    overlay.className = "fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4";
 
+    // Contenu
     overlay.innerHTML = `
-      <div class="custom-confirm-box">
-        <p>${message}</p>
+      <div class="bg-white rounded-2xl p-6 max-w-md w-full shadow-lg">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">${message}</h3>
         <input type="text" id="custom-prompt-input" 
                value="${defaultValue}" 
-               style="width: 90%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"/>
-        <div class="custom-confirm-actions">
-          <button class="custom-confirm-btn custom-confirm-yes">Valider</button>
-          <button class="custom-confirm-btn custom-confirm-no">Annuler</button>
+               class="w-full p-3 border border-gray-300 rounded-xl mb-6 focus:ring-2 focus:ring-blue-500 focus:outline-none text-gray-700"/>
+        <div class="flex gap-4">
+          <button class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 px-4 rounded-xl font-medium">
+            Annuler
+          </button>
+          <button class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-3 px-4 rounded-xl font-medium">
+            Valider
+          </button>
         </div>
       </div>
     `;
@@ -4422,16 +4515,17 @@ function customPrompt(message, defaultValue = "") {
     document.body.appendChild(overlay);
 
     const input = overlay.querySelector("#custom-prompt-input");
+    const [btnCancel, btnOk] = overlay.querySelectorAll("button");
     input.focus();
 
     // Valider
-    overlay.querySelector(".custom-confirm-yes").addEventListener("click", () => {
+    btnOk.addEventListener("click", () => {
       resolve(input.value.trim());
       overlay.remove();
     });
 
     // Annuler
-    overlay.querySelector(".custom-confirm-no").addEventListener("click", () => {
+    btnCancel.addEventListener("click", () => {
       resolve(null);
       overlay.remove();
     });
@@ -4450,7 +4544,7 @@ function customPrompt(message, defaultValue = "") {
   });
 }
 
-// ✅ Polyfill : remplacer prompt natif
+// ✅ Polyfill pour remplacer prompt natif
 window.prompt = function (message, defaultValue = "") {
   return customPrompt(message, defaultValue);
 };
