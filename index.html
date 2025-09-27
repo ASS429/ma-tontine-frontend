@@ -2526,7 +2526,8 @@ function afficherMembresTontineGestion() {
 
 // ➤ Supprimer un membre (via backend + synchro locale)
 async function supprimerMembreTontine(membreId) {
-  if (!confirm('Supprimer ce membre ?')) return;
+  const ok = await confirm('❓ Supprimer ce membre ?');
+  if (!ok) return;
 
   try {
     await apiFetch(`${API_BASE}/membres/${membreId}`, { method: "DELETE" });
@@ -2787,7 +2788,8 @@ async function retirerMembreTontine(membreId, tontineId) {
                   `⚠️ Toutes ses cotisations seront supprimées définitivement.\n\n` +
                   `Confirmer le retrait ?`;
 
-  if (!confirm(message)) return;
+  const ok = await confirm(message);
+  if (!ok) return;
 
   try {
     const res = await apiFetch(`${API_BASE}/membres/${membreId}`, { method: "DELETE" });
@@ -3684,7 +3686,7 @@ function estEnRetardPeriode(membre, tontine) {
             }
         }
 
-        // ➤ Supprimer une tontine
+       // ➤ Supprimer une tontine
 async function supprimerTontine(id) {
   const tontine = tontines.find(t => t.id === id);
   if (!tontine) return;
@@ -3703,7 +3705,8 @@ async function supprimerTontine(id) {
     `(Membres, cotisations, historique des tirages)\n\n` +
     `Êtes-vous absolument certain(e) ?`;
 
-  if (!confirm(message)) return;
+  const ok = await confirm(message);
+  if (!ok) return;
 
   try {
     const res = await apiFetch(`${API_BASE}/tontines/${id}`, { method: "DELETE" });
@@ -3805,7 +3808,8 @@ async function supprimerTontine(id) {
   }
 }
         
-        async function supprimerTontineActive() {
+      // ➤ Supprimer la tontine active
+async function supprimerTontineActive() {
   if (!tontineActive) return;
 
   const message = `⚠️ SUPPRESSION DE TONTINE ⚠️\n\n` +
@@ -3814,7 +3818,8 @@ async function supprimerTontine(id) {
                   `Toutes les données liées (membres, cotisations, tirages, alertes) seront supprimées définitivement.\n\n` +
                   `Confirmer la suppression ?`;
 
-  if (!confirm(message)) return;
+  const ok = await confirm(message);
+  if (!ok) return;
 
   const { error } = await sb.from('tontines').delete().eq('id', tontineActive.id);
   if (error) return showNotification('Suppression impossible: ' + error.message, "error");
@@ -4157,8 +4162,10 @@ async function validerPaiement(id) {
   }
 }
 
+// ➤ Supprimer un paiement
 async function supprimerPaiement(id) {
-  if (!confirm("Supprimer ce paiement ?")) return;
+  const ok = await confirm("❓ Supprimer ce paiement ?");
+  if (!ok) return;
 
   try {
     const res = await apiFetch(`${API_BASE}/paiements/${id}`, { method: "DELETE" });
@@ -4249,10 +4256,10 @@ async function ajouterCompte() {
   }
 }
 
-// ✏️ Modifier solde d’un compte
+// ✏️ Modifier solde d’un compte (avec modale moderne)
 async function modifierSoldeCompte(id, soldeActuel) {
-  const nouveauSolde = prompt("Nouveau solde :", soldeActuel);
-  if (nouveauSolde === null) return;
+  const nouveauSolde = await prompt("💰 Nouveau solde :", soldeActuel);
+  if (nouveauSolde === null || nouveauSolde === "") return;
 
   try {
     const res = await apiFetch(`${API_BASE}/comptes/${id}`, {
@@ -4270,9 +4277,10 @@ async function modifierSoldeCompte(id, soldeActuel) {
   }
 }
 
-// 🗑️ Supprimer un compte
+// ➤ Supprimer un compte
 async function supprimerCompte(id) {
-  if (!confirm("Supprimer ce compte ?")) return;
+  const ok = await confirm("❓ Supprimer ce compte ?");
+  if (!ok) return;
 
   try {
     const res = await apiFetch(`${API_BASE}/comptes/${id}`, { method: "DELETE" });
@@ -4390,6 +4398,63 @@ function showNotification(message, type = "info") {
     toast.remove();
   }, 4000);
 }
+
+// ✅ Remplace prompt par une version moderne
+function customPrompt(message, defaultValue = "") {
+  return new Promise((resolve) => {
+    // Overlay
+    const overlay = document.createElement("div");
+    overlay.id = "custom-confirm-overlay";
+
+    overlay.innerHTML = `
+      <div class="custom-confirm-box">
+        <p>${message}</p>
+        <input type="text" id="custom-prompt-input" 
+               value="${defaultValue}" 
+               style="width: 90%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; margin-bottom: 16px; font-size: 14px;"/>
+        <div class="custom-confirm-actions">
+          <button class="custom-confirm-btn custom-confirm-yes">Valider</button>
+          <button class="custom-confirm-btn custom-confirm-no">Annuler</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const input = overlay.querySelector("#custom-prompt-input");
+    input.focus();
+
+    // Valider
+    overlay.querySelector(".custom-confirm-yes").addEventListener("click", () => {
+      resolve(input.value.trim());
+      overlay.remove();
+    });
+
+    // Annuler
+    overlay.querySelector(".custom-confirm-no").addEventListener("click", () => {
+      resolve(null);
+      overlay.remove();
+    });
+
+    // Entrée + Échap
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        resolve(input.value.trim());
+        overlay.remove();
+      }
+      if (e.key === "Escape") {
+        resolve(null);
+        overlay.remove();
+      }
+    });
+  });
+}
+
+// ✅ Polyfill : remplacer prompt natif
+window.prompt = function (message, defaultValue = "") {
+  return customPrompt(message, defaultValue);
+};
+
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
