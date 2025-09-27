@@ -443,6 +443,42 @@ label { font-size: 0.95rem; font-weight: 600; }
         /* Bordure contrastée pour les bannières de statut */
 .status-banner { border-left: 6px solid rgba(255,255,255,0.6); }
 
+/* ✅ Zone contenant les toasts */
+  #toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  /* ✅ Style d’un toast */
+  .toast {
+    min-width: 220px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    animation: slideIn 0.4s ease, fadeOut 0.5s ease 3.5s forwards;
+  }
+
+  /* ✅ Variantes par type */
+  .toast.success { background: #16a34a; }  /* vert */
+  .toast.error { background: #dc2626; }    /* rouge */
+  .toast.warning { background: #f59e0b; }  /* jaune */
+  .toast.info { background: #2563eb; }     /* bleu */
+
+  /* ✅ Animations */
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(100%); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes fadeOut {
+    to { opacity: 0; transform: translateX(100%); }
+  }
 
     </style>
 
@@ -1403,18 +1439,27 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
         // Système d'authentification
 
-        async function seConnecter(event) { 
+       async function seConnecter(event) { 
   event.preventDefault();
   const email = document.getElementById('emailConnexion').value.trim();
   const motPasse = document.getElementById('motPasseConnexion').value;
 
-  if (!email || !motPasse) return alert('Remplissez tous les champs.');
+  if (!email || !motPasse) {
+    showNotification("⚠️ Remplissez tous les champs.", "warning");
+    return;
+  }
 
   const { data, error } = await sb.auth.signInWithPassword({ email, password: motPasse });
-  if (error) return alert('Connexion impossible: ' + error.message);
+  if (error) {
+    showNotification("❌ Connexion impossible: " + error.message, "error");
+    return;
+  }
 
   const { user, session } = data;
-  if (!session) return alert("Impossible de récupérer la session");
+  if (!session) {
+    showNotification("❌ Impossible de récupérer la session", "error");
+    return;
+  }
 
   // 🔹 Sauvegarder le vrai token JWT
   localStorage.setItem("token", session.access_token);
@@ -1445,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   afficherInterfaceConnectee();
 }
 
-        async function sInscrire(event) {
+async function sInscrire(event) {
   event.preventDefault();
 
   const nom = document.getElementById('nomInscription').value.trim();
@@ -1453,9 +1498,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   const motPasse = document.getElementById('motPasseInscription').value;
   const confirm = document.getElementById('confirmMotPasse').value;
 
-  if (!nom || !email || !motPasse || !confirm) return alert('Remplissez tous les champs.');
-  if (motPasse !== confirm) return alert('Les mots de passe ne correspondent pas.');
-  if (motPasse.length < 6) return alert('Mot de passe trop court.');
+  if (!nom || !email || !motPasse || !confirm) {
+    showNotification("⚠️ Remplissez tous les champs.", "warning");
+    return;
+  }
+  if (motPasse !== confirm) {
+    showNotification("❌ Les mots de passe ne correspondent pas.", "error");
+    return;
+  }
+  if (motPasse.length < 6) {
+    showNotification("⚠️ Mot de passe trop court.", "warning");
+    return;
+  }
 
   // 🔹 Inscription via Supabase Auth
   const { data, error } = await sb.auth.signUp({
@@ -1465,7 +1519,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   if (error) {
-    alert('Inscription impossible: ' + error.message);
+    showNotification("❌ Inscription impossible: " + error.message, "error");
     return;
   }
 
@@ -1478,13 +1532,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // ✅ PAS BESOIN de réinsérer dans "utilisateurs" : ton trigger SQL `handle_new_user` s’en charge automatiquement.
 
-  alert('✅ Compte créé avec succès !');
+  showNotification("✅ Compte créé avec succès !", "success");
   
   // 🔹 Rediriger l’utilisateur vers l’accueil
   ouvrirPageConnexion(); // ou accueil si tu veux le connecter direct
 }
 
-       async function seDeconnecter(silencieux = false) {
+async function seDeconnecter(silencieux = false) {
   await sb.auth.signOut();
   localStorage.removeItem("token");
   utilisateurConnecte = null;
@@ -1494,10 +1548,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   pageActuelle = 'connexion';
   afficherPageConnexion();
   if (!silencieux) {
-    alert('✅ Déconnexion réussie !');
+    showNotification("✅ Déconnexion réussie !", "success");
   }
 }
-
 
         function ouvrirPageConnexion() {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1545,7 +1598,8 @@ async function chargerDepuisSupabase() {
 
   if (error) {
     console.error(error);
-    return alert('Erreur au chargement des données: ' + error.message);
+    showNotification("❌ Erreur au chargement des données: " + error.message, "error");
+    return;
   }
 
   // Mapper vers ta structure actuelle (pour ne pas toucher à ton UI)
@@ -1866,7 +1920,7 @@ async function majEntete() {
   }
 }
 
-// Création finale (uniquement à l’étape 4)
+// ➤ Création finale (uniquement à l’étape 4)
 async function creerTontine() {
   const nom = document.getElementById('nomTontine').value.trim();
   const type = document.getElementById('typeTontine').value;
@@ -1878,7 +1932,7 @@ async function creerTontine() {
   const description = document.getElementById('descriptionTontine').value.trim();
 
   if (!nom || !montant || !nbMembres || nbMembres < 2) {
-    return afficherErreur("Veuillez remplir les champs requis.");
+    return showNotification("⚠️ Veuillez remplir les champs requis.", "error");
   }
 
   const { data, error } = await sb.from('tontines')
@@ -1896,12 +1950,13 @@ async function creerTontine() {
     .select()
     .single();
 
-  if (error) return alert('Création impossible: ' + error.message);
+  if (error) {
+    return showNotification('❌ Création impossible: ' + error.message, "error");
+  }
 
-  // Met à jour le state local pour réutiliser ton UI sans refactor
   tontines.push(mapTontineRowToLocal({ ...data, membres: [], cotisations: [] }));
   ouvrirPage('accueil');
-  alert('✅ Tontine créée avec succès !');
+  showNotification('✅ Tontine créée avec succès !', "success");
 }
 
     // ✅ Affichage des tontines sécurisé
@@ -2084,7 +2139,7 @@ function masquerGuide() {
     });
 }
 
-       // ➤ Charger la tontine pour la gestion
+// ➤ Charger la tontine pour la gestion
 async function chargerTontineGestion() {
   const id = document.getElementById('selectTontineGestion').value;
   if (!id) {
@@ -2093,22 +2148,18 @@ async function chargerTontineGestion() {
   }
 
   try {
-    // 🔹 Un seul appel backend qui inclut déjà les membres + cotisations
     const res = await apiFetch(`${API_BASE}/tontines/${id}`);
     tontineActive = await res.json();
 
-    // ✅ Afficher panneau gestion
     document.getElementById('panneauGestion').classList.remove('hidden');
 
-    // ✅ Rafraîchir les affichages
     afficherInfosTontine?.();
     afficherMembresTontineGestion?.();
     afficherHistoriqueCotisations?.();
     mettreAJourAlertes?.();
-
   } catch (err) {
     console.error("❌ Erreur chargement gestion tontine:", err);
-    alert("Impossible de charger la tontine sélectionnée");
+    showNotification("❌ Impossible de charger la tontine sélectionnée", "error");
   }
 }
 
@@ -2219,7 +2270,6 @@ async function afficherMembresTontine() {
   }
 
   try {
-    // 🔹 Charger la tontine (avec membres + cotisations)
     const res = await apiFetch(`${API_BASE}/membres/${tontineId}`);
     if (!res.ok) {
       let message = `Erreur ${res.status}: ${res.statusText}`;
@@ -2302,15 +2352,16 @@ async function afficherMembresTontine() {
     });
   } catch (err) {
     console.error('❌ Erreur chargement membres:', err);
-    alert("Impossible de charger les membres ❌");
+    showNotification("❌ Impossible de charger les membres", "error");
   }
 }
+
         // Gestion des membres
 
 // ➤ Ajouter un membre à la tontine active (backend Express)
 async function ajouterMembreTontine() {
   if (!tontineActive) {
-    return alert("⚠️ Aucune tontine active !");
+    return showNotification("⚠️ Aucune tontine active !", "warning");
   }
 
   const nom = document.getElementById("nomMembre").value.trim();
@@ -2318,11 +2369,10 @@ async function ajouterMembreTontine() {
   const adresse = document.getElementById("adresseMembre").value.trim();
 
   if (!nom || !telephone || !adresse) {
-    return alert("⚠️ Veuillez remplir tous les champs (nom, téléphone, adresse)");
+    return showNotification("⚠️ Veuillez remplir tous les champs (nom, téléphone, adresse)", "error");
   }
 
   try {
-    // 1️⃣ Ajout côté backend Express
     const res = await apiFetch(`${API_BASE}/membres`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2341,7 +2391,6 @@ async function ajouterMembreTontine() {
 
     const newMembre = await res.json();
 
-    // 2️⃣ Mise à jour locale (optionnelle si tu relies toujours à l’API)
     tontineActive.membres = tontineActive.membres || [];
     tontineActive.membres.push({
       id: newMembre.id,
@@ -2351,15 +2400,13 @@ async function ajouterMembreTontine() {
       dateAjout: newMembre.cree_le 
         ? new Date(newMembre.cree_le).toISOString() 
         : new Date().toISOString(),
-      cotisationsPayees: [] // ⚠️ à remplir plus tard via l'API
+      cotisationsPayees: []
     });
 
-    // 3️⃣ Réinitialiser formulaire
     document.getElementById("nomMembre").value = "";
     document.getElementById("telephoneMembre").value = "";
     document.getElementById("adresseMembre").value = "";
 
-    // 4️⃣ Rafraîchir affichage
     if (typeof afficherMembresTontine === "function") {
       afficherMembresTontine();
     }
@@ -2367,10 +2414,10 @@ async function ajouterMembreTontine() {
       afficherMembresTontineGestion();
     }
 
-    alert(`✅ Membre "${nom}" ajouté avec succès !`);
+    showNotification(`✅ Membre "${nom}" ajouté avec succès !`, "success");
   } catch (err) {
     console.error("❌ Erreur ajout membre:", err);
-    alert("❌ Ajout impossible: " + err.message);
+    showNotification("❌ Ajout impossible: " + err.message, "error");
   }
 }
 
@@ -2489,22 +2536,21 @@ async function supprimerMembreTontine(membreId) {
     mettreAJourSelectMembres?.();
     mettreAJourAffichage?.();
 
-    alert("✅ Membre supprimé avec succès !");
+    showNotification("✅ Membre supprimé avec succès !", "success");
   } catch (err) {
     console.error("Erreur suppression membre:", err);
-    alert("❌ Suppression impossible: " + err.message);
+    showNotification("❌ Suppression impossible: " + err.message, "error");
   }
 }
 
 
-       // ➤ Ouvrir l’édition
+// ➤ Ouvrir l’édition
 async function editerTontineAccueil(id) {
   try {
     const res = await apiFetch(`${API_BASE}/tontines/${id}`);
     if (!res.ok) throw new Error("Impossible de charger la tontine");
     tontineActive = await res.json();
 
-    // Pré-remplir la modale avec les bons IDs
     document.getElementById("editNomTontine").value = tontineActive.nom;
     document.getElementById("editTypeTontine").value = tontineActive.type;
     document.getElementById("editMontantCotisation").value = tontineActive.montant_cotisation;
@@ -2514,13 +2560,13 @@ async function editerTontineAccueil(id) {
     document.getElementById("editNombreMembres").value = tontineActive.nombre_membres;
     document.getElementById("editDescriptionTontine").value = tontineActive.description || "";
 
-    // Afficher la modale
     document.getElementById("modaleEditionTontine").classList.remove("hidden");
   } catch (err) {
     console.error("❌ Erreur édition tontine:", err);
-    alert("Impossible de charger la tontine.");
+    showNotification("❌ Impossible de charger la tontine.", "error");
   }
 }
+
 
 // ➤ Sauvegarder les modifs
 async function sauvegarderEditionTontine() {
@@ -2548,8 +2594,6 @@ async function sauvegarderEditionTontine() {
     }
 
     const updated = await res.json();
-
-    // ✅ Sécuriser l'objet retourné (ajouter les tableaux si manquants)
     const tontineComplete = {
       ...updated,
       membres: updated.membres || [],
@@ -2558,15 +2602,14 @@ async function sauvegarderEditionTontine() {
       gagnants: updated.gagnants || []
     };
 
-    // ✅ Mettre à jour la liste locale
     tontines = tontines.map(t => t.id === tontineComplete.id ? tontineComplete : t);
 
     afficherTontines();
     fermerModaleEditionTontine();
-    alert(`✅ Tontine "${tontineComplete.nom}" mise à jour avec succès !`);
+    showNotification(`✅ Tontine "${tontineComplete.nom}" mise à jour avec succès !`, "success");
   } catch (err) {
     console.error("Erreur sauvegarde édition:", err);
-    alert("❌ Impossible de modifier la tontine: " + err.message);
+    showNotification("❌ Impossible de modifier la tontine: " + err.message, "error");
   }
 }
 
@@ -2618,16 +2661,15 @@ function mettreAJourSelectMembres() {
        
 // ➤ Enregistrer une cotisation
 async function enregistrerCotisationTontine() {
-  if (!tontineActive) return alert("⚠️ Aucune tontine active !");
+  if (!tontineActive) return showNotification("⚠️ Aucune tontine active !", "warning");
 
   const membreId = document.getElementById('selectMembreCotisation').value;
-  if (!membreId) return alert("⚠️ Sélectionne un membre !");
+  if (!membreId) return showNotification("⚠️ Sélectionne un membre !", "warning");
 
-  const montant = tontineActive.montant_cotisation; // ✅ cohérent avec backend
+  const montant = tontineActive.montant_cotisation;
   const date = document.getElementById('dateCotisation').value || new Date().toISOString().split('T')[0];
 
   try {
-    // 🔹 Appel backend sécurisé
     const res = await apiFetch(`${API_BASE}/cotisations`, {
       method: "POST",
       body: JSON.stringify({
@@ -2644,28 +2686,24 @@ async function enregistrerCotisationTontine() {
     }
 
     const data = await res.json();
-
-    // ✅ Normalisation uniforme
     const cotisation = {
       id: data.id,
-      membre_id: data.membre_id,  // reste en snake_case pour cohérence
+      membre_id: data.membre_id,
       montant: Number(data.montant),
       date_cotisation: data.date_cotisation
     };
 
-    // 🔄 Mise à jour locale
     if (!tontineActive.cotisations) tontineActive.cotisations = [];
     tontineActive.cotisations.push(cotisation);
 
-    // ✅ Rafraîchir l’affichage
     afficherHistoriqueCotisations?.();
     afficherMembresTontineGestion?.();
     mettreAJourAlertes?.();
 
-    alert('✅ Cotisation enregistrée avec succès.');
+    showNotification('✅ Cotisation enregistrée avec succès.', "success");
   } catch (err) {
     console.error("Erreur API cotisation:", err);
-    alert("❌ Impossible d’enregistrer la cotisation : " + err.message);
+    showNotification("❌ Impossible d’enregistrer la cotisation : " + err.message, "error");
   }
 }
 
@@ -2731,11 +2769,11 @@ function afficherHistoriqueCotisations() {
         // Fonctions de gestion des cotisations et membres
 // ➤ Retirer un membre d’une tontine via backend Express
 async function retirerMembreTontine(membreId, tontineId) {
-  if (!tontineActive) return alert("⚠️ Aucune tontine active !");
+  if (!tontineActive) return showNotification("⚠️ Aucune tontine active !", "warning");
+
   const membre = tontineActive.membres.find(m => m.id === membreId);
   if (!membre) return;
 
-  // 🔹 Calcul du résumé avant suppression
   const cotisations = (tontineActive.cotisations || []).filter(c => c.membre_id === membreId);
   const cotisationsCount = cotisations.length;
   const totalCotise = cotisations.reduce((s, c) => s + Number(c.montant || 0), 0);
@@ -2752,25 +2790,17 @@ async function retirerMembreTontine(membreId, tontineId) {
   if (!confirm(message)) return;
 
   try {
-    // 1️⃣ Suppression via backend
-    const res = await apiFetch(`${API_BASE}/membres/${membreId}`, {
-      method: "DELETE"
-    });
-
+    const res = await apiFetch(`${API_BASE}/membres/${membreId}`, { method: "DELETE" });
     if (!res.ok) {
       const errData = await res.json();
       throw new Error(errData.error || "Erreur lors de la suppression du membre");
     }
 
-    // 2️⃣ Mise à jour locale (optimiste)
     tontineActive.membres = tontineActive.membres.filter(m => m.id !== membreId);
     tontineActive.cotisations = (tontineActive.cotisations || []).filter(c => c.membre_id !== membreId);
-
-    // Vérifier si ce membre était déjà gagnant
     tontineActive.gagnants = (tontineActive.gagnants || []).filter(g => g.membre_id !== membreId);
     tontineActive.tirages = (tontineActive.tirages || []).filter(t => t.membre_id !== membreId);
 
-    // 3️⃣ Rafraîchir affichages
     if (pageActuelle === 'gestion') {
       afficherMembresTontineGestion?.();
       mettreAJourSelectMembres?.();
@@ -2780,14 +2810,13 @@ async function retirerMembreTontine(membreId, tontineId) {
     afficherHistoriqueCotisations?.();
     mettreAJourAlertes?.();
 
-    // 4️⃣ Confirmation
-    alert(`✅ Membre "${membre.nom}" retiré avec succès !\n\n` +
-          `📊 Résumé:\n` +
-          `• ${cotisationsCount} cotisations supprimées\n` +
-          `• ${totalCotise.toLocaleString()} FCFA retirés de l’historique\n`);
+    showNotification(
+      `✅ Membre "${membre.nom}" retiré avec succès !\n\n📊 Résumé:\n• ${cotisationsCount} cotisations supprimées\n• ${totalCotise.toLocaleString()} FCFA retirés de l’historique`,
+      "success"
+    );
   } catch (err) {
     console.error("❌ Erreur suppression membre:", err);
-    alert("❌ Suppression impossible: " + err.message);
+    showNotification("❌ Suppression impossible: " + err.message, "error");
   }
 }
 
@@ -2804,16 +2833,13 @@ async function chargerTontineTirage() {
   }
 
   try {
-    // 1️⃣ Récupérer les tirages de cette tontine
     const res = await apiFetch(`${API_BASE}/tirages/${id}`);
     if (!res.ok) throw new Error("Erreur chargement tirages");
     const tirages = await res.json();
 
-    // 2️⃣ Synchroniser la tontine active
     tontineActive = tontines.find(t => t.id == id);
     if (!tontineActive) throw new Error("Tontine non trouvée en mémoire");
 
-    // 3️⃣ Mapper les gagnants (backend renvoie déjà montant_gagne)
     tontineActive.gagnants = tirages.map((tr, i) => ({
       id: tr.id,
       membreId: tr.membre_id,
@@ -2823,21 +2849,17 @@ async function chargerTontineTirage() {
       montant: tr.montant_gagne || 0
     }));
 
-    // 4️⃣ Mettre à jour les flags "aGagne"
     tontineActive.membres.forEach(m => {
       m.aGagne = tontineActive.gagnants.some(g => g.membreId === m.id);
     });
 
-    // 5️⃣ Afficher panneau
     document.getElementById('panneauTirage').classList.remove('hidden');
-
-    // 6️⃣ Mettre à jour les sections
-    afficherInfosTirage();        // via preview backend
-    afficherMembresEligibles();   // liste des éligibles
-    afficherHistoriqueGagnants(); // historique
+    afficherInfosTirage();
+    afficherMembresEligibles();
+    afficherHistoriqueGagnants();
   } catch (err) {
     console.error("❌ Erreur chargement tirage tontine:", err);
-    alert("Impossible de charger la tontine sélectionnée");
+    showNotification("❌ Impossible de charger la tontine sélectionnée", "error");
   }
 }
 
@@ -2849,15 +2871,15 @@ async function supprimerTirage(id) {
     const res = await apiFetch(`${API_BASE}/tirages/${id}`, { method: "DELETE" });
 
     if (res.ok) {
-      alert("✅ Tirage supprimé !");
+      showNotification("✅ Tirage supprimé !", "success");
       chargerTontineTirage();
     } else {
       const err = await res.json();
-      alert("Erreur suppression: " + (err.error || "inconnue"));
+      showNotification("❌ Erreur suppression: " + (err.error || "inconnue"), "error");
     }
   } catch (err) {
     console.error("❌ Erreur suppression tirage:", err);
-    alert("Impossible de supprimer ce tirage");
+    showNotification("❌ Impossible de supprimer ce tirage", "error");
   }
 }
 
@@ -3042,7 +3064,7 @@ async function effectuerTirage() {
     const gagnant = await res.json();
 
     if (!res.ok) {
-      alert(gagnant.error || "Erreur lors du tirage");
+      showNotification(gagnant.error || "Erreur lors du tirage", "error");
       return;
     }
 
@@ -3058,10 +3080,9 @@ async function effectuerTirage() {
     }, 2000);
   } catch (err) {
     console.error("❌ Erreur tirage:", err);
-    alert("Erreur réseau");
+    showNotification("Erreur réseau", "error");
   }
 }
-
 
 // 📊 Graphiques
 let chartTypes = null;
@@ -3129,29 +3150,25 @@ async function getStatsDetails() {
 // 📊 Afficher les stats dans le dashboard
 async function afficherStatistiques() {
   try {
-    // Stats globales
     const stats = await getStatsOverview();
 
-    // 🔹 Top metrics
     document.getElementById('statTotalTontines').textContent = stats.tontines_actives;
     document.getElementById('statTotalMembres').textContent = stats.membres_total;
     document.getElementById('statTotalCotisations').textContent = stats.montant_collecte.toLocaleString();
     document.getElementById('statTotalTirages').textContent = stats.tirages_effectues;
 
-    // 🔹 Alertes/statistiques additionnelles
     document.getElementById('statRetards').textContent = stats.retards;
     document.getElementById('statCyclesRetard').textContent = stats.cycles_retard;
     document.getElementById('statPaiementsAttente').textContent = stats.paiements_attente;
     document.getElementById('statTiragesDisponibles').textContent = stats.tirages_disponibles;
 
-    // Stats détaillées
     const details = await getStatsDetails();
     creerGraphiques(details.types, details.cotisations);
     remplirTableauPerformance(details.performance);
 
   } catch (err) {
     console.error("❌ Erreur affichage statistiques:", err);
-    alert("Impossible de charger les statistiques");
+    showNotification("Impossible de charger les statistiques", "error");
   }
 }
 
@@ -3456,11 +3473,9 @@ async function resoudreAlerte(alerteId) {
 
     if (!res.ok) throw new Error("Erreur résolution alerte");
 
-    // 🔄 Retirer visuellement l'alerte de la liste
     const el = document.querySelector(`[data-alerte-id="${alerteId}"]`);
     if (el) el.remove();
 
-    // ✅ Mettre à jour badge
     const badge = document.getElementById("badgeAlertes");
     const actuel = parseInt(badge.textContent || "0", 10);
 
@@ -3474,7 +3489,7 @@ async function resoudreAlerte(alerteId) {
     console.log(`✅ Alerte ${alerteId} marquée comme résolue`);
   } catch (err) {
     console.error("❌ Erreur résolution alerte:", err);
-    alert("Impossible de marquer l’alerte comme résolue");
+    showNotification("Impossible de marquer l’alerte comme résolue", "error");
   }
 }
 
@@ -3483,11 +3498,9 @@ async function resoudreAlerte(alerteId) {
     const res = await apiFetch(`${API_BASE}/alertes/${alerteId}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Erreur suppression alerte");
 
-    // ✅ Retirer du DOM directement
     const el = document.querySelector(`[data-alerte-id="${alerteId}"]`);
     if (el) el.remove();
 
-    // ✅ Mettre à jour le badge
     const badge = document.getElementById("badgeAlertes");
     const actuel = parseInt(badge.textContent || "0", 10);
 
@@ -3501,9 +3514,10 @@ async function resoudreAlerte(alerteId) {
     console.log(`✅ Alerte ${alerteId} supprimée`);
   } catch (err) {
     console.error("❌ Erreur suppression alerte:", err);
-    alert("Impossible de supprimer l’alerte");
+    showNotification("Impossible de supprimer l’alerte", "error");
   }
 }
+
 
  function allerAuTirage(tontineId) {
             ouvrirPage('tirages');
@@ -3670,7 +3684,7 @@ function estEnRetardPeriode(membre, tontine) {
             }
         }
 
-        // ➤ Supprimer une tontine (via backend + synchro locale)
+        // ➤ Supprimer une tontine
 async function supprimerTontine(id) {
   const tontine = tontines.find(t => t.id === id);
   if (!tontine) return;
@@ -3699,27 +3713,22 @@ async function supprimerTontine(id) {
       throw new Error(errData.error || "Erreur lors de la suppression");
     }
 
-    const data = await res.json(); // ← récupère { success, message }
+    const data = await res.json();
 
-    // Nettoyage local
     tontines = tontines.filter(t => t.id !== id);
 
-    // MAJ affichage
     mettreAJourAffichage?.();
     if (pageActuelle === 'accueil') afficherTontines?.();
 
-    // ✅ Feedback utilisateur
-    alert(`✅ ${data.message}\n\n` +
-      `📊 Résumé de la suppression:\n` +
+    showNotification(`✅ ${data.message}\n` +
       `• ${tontine.membres.length} membres retirés\n` +
       `• ${totalCotisations.toLocaleString()} FCFA de cotisations effacées\n` +
-      `• ${tontine.tirages.length} tirages supprimés`);
+      `• ${tontine.tirages.length} tirages supprimés`, "success");
   } catch (err) {
     console.error("❌ Erreur suppression tontine:", err);
-    alert("❌ Suppression impossible: " + err.message);
+    showNotification("❌ Suppression impossible: " + err.message, "error");
   }
 }
-
 
         function mettreAJourAffichage() {
             document.getElementById('nombreTontines').textContent = tontines.filter(t => t.statut === 'active').length;
@@ -3756,7 +3765,7 @@ async function supprimerTontine(id) {
   const dateAjout = document.getElementById('editDateAjoutMembre').value;
 
   if (!nom || !dateAjout) {
-    alert('Veuillez remplir tous les champs');
+    showNotification('Veuillez remplir tous les champs', "warning");
     return;
   }
 
@@ -3777,7 +3786,6 @@ async function supprimerTontine(id) {
 
     const updated = await res.json();
 
-    // 🔄 Mettre à jour localement
     membreEnEdition.nom = updated.nom;
     membreEnEdition.dateAjout = updated.cree_le;
 
@@ -3790,10 +3798,10 @@ async function supprimerTontine(id) {
       afficherMembresTontine?.();
     }
 
-    alert(`✅ Membre "${updated.nom}" modifié avec succès !`);
+    showNotification(`✅ Membre "${updated.nom}" modifié avec succès !`, "success");
   } catch (err) {
     console.error("❌ Erreur édition membre:", err);
-    alert("❌ Impossible de modifier le membre: " + err.message);
+    showNotification("❌ Impossible de modifier le membre: " + err.message, "error");
   }
 }
         
@@ -3808,21 +3816,18 @@ async function supprimerTontine(id) {
 
   if (!confirm(message)) return;
 
-  // 🔹 Suppression côté Supabase
   const { error } = await sb.from('tontines').delete().eq('id', tontineActive.id);
-  if (error) return alert('Suppression impossible: ' + error.message);
+  if (error) return showNotification('Suppression impossible: ' + error.message, "error");
 
-  // 🔹 Mise à jour côté front
   tontines = tontines.filter(t => t.id !== tontineActive.id);
   alertes = alertes.filter(a => a.tontineId !== tontineActive.id);
   tontineActive = null;
 
   mettreAJourAlertes();
 
-  alert(`✅ Tontine "${tontineActive?.nom || ''}" supprimée avec succès !\n\n` +
-        `📊 Toutes ses données associées (membres, cotisations, tirages) ont été effacées.`);
+  showNotification(`✅ Tontine supprimée avec succès !\n` +
+                   `📊 Toutes ses données associées (membres, cotisations, tirages) ont été effacées.`, "success");
 
-  // Retourner à l'accueil
   ouvrirPage('accueil');
 }
         
@@ -3871,12 +3876,11 @@ async function sauvegarderEditionMembre() {
   const dateAjout = document.getElementById('editDateAjoutMembre').value;
 
   if (!nom || !telephone || !adresse || !dateAjout) {
-    alert('⚠️ Veuillez remplir tous les champs');
+    showNotification('⚠️ Veuillez remplir tous les champs', "warning");
     return;
   }
 
   try {
-    // 🔹 Appel backend
     const res = await apiFetch(`${API_BASE}/membres/${membreEnEdition.id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -3895,7 +3899,6 @@ async function sauvegarderEditionMembre() {
 
     const updated = await res.json();
 
-    // 🔹 Mise à jour locale
     membreEnEdition.nom = updated.nom;
     membreEnEdition.telephone = updated.telephone;
     membreEnEdition.adresse = updated.adresse;
@@ -3903,7 +3906,6 @@ async function sauvegarderEditionMembre() {
 
     fermerModaleEditionMembre();
 
-    // 🔄 Rafraîchir l’affichage
     if (pageActuelle === 'gestion') {
       afficherMembresTontineGestion();
       mettreAJourSelectMembres?.();
@@ -3911,10 +3913,10 @@ async function sauvegarderEditionMembre() {
       afficherMembresTontine();
     }
 
-    alert(`✅ Membre "${updated.nom}" modifié avec succès !`);
+    showNotification(`✅ Membre "${updated.nom}" modifié avec succès !`, "success");
   } catch (err) {
     console.error("❌ Erreur édition membre:", err);
-    alert("❌ Impossible de modifier le membre: " + err.message);
+    showNotification("❌ Impossible de modifier le membre: " + err.message, "error");
   }
 }
 
@@ -3959,45 +3961,48 @@ async function sauvegarderEditionMembre() {
         }
         
         function sauvegarderEditionCotisation() {
-            if (!cotisationEnEdition) return;
-            
-            const date = document.getElementById('editDateCotisation').value;
-            const montant = parseFloat(document.getElementById('editMontantCotisation').value);
-            
-            if (!date || !montant || montant <= 0) {
-                alert('Veuillez remplir tous les champs avec des valeurs valides');
-                return;
-            }
-            
-            const { cotisation, tontine, membre } = cotisationEnEdition;
-            
-            // Mettre à jour la cotisation
-            cotisation.date = new Date(date).toISOString();
-            cotisation.montant = montant;
-            
-            // Mettre à jour dans la liste du membre
-            const cotisationMembre = membre.cotisationsPayees.find(c => c.id == cotisation.id);
-            if (cotisationMembre) {
-                cotisationMembre.date = cotisation.date;
-                cotisationMembre.montant = cotisation.montant;
-            }
-            
-            sauvegarder();
-            fermerModaleEditionCotisation();
-            
-            // Rafraîchir l'affichage
-            if (pageActuelle === 'gestion') {
-                afficherHistoriqueCotisations();
-                afficherMembresTontineGestion();
-            } else if (pageActuelle === 'membres') {
-                afficherMembresTontine();
-            }
-            
-            mettreAJourAlertes();
-            
-            const equivalent = (montant / tontine.montant).toFixed(1);
-            alert(`✅ Cotisation modifiée avec succès !\n\n📊 Détails:\n• Montant: ${montant.toLocaleString()} FCFA\n• Équivalent: ${equivalent} cotisation(s)\n• Date: ${new Date(date).toLocaleDateString('fr-FR')}`);
-        }
+  if (!cotisationEnEdition) return;
+  
+  const date = document.getElementById('editDateCotisation').value;
+  const montant = parseFloat(document.getElementById('editMontantCotisation').value);
+  
+  if (!date || !montant || montant <= 0) {
+    showNotification('⚠️ Veuillez remplir tous les champs avec des valeurs valides', 'warning');
+    return;
+  }
+  
+  const { cotisation, tontine, membre } = cotisationEnEdition;
+  
+  // Mettre à jour la cotisation
+  cotisation.date = new Date(date).toISOString();
+  cotisation.montant = montant;
+  
+  // Mettre à jour dans la liste du membre
+  const cotisationMembre = membre.cotisationsPayees.find(c => c.id == cotisation.id);
+  if (cotisationMembre) {
+    cotisationMembre.date = cotisation.date;
+    cotisationMembre.montant = cotisation.montant;
+  }
+  
+  sauvegarder();
+  fermerModaleEditionCotisation();
+  
+  // Rafraîchir l'affichage
+  if (pageActuelle === 'gestion') {
+    afficherHistoriqueCotisations();
+    afficherMembresTontineGestion();
+  } else if (pageActuelle === 'membres') {
+    afficherMembresTontine();
+  }
+  
+  mettreAJourAlertes();
+  
+  const equivalent = (montant / tontine.montant).toFixed(1);
+  showNotification(
+    `✅ Cotisation modifiée avec succès !\n\n📊 Détails:\n• Montant: ${montant.toLocaleString()} FCFA\n• Équivalent: ${equivalent} cotisation(s)\n• Date: ${new Date(date).toLocaleDateString('fr-FR')}`,
+    'success'
+  );
+}
 
         function sauvegarder() {
             // Sauvegarder les données spécifiques à l'utilisateur connecté
@@ -4138,17 +4143,17 @@ async function validerPaiement(id) {
     const data = await res.json();
 
     if (!res.ok) {
-      showToast(`❌ Erreur validation paiement: ${data.details || data.error}`, "error");
+      showNotification(`❌ Erreur validation paiement: ${data.details || data.error}`, "error");
       return;
     }
 
-    showToast("✅ Paiement marqué comme effectué", "success");
+    showNotification("✅ Paiement marqué comme effectué", "success");
 
     await chargerPaiements();
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur valider paiement:", err);
-    showToast("❌ Erreur validation paiement", "error");
+    showNotification("❌ Erreur validation paiement", "error");
   }
 }
 
@@ -4160,17 +4165,17 @@ async function supprimerPaiement(id) {
     const data = await res.json();
 
     if (!res.ok) {
-      showToast(`❌ Erreur suppression paiement: ${data.details || data.error}`, "error");
+      showNotification(`❌ Erreur suppression paiement: ${data.details || data.error}`, "error");
       return;
     }
 
-    showToast("🗑️ Paiement supprimé avec succès", "success");
+    showNotification("🗑️ Paiement supprimé avec succès", "success");
 
     await chargerPaiements();
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur suppression paiement:", err);
-    showToast("❌ Erreur suppression paiement", "error");
+    showNotification("❌ Erreur suppression paiement", "error");
   }
 }
 
@@ -4236,11 +4241,11 @@ async function ajouterCompte() {
     });
     if (!res.ok) throw new Error("Erreur ajout compte");
 
-    showToast("✅ Compte ajouté avec succès", "success");
+    showNotification("✅ Compte ajouté avec succès", "success");
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur ajouter compte:", err);
-    showToast("❌ Impossible d’ajouter le compte", "error");
+    showNotification("❌ Impossible d’ajouter le compte", "error");
   }
 }
 
@@ -4257,11 +4262,11 @@ async function modifierSoldeCompte(id, soldeActuel) {
     });
     if (!res.ok) throw new Error("Erreur modification solde");
 
-    showToast("✅ Solde mis à jour", "success");
+    showNotification("✅ Solde mis à jour", "success");
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur modification compte:", err);
-    showToast("❌ Impossible de modifier le solde", "error");
+    showNotification("❌ Impossible de modifier le solde", "error");
   }
 }
 
@@ -4273,11 +4278,11 @@ async function supprimerCompte(id) {
     const res = await apiFetch(`${API_BASE}/comptes/${id}`, { method: "DELETE" });
     if (!res.ok) throw new Error("Erreur suppression compte");
 
-    showToast("✅ Compte supprimé", "success");
+    showNotification("✅ Compte supprimé", "success");
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur suppression compte:", err);
-    showToast("❌ Impossible de supprimer le compte", "error");
+    showNotification("❌ Impossible de supprimer le compte", "error");
   }
 }
 
@@ -4289,7 +4294,7 @@ async function chargerSelectsPaiements() {
     // 🔹 Charger membres
     const resM = await apiFetch(`${API_BASE}/membres/tontine/${tontineId}`);
     const membres = await resM.json();
-      console.log("👥 Membres reçus API:", membres);
+    console.log("👥 Membres reçus API:", membres);
     const selM = document.getElementById("paiementMembre");
 
     if (!membres.length) {
@@ -4313,7 +4318,6 @@ async function chargerSelectsPaiements() {
   }
 }
 
-
 async function ajouterPaiement() {
   const tontineId = document.getElementById("selectTontinePaiements").value;
   const membreId = document.getElementById("paiementMembre").value;
@@ -4322,7 +4326,7 @@ async function ajouterPaiement() {
   const moyen = document.getElementById("paiementMoyen").value;
 
   if (!membreId || !montant || !moyen) {
-    showToast("⚠️ Remplis tous les champs", "warning");
+    showNotification("⚠️ Remplis tous les champs", "warning");
     return;
   }
 
@@ -4343,47 +4347,49 @@ async function ajouterPaiement() {
     const data = await res.json();
 
     if (!res.ok) {
-      showToast(`❌ Erreur ajout paiement: ${data.details || data.error}`, "error");
+      showNotification(`❌ Erreur ajout paiement: ${data.details || data.error}`, "error");
       return;
     }
 
-    showToast("✅ Paiement enregistré avec succès", "success");
+    showNotification("✅ Paiement enregistré avec succès", "success");
 
     // Petit plus : indiquer si un compte a été créé automatiquement
     if (data.details && data.details.includes("Aucun compte trouvé")) {
-      showToast("💡 Un compte a été créé automatiquement pour ce moyen", "info");
+      showNotification("💡 Un compte a été créé automatiquement pour ce moyen", "info");
     }
 
     await chargerPaiements();
     await chargerComptes();
   } catch (err) {
     console.error("❌ Erreur ajout paiement:", err);
-    showToast("❌ Erreur ajout paiement", "error");
+    showNotification("❌ Erreur ajout paiement", "error");
   }
 }
 
-// ✅ Fonction pour afficher un toast
-function showToast(message, type = "info") {
-  const colors = {
-    success: "bg-green-500",
-    error: "bg-red-500",
-    info: "bg-blue-500",
-    warning: "bg-yellow-500"
-  };
 
+// ✅ Fonction principale pour afficher un toast
+function showNotification(message, type = "info") {
+  // Créer le conteneur si non existant
+  let container = document.getElementById("toast-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "toast-container";
+    document.body.appendChild(container);
+  }
+
+  // Créer le toast
   const toast = document.createElement("div");
-  toast.className = `fixed bottom-5 right-5 px-4 py-3 rounded-lg shadow-lg text-white ${colors[type] || colors.info} z-50`;
+  toast.className = `toast ${type}`;
   toast.textContent = message;
 
-  document.body.appendChild(toast);
+  // Ajouter le toast au conteneur
+  container.appendChild(toast);
 
+  // Retirer après 4s
   setTimeout(() => {
-    toast.classList.add("opacity-0", "transition");
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+    toast.remove();
+  }, 4000);
 }
-
-
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
