@@ -2370,6 +2370,9 @@ async function afficherMembresTontine() {
     const tontineData = await res.json();
     const membres = tontineData.membres || [];
 
+    // ✅ Mettre à jour la tontine active globale
+    tontineActive = tontineData;
+
     panneau.classList.remove('hidden');
     cartes.innerHTML = '';
 
@@ -2857,23 +2860,37 @@ function afficherHistoriqueCotisations() {
         // Fonctions de gestion des cotisations et membres
 // ➤ Retirer un membre d’une tontine via backend Express
 async function retirerMembreTontine(membreId, tontineId) {
-  if (!tontineActive) return showNotification("⚠️ Aucune tontine active !", "warning");
+  if (!tontineActive) {
+    return showNotification("⚠️ Aucune tontine active !", "warning");
+  }
 
+  // Chercher le membre dans la tontine active
   const membre = tontineActive.membres.find(m => m.id === membreId);
-  if (!membre) return;
+  if (!membre) {
+    showNotification("❌ Membre introuvable dans la tontine active", "error");
+    return;
+  }
 
+  // Infos cotisations
   const cotisations = (tontineActive.cotisations || []).filter(c => c.membre_id === membreId);
   const cotisationsCount = cotisations.length;
   const totalCotise = cotisations.reduce((s, c) => s + Number(c.montant || 0), 0);
 
-  const message = `⚠️ RETRAIT DE MEMBRE ⚠️\n\n` +
-                  `👤 Membre: "${membre.nom}"\n` +
-                  `📌 Tontine: "${tontineActive.nom}"\n` +
-                  `📅 Depuis: ${membre.cree_le ? new Date(membre.cree_le).toLocaleDateString('fr-FR') : '-'}\n\n` +
-                  `💰 Cotisations enregistrées: ${cotisationsCount}\n` +
-                  `💵 Total cotisé: ${totalCotise.toLocaleString()} FCFA\n\n` +
-                  `⚠️ Toutes ses cotisations seront supprimées définitivement.\n\n` +
-                  `Confirmer le retrait ?`;
+  // Message de confirmation
+  const message = `
+⚠️ RETRAIT DE MEMBRE ⚠️
+
+👤 Membre: "${membre.nom}"
+📌 Tontine: "${tontineActive.nom}"
+📅 Depuis: ${membre.cree_le ? new Date(membre.cree_le).toLocaleDateString('fr-FR') : '-'}
+
+💰 Cotisations enregistrées: ${cotisationsCount}
+💵 Total cotisé: ${totalCotise.toLocaleString()} FCFA
+
+⚠️ Toutes ses cotisations seront supprimées définitivement.
+
+Confirmer le retrait ?
+  `;
 
   const ok = await confirm(message);
   if (!ok) return;
@@ -2885,11 +2902,13 @@ async function retirerMembreTontine(membreId, tontineId) {
       throw new Error(errData.error || "Erreur lors de la suppression du membre");
     }
 
+    // 🔥 Mets à jour la tontineActive après suppression
     tontineActive.membres = tontineActive.membres.filter(m => m.id !== membreId);
     tontineActive.cotisations = (tontineActive.cotisations || []).filter(c => c.membre_id !== membreId);
     tontineActive.gagnants = (tontineActive.gagnants || []).filter(g => g.membre_id !== membreId);
     tontineActive.tirages = (tontineActive.tirages || []).filter(t => t.membre_id !== membreId);
 
+    // Rafraîchir affichages
     if (pageActuelle === 'gestion') {
       afficherMembresTontineGestion?.();
       mettreAJourSelectMembres?.();
