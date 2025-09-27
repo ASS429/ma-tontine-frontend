@@ -4568,6 +4568,44 @@ window.prompt = function (message, defaultValue = "") {
   return customPrompt(message, defaultValue);
 };
 
+// ✅ Remplace confirm par une version moderne
+function customConfirm(message) {
+  return new Promise((resolve) => {
+    // Créer l’overlay
+    const overlay = document.createElement("div");
+    overlay.id = "custom-confirm-overlay";
+
+    // Contenu (avec backticks !)
+    overlay.innerHTML = `
+      <div class="custom-confirm-box">
+        <p>${message}</p>
+        <div class="custom-confirm-actions">
+          <button class="custom-confirm-btn custom-confirm-yes">Confirmer</button>
+          <button class="custom-confirm-btn custom-confirm-no">Annuler</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    // Boutons
+    overlay.querySelector(".custom-confirm-yes").addEventListener("click", () => {
+      resolve(true);
+      overlay.remove();
+    });
+    overlay.querySelector(".custom-confirm-no").addEventListener("click", () => {
+      resolve(false);
+      overlay.remove();
+    });
+  });
+}
+
+// ✅ Polyfill : remplacer confirm natif
+window.confirm = function (message) {
+  console.log("⚡ confirm appelé avec :", message);
+  return customConfirm(message);
+};
+
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
