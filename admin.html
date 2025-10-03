@@ -768,7 +768,7 @@
     window.location.href = "index.html"; // ta page de connexion
   }
 });
-        async function fetchSubscribers() {
+       async function fetchSubscribers() {
   try {
     const token = localStorage.getItem("token");
     const res = await fetch(API_BASE + "/utilisateurs", {
@@ -779,13 +779,22 @@
 
     const data = await res.json();
 
+    // 🔒 Vérifie que c’est bien un tableau
+    if (!Array.isArray(data)) {
+      console.error("API n’a pas renvoyé un tableau:", data);
+      showNotification("❌ Erreur: impossible de charger les abonnés", "error");
+      subscribers = [];
+      filteredSubscribers = [];
+      return;
+    }
+
     // 🔹 Adapter les données de l’API aux champs attendus par le front
     subscribers = data.map(user => ({
       id: user.id,
       name: user.nom_complet,
       email: user.email,
       phone: user.phone || "",
-      status: user.role === "bloqué" ? "Bloqué" : "Actif",
+      status: user.status || "Actif", // utilise le vrai champ "status" de ta table
       plan: user.plan || "Free",
       expiration: user.expiration ? new Date(user.expiration).toISOString().split("T")[0] : "—",
       avatar: user.nom_complet ? user.nom_complet.charAt(0).toUpperCase() : "U",
@@ -798,8 +807,10 @@
     filteredSubscribers = [...subscribers];
     populateSubscribersGrid();
   } catch (err) {
-    console.error(err);
+    console.error("Erreur fetchSubscribers:", err);
     showNotification("❌ Impossible de charger les abonnés", "error");
+    subscribers = [];
+    filteredSubscribers = [];
   }
 }
 
