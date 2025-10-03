@@ -768,6 +768,11 @@
     window.location.href = "index.html"; // ta page de connexion
   }
 });
+
+// 🔹 Variables globales
+let subscribers = [];
+let filteredSubscribers = [];
+
        async function fetchSubscribers() {
   try {
     const token = localStorage.getItem("token");
