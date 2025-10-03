@@ -2123,7 +2123,7 @@ async function creerTontine() {
     });
 
     if (res.status === 403) {
-      // 🔥 Limite atteinte → afficher modal Premium
+      // 🔥 Limite atteinte côté backend → afficher modal Premium
       showModalById("premiumModal");
       return;
     }
@@ -2134,6 +2134,16 @@ async function creerTontine() {
     }
 
     const tontine = await res.json();
+
+    // ✅ Vérifier plan et statut avant d’accepter définitivement
+    const plan = localStorage.getItem("userPlan");
+    const paymentStatus = localStorage.getItem("paymentStatus");
+
+    if (plan === "Premium" && paymentStatus === "en_attente") {
+      showNotification("⏳ Votre abonnement Premium est en attente de validation par un administrateur.", "warning");
+      return;
+    }
+
     tontines.push(mapTontineRowToLocal({ ...tontine, membres: [], cotisations: [] }));
     ouvrirPage("accueil");
     showNotification("✅ Tontine créée avec succès !", "success");
@@ -4715,7 +4725,11 @@ document.getElementById("upgradeForm")?.addEventListener("submit", async (e) => 
   try {
     const res = await apiFetch(API_BASE + "/utilisateurs/upgrade", {
       method: "POST",
-      body: JSON.stringify({ plan: "Premium" }) // simple → tu pourrais aussi envoyer le tel et méthode
+      body: JSON.stringify({
+        plan: "Premium",
+        phone,
+        payment_method: paymentMethod
+      })
     });
 
     if (!res.ok) {
@@ -4726,8 +4740,12 @@ document.getElementById("upgradeForm")?.addEventListener("submit", async (e) => 
     const data = await res.json();
     showNotification(data.message, "success");
 
-    // Mettre à jour localStorage
-    localStorage.setItem("userPlan", "Premium");
+    // ✅ Sauvegarde correcte des infos
+    localStorage.setItem("userPlan", data.utilisateur.plan);
+    localStorage.setItem("paymentStatus", data.utilisateur.payment_status);
+    if (data.utilisateur.expiration) {
+      localStorage.setItem("expiration", data.utilisateur.expiration);
+    }
 
     hideModalById("contactModal");
   } catch (err) {
