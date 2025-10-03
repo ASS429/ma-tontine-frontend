@@ -1,0 +1,91 @@
+```html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Tontines</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #2c3e50; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f4f4f4; }
+    .error { color: red; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h1>📊 Tableau de bord Admin</h1>
+  <p>Bienvenue, administrateur.</p>
+
+  <h2>👥 Utilisateurs</h2>
+  <table id="usersTable">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Nom</th>
+        <th>Rôle</th>
+        <th>Plan</th>
+        <th>Expiration</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td colspan="5">Chargement...</td></tr>
+    </tbody>
+  </table>
+
+  <p class="error" id="errorMsg"></p>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const role = localStorage.getItem("userRole");
+
+      // 🚫 Vérification du rôle
+      if (role !== "admin") {
+        alert("⛔ Accès refusé : réservé aux administrateurs.");
+        window.location.href = "index.html";
+        return;
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        document.getElementById("errorMsg").textContent = "⚠️ Token manquant. Veuillez vous reconnecter.";
+        return;
+      }
+
+      try {
+        const res = await fetch(API_BASE + "/admin/utilisateurs", {
+          headers: { Authorization: "Bearer " + token }
+        });
+
+        if (!res.ok) {
+          throw new Error("Erreur API: " + res.status);
+        }
+
+        const users = await res.json();
+        const tbody = document.querySelector("#usersTable tbody");
+        tbody.innerHTML = "";
+
+        if (users.length === 0) {
+          tbody.innerHTML = "<tr><td colspan='5'>Aucun utilisateur trouvé</td></tr>";
+        } else {
+          users.forEach(u => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `
+              <td>${u.email}</td>
+              <td>${u.nom_complet || "-"}</td>
+              <td>${u.role}</td>
+              <td>${u.plan}</td>
+              <td>${u.expiration || "-"}</td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("errorMsg").textContent = "❌ " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
+```
