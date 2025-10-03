@@ -758,39 +758,34 @@
     </div>
 
     <script>
-        // Sample subscriber data with payment methods
-        const subscribers = [
-            { 
-                id: 1, name: "Jean Dupont", email: "jean.dupont@email.com", phone: "+33 6 12 34 56 78", 
-                status: "Actif", plan: "Premium", expiration: "2024-03-15", avatar: "JD",
-                paymentStatus: "ok", lastPayment: "2024-01-15", amount: "29.99", paymentMethod: "wave"
-            },
-            { 
-                id: 2, name: "Marie Martin", email: "marie.martin@email.com", phone: "+33 6 98 76 54 32", 
-                status: "Actif", plan: "Free", expiration: "2024-02-28", avatar: "MM",
-                paymentStatus: "ok", lastPayment: "2024-01-10", amount: "0.00", paymentMethod: "orange"
-            },
-            { 
-                id: 3, name: "Pierre Durand", email: "pierre.durand@email.com", phone: "+33 6 11 22 33 44", 
-                status: "Bloqué", plan: "Premium", expiration: "2024-04-10", avatar: "PD",
-                paymentStatus: "late", lastPayment: "2023-12-10", amount: "29.99", paymentMethod: "cash"
-            },
-            { 
-                id: 4, name: "Sophie Leroy", email: "sophie.leroy@email.com", phone: "+33 6 55 66 77 88", 
-                status: "Actif", plan: "Premium", expiration: "2024-05-20", avatar: "SL",
-                paymentStatus: "ok", lastPayment: "2024-01-20", amount: "29.99", paymentMethod: "wave"
-            },
-            { 
-                id: 5, name: "Thomas Bernard", email: "thomas.bernard@email.com", phone: "+33 6 99 88 77 66", 
-                status: "Actif", plan: "Free", expiration: "2024-01-30", avatar: "TB",
-                paymentStatus: "warning", lastPayment: "2024-01-05", amount: "0.00", paymentMethod: "orange"
-            },
-            { 
-                id: 6, name: "Julie Moreau", email: "julie.moreau@email.com", phone: "+33 6 44 33 22 11", 
-                status: "Bloqué", plan: "Premium", expiration: "2024-03-05", avatar: "JM",
-                paymentStatus: "late", lastPayment: "2023-11-20", amount: "29.99", paymentMethod: "cash"
-            }
-        ];
+
+        document.addEventListener("DOMContentLoaded", () => {
+  const token = localStorage.getItem("authToken");
+  const role = localStorage.getItem("userRole");
+
+  if (!token || role !== "admin") {
+    alert("⛔ Accès réservé aux administrateurs.");
+    window.location.href = "index.html"; // ta page de connexion
+  }
+});
+        async function fetchSubscribers() {
+  try {
+    const token = localStorage.getItem("authToken");
+    const res = await fetch(API_BASE + "/utilisateurs", {
+      headers: { "Authorization": "Bearer " + token }
+    });
+
+    if (!res.ok) throw new Error("Erreur chargement abonnés");
+
+    subscribers = await res.json();
+    filteredSubscribers = [...subscribers];
+    populateSubscribersGrid();
+  } catch (err) {
+    console.error(err);
+    showNotification("❌ Impossible de charger les abonnés", "error");
+  }
+}
+
 
         // Sample transactions
         const transactions = [
@@ -1385,7 +1380,9 @@
             
             // Show welcome message
             showNotification('Bienvenue dans votre tableau de bord !', 'success');
+            fetchSubscribers();
         });
+
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'988e5a4466b6d7c8',t:'MTc1OTUxNDU2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
