@@ -777,7 +777,24 @@
 
     if (!res.ok) throw new Error("Erreur chargement abonnés");
 
-    subscribers = await res.json();
+    const data = await res.json();
+
+    // 🔹 Adapter les données de l’API aux champs attendus par le front
+    subscribers = data.map(user => ({
+      id: user.id,
+      name: user.nom_complet,
+      email: user.email,
+      phone: user.phone || "",
+      status: user.role === "bloqué" ? "Bloqué" : "Actif",
+      plan: user.plan || "Free",
+      expiration: user.expiration ? new Date(user.expiration).toISOString().split("T")[0] : "—",
+      avatar: user.nom_complet ? user.nom_complet.charAt(0).toUpperCase() : "U",
+      paymentStatus: user.payment_status === "en_retard" ? "late" :
+                     user.payment_status === "en_attente" ? "warning" : "ok",
+      amount: user.plan === "Premium" ? "29.99" : "0.00",
+      paymentMethod: user.payment_method || "cash"
+    }));
+
     filteredSubscribers = [...subscribers];
     populateSubscribersGrid();
   } catch (err) {
@@ -785,7 +802,6 @@
     showNotification("❌ Impossible de charger les abonnés", "error");
   }
 }
-
 
         // Sample transactions
         const transactions = [
@@ -974,93 +990,107 @@
         }
 
         // Populate subscribers grid
-        function populateSubscribersGrid() {
-            const grid = document.getElementById('subscribersGrid');
-            grid.innerHTML = '';
+function populateSubscribersGrid() {
+    const grid = document.getElementById('subscribersGrid');
+    grid.innerHTML = '';
 
-            filteredSubscribers.forEach((subscriber, index) => {
-                const originalIndex = subscribers.findIndex(s => s.id === subscriber.id);
-                const paymentStatusColor = {
-                    'ok': 'bg-green-100 text-green-800',
-                    'warning': 'bg-orange-100 text-orange-800',
-                    'late': 'bg-red-100 text-red-800'
-                };
+    filteredSubscribers.forEach((subscriber) => {
+        const paymentStatusColor = {
+            'effectue': 'bg-green-100 text-green-800',
+            'en_attente': 'bg-orange-100 text-orange-800',
+            'rejete': 'bg-red-100 text-red-800'
+        };
 
-                const paymentMethodIcons = {
-                    'wave': '🌊',
-                    'orange': '🟠',
-                    'cash': '💵'
-                };
+        const paymentMethodIcons = {
+            'wave': '🌊',
+            'orange': '🟠',
+            'cash': '💵',
+            null: ''
+        };
 
-                const statusBadge = subscriber.status === 'Actif' 
-                    ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Actif</span>'
-                    : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Bloqué</span>';
-                
-                const planBadge = subscriber.plan === 'Premium'
-                    ? '<span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">Premium</span>'
-                    : '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
+        // ✅ badges
+        const statusBadge = subscriber.status === 'Actif'
+            ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Actif</span>'
+            : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Bloqué</span>';
 
-                const paymentBadge = `<span class="px-2 py-1 text-xs font-medium ${paymentStatusColor[subscriber.paymentStatus]} rounded-full">
-                    ${subscriber.paymentStatus === 'ok' ? 'À jour' : subscriber.paymentStatus === 'warning' ? 'Attention' : 'En retard'}
-                </span>`;
+        const planBadge = subscriber.plan === 'Premium'
+            ? '<span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">Premium</span>'
+            : '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
 
-                const actions = subscriber.status === 'Actif'
-                    ? `<button onclick="blockUser(${originalIndex})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Bloquer</button>
-                       <button onclick="sendReminder(${originalIndex})" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rappel</button>
-                       <button onclick="deleteUser(${originalIndex})" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>`
-                    : `<button onclick="activateUser(${originalIndex})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Réactiver</button>
-                       <button onclick="deleteUser(${originalIndex})" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>`;
+        const paymentBadge = `<span class="px-2 py-1 text-xs font-medium ${paymentStatusColor[subscriber.payment_status] || 'bg-gray-100 text-gray-800'} rounded-full">
+            ${subscriber.payment_status === 'effectue' ? 'À jour' :
+              subscriber.payment_status === 'en_attente' ? 'En attente' :
+              subscriber.payment_status === 'rejete' ? 'Rejeté' : 'N/A'}
+        </span>`;
 
-                const card = document.createElement('div');
-                card.className = 'subscriber-card bg-white rounded-xl shadow-sm border border-gray-100 p-6';
-                card.innerHTML = `
-                    <div class="flex items-center space-x-4 mb-4">
-                        <div class="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center">
-                            <span class="text-violet-600 font-semibold">${subscriber.avatar}</span>
-                        </div>
-                        <div class="flex-1">
-                            <h3 class="font-semibold text-gray-800">${subscriber.name}</h3>
-                            <p class="text-sm text-gray-500">${subscriber.email}</p>
-                        </div>
-                    </div>
-                    
-                    <div class="space-y-3 mb-4">
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Statut:</span>
-                            ${statusBadge}
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Plan:</span>
-                            ${planBadge}
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Paiement:</span>
-                            ${paymentBadge}
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Méthode:</span>
-                            <span class="text-sm font-medium">${paymentMethodIcons[subscriber.paymentMethod]} ${subscriber.paymentMethod.charAt(0).toUpperCase() + subscriber.paymentMethod.slice(1)}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Expiration:</span>
-                            <span class="text-sm font-medium">${subscriber.expiration}</span>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm text-gray-600">Montant:</span>
-                            <span class="text-sm font-medium">€${subscriber.amount}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="border-t pt-4">
-                        <div class="flex flex-wrap">
-                            ${actions}
-                        </div>
-                    </div>
-                `;
-                
-                grid.appendChild(card);
-            });
+        // ✅ actions dynamiques
+        let actions = "";
+
+        if (subscriber.payment_status === "en_attente" && subscriber.plan === "Premium") {
+            // 👉 Admin doit valider ou rejeter la demande d’upgrade
+            actions = `
+                <button onclick="approveSubscriber('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Valider</button>
+                <button onclick="rejectSubscriber('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rejeter</button>
+            `;
+        } else if (subscriber.status === "Actif") {
+            actions = `
+                <button onclick="blockUser('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Bloquer</button>
+                <button onclick="sendReminder('${subscriber.id}')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rappel</button>
+                <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>
+            `;
+        } else {
+            actions = `
+                <button onclick="activateUser('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Réactiver</button>
+                <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>
+            `;
         }
+
+        const card = document.createElement('div');
+        card.className = 'subscriber-card bg-white rounded-xl shadow-sm border border-gray-100 p-6';
+        card.innerHTML = `
+            <div class="flex items-center space-x-4 mb-4">
+                <div class="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center">
+                    <span class="text-violet-600 font-semibold">${subscriber.nom_complet ? subscriber.nom_complet[0].toUpperCase() : "?"}</span>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-gray-800">${subscriber.nom_complet || "Utilisateur"}</h3>
+                    <p class="text-sm text-gray-500">${subscriber.email}</p>
+                </div>
+            </div>
+            
+            <div class="space-y-3 mb-4">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Statut:</span>
+                    ${statusBadge}
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Plan:</span>
+                    ${planBadge}
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Paiement:</span>
+                    ${paymentBadge}
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Méthode:</span>
+                    <span class="text-sm font-medium">${paymentMethodIcons[subscriber.payment_method] || ""} ${subscriber.payment_method || "-"}</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-600">Expiration:</span>
+                    <span class="text-sm font-medium">${subscriber.expiration || "-"}</span>
+                </div>
+            </div>
+            
+            <div class="border-t pt-4">
+                <div class="flex flex-wrap">
+                    ${actions}
+                </div>
+            </div>
+        `;
+        
+        grid.appendChild(card);
+    });
+}
 
         // Populate transactions list
         function populateTransactionsList() {
@@ -1112,38 +1142,45 @@
             document.getElementById('newSubscriberPaymentMethod').value = 'wave';
         }
 
-        function addSubscriber() {
-            const name = document.getElementById('newSubscriberName').value;
-            const email = document.getElementById('newSubscriberEmail').value;
-            const phone = document.getElementById('newSubscriberPhone').value;
-            const plan = document.getElementById('newSubscriberPlan').value;
-            const paymentMethod = document.getElementById('newSubscriberPaymentMethod').value;
+        async function addSubscriber() {
+  const name = document.getElementById('newSubscriberName').value.trim();
+  const email = document.getElementById('newSubscriberEmail').value.trim();
+  const phone = document.getElementById('newSubscriberPhone').value.trim();
+  const plan = document.getElementById('newSubscriberPlan').value;
+  const paymentMethod = document.getElementById('newSubscriberPaymentMethod').value;
 
-            if (!name || !email || !phone) {
-                showNotification('Veuillez remplir tous les champs obligatoires', 'error');
-                return;
-            }
+  if (!name || !email || !phone) {
+    showNotification('Veuillez remplir tous les champs obligatoires', 'error');
+    return;
+  }
 
-            const newSubscriber = {
-                id: subscribers.length + 1,
-                name: name,
-                email: email,
-                phone: phone,
-                status: "Actif",
-                plan: plan,
-                expiration: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
-                avatar: name.split(' ').map(n => n[0]).join('').toUpperCase(),
-                paymentStatus: "ok",
-                lastPayment: new Date().toISOString().split('T')[0],
-                amount: plan === 'Premium' ? '29.99' : '0.00',
-                paymentMethod: paymentMethod
-            };
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(API_BASE + "/utilisateurs", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({
+        nom_complet: name,
+        email,
+        phone,
+        plan,
+        payment_method: paymentMethod
+      })
+    });
 
-            subscribers.push(newSubscriber);
-            populateSubscribersGrid();
-            closeAddSubscriberModal();
-            showNotification('Abonné ajouté avec succès', 'success');
-        }
+    if (!res.ok) throw new Error("Erreur lors de l'ajout de l'abonné");
+
+    showNotification("✅ Abonné ajouté avec succès", "success");
+    closeAddSubscriberModal();
+    fetchSubscribers(); // recharger la liste
+  } catch (err) {
+    console.error(err);
+    showNotification("❌ Impossible d’ajouter l’abonné", "error");
+  }
+}
 
         function openWithdrawModal() {
             document.getElementById('withdrawModal').classList.remove('hidden');
@@ -1382,6 +1419,71 @@
             showNotification('Bienvenue dans votre tableau de bord !', 'success');
             fetchSubscribers();
         });
+        
+        async function blockUser(id) {
+  return updateUserStatus(id, "block", "🚫 Utilisateur bloqué");
+}
+
+async function activateUser(id) {
+  return updateUserStatus(id, "activate", "✅ Utilisateur activé");
+}
+
+async function deleteUser(id) {
+  if (!confirm("Voulez-vous vraiment supprimer cet utilisateur ?")) return;
+  return updateUserStatus(id, "", "🗑️ Utilisateur supprimé", "DELETE");
+}
+
+async function approveSubscriber(id) {
+  return updateUserStatus(id, "approve", "✅ Abonnement validé");
+}
+
+async function rejectSubscriber(id) {
+  return updateUserStatus(id, "reject", "❌ Demande rejetée");
+}
+
+async function updateUserStatus(id, action, successMessage, method = "PUT") {
+  try {
+    const token = localStorage.getItem("token");
+    const url = API_BASE + "/utilisateurs/" + id + (action ? "/" + action : "");
+
+    const res = await fetch(url, {
+      method,
+      headers: { "Authorization": "Bearer " + token }
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Erreur");
+
+    showNotification(successMessage, "success");
+    fetchSubscribers(); // 🔄 recharge la liste
+  } catch (err) {
+    console.error(err);
+    showNotification("❌ " + err.message, "error");
+  }
+}
+
+async function sendReminder(userId) {
+  if (!confirm("Voulez-vous vraiment envoyer un rappel à cet utilisateur ?")) return;
+
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(API_BASE + "/utilisateurs/" + userId + "/reminder", {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json"
+      }
+    });
+
+    if (!res.ok) throw new Error("Erreur envoi rappel");
+
+    const data = await res.json();
+    showNotification("✅ " + data.message, "success");
+  } catch (err) {
+    console.error(err);
+    showNotification("❌ Impossible d’envoyer le rappel", "error");
+  }
+}
 
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'988e5a4466b6d7c8',t:'MTc1OTUxNDU2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
