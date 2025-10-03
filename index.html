@@ -1662,16 +1662,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   afficherInterfaceConnectee();
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const role = localStorage.getItem("userRole");
-
-    // 🚫 Si pas admin → redirection
-    if (role !== "admin") {
-      alert("⛔ Accès refusé : réservé aux administrateurs.");
-      window.location.href = "index.html"; // ou page de connexion
-    }
-  });
-
 async function sInscrire(event) {
   event.preventDefault();
 
