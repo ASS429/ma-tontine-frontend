@@ -760,7 +760,7 @@
     <script>
 
         document.addEventListener("DOMContentLoaded", () => {
-  const token = localStorage.getItem("authToken");
+  const token = localStorage.getItem("token");
   const role = localStorage.getItem("userRole");
 
   if (!token || role !== "admin") {
@@ -770,7 +770,7 @@
 });
         async function fetchSubscribers() {
   try {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
     const res = await fetch(API_BASE + "/utilisateurs", {
       headers: { "Authorization": "Bearer " + token }
     });
