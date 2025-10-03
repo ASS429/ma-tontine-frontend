@@ -1,91 +1,1391 @@
-```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <title>Admin - Tontines</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    h1 { color: #2c3e50; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    th { background: #f4f4f4; }
-    .error { color: red; margin-top: 10px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-link:hover { background: rgba(139, 92, 246, 0.1); }
+        .sidebar-link.active { background: rgba(139, 92, 246, 0.2); border-right: 3px solid #8b5cf6; }
+        .stat-card { transition: transform 0.2s ease; }
+        .stat-card:hover { transform: translateY(-2px); }
+        .subscriber-card { transition: all 0.3s ease; }
+        .subscriber-card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
+        .section { display: none; }
+        .section.active { display: block; }
+        .alert-badge { animation: pulse 2s infinite; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .transaction-item { border-left: 4px solid transparent; }
+        .transaction-item.income { border-left-color: #10b981; }
+        .transaction-item.expense { border-left-color: #ef4444; }
+        .sidebar-hidden { transform: translateX(-100%); }
+        .main-expanded { margin-left: 0 !important; }
+        #mainContent { transition: margin-left 0.3s ease; }
+        .modal { backdrop-filter: blur(4px); }
+    </style>
 </head>
-<body>
-  <h1>📊 Tableau de bord Admin</h1>
-  <p>Bienvenue, administrateur.</p>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200 fixed w-full top-0 z-50">
+        <div class="flex items-center justify-between px-6 py-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
+                    <span class="text-white font-bold text-sm">A</span>
+                </div>
+                <h1 class="text-xl font-semibold text-gray-800">BOUTIQUE GESTION</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <!-- Notification Bell -->
+                <div class="relative">
+                    <button onclick="toggleNotifications()" class="p-2 text-gray-600 hover:text-violet-600 relative">
+                        <span class="text-xl">🔔</span>
+                        <span id="alertBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center alert-badge">3</span>
+                    </button>
+                    <div id="notificationPanel" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                        <div class="p-4 border-b border-gray-200">
+                            <h3 class="font-semibold text-gray-800">Alertes de Paiement</h3>
+                        </div>
+                        <div class="max-h-64 overflow-y-auto">
+                            <div class="p-3 border-b border-gray-100 hover:bg-gray-50" id="alert-1">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-800">Pierre Durand</p>
+                                            <p class="text-xs text-gray-500">Paiement en retard de 5 jours</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-1">
+                                        <button onclick="ignoreAlert('alert-1')" class="text-gray-400 hover:text-orange-500 p-1" title="Ignorer">
+                                            <span class="text-xs">👁️‍🗨️</span>
+                                        </button>
+                                        <button onclick="closeAlert('alert-1')" class="text-gray-400 hover:text-red-500 p-1" title="Fermer">
+                                            <span class="text-xs">✕</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 border-b border-gray-100 hover:bg-gray-50" id="alert-2">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-800">Julie Moreau</p>
+                                            <p class="text-xs text-gray-500">Paiement dû dans 2 jours</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-1">
+                                        <button onclick="ignoreAlert('alert-2')" class="text-gray-400 hover:text-orange-500 p-1" title="Ignorer">
+                                            <span class="text-xs">👁️‍🗨️</span>
+                                        </button>
+                                        <button onclick="closeAlert('alert-2')" class="text-gray-400 hover:text-red-500 p-1" title="Fermer">
+                                            <span class="text-xs">✕</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 hover:bg-gray-50" id="alert-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center space-x-3">
+                                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
+                                        <div class="flex-1">
+                                            <p class="text-sm font-medium text-gray-800">Marc Petit</p>
+                                            <p class="text-xs text-gray-500">Paiement en retard de 12 jours</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-1">
+                                        <button onclick="ignoreAlert('alert-3')" class="text-gray-400 hover:text-orange-500 p-1" title="Ignorer">
+                                            <span class="text-xs">👁️‍🗨️</span>
+                                        </button>
+                                        <button onclick="closeAlert('alert-3')" class="text-gray-400 hover:text-red-500 p-1" title="Fermer">
+                                            <span class="text-xs">✕</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <span class="text-gray-600">Marie Dubois</span>
+                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Déconnexion
+                </button>
+            </div>
+        </div>
+    </header>
 
-  <h2>👥 Utilisateurs</h2>
-  <table id="usersTable">
-    <thead>
-      <tr>
-        <th>Email</th>
-        <th>Nom</th>
-        <th>Rôle</th>
-        <th>Plan</th>
-        <th>Expiration</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr><td colspan="5">Chargement...</td></tr>
-    </tbody>
-  </table>
 
-  <p class="error" id="errorMsg"></p>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      const role = localStorage.getItem("userRole");
+    <!-- Dashboard Container -->
+    <div id="dashboardContainer">
+    <div class="flex pt-16">
+        <!-- Sidebar Toggle Button -->
+        <button id="sidebarToggle" onclick="toggleSidebar()" class="fixed top-20 left-4 z-50 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white p-3 rounded-xl shadow-lg transition-all duration-300 transform hover:scale-105">
+            <span id="toggleIcon" class="text-lg font-bold">☰</span>
+        </button>
 
-      // 🚫 Vérification du rôle
-      if (role !== "admin") {
-        alert("⛔ Accès refusé : réservé aux administrateurs.");
-        window.location.href = "index.html";
-        return;
-      }
+        <!-- Sidebar -->
+        <aside id="sidebar" class="w-64 bg-gradient-to-b from-gray-100 to-gray-200 min-h-screen fixed left-0 shadow-lg transition-transform duration-300">
+            <nav class="mt-8 px-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#" onclick="showSection('dashboard')" class="sidebar-link dashboard-link active flex items-center space-x-3 px-4 py-3 rounded-lg text-violet-600 font-medium transition-all">
+                            <span class="text-lg">📊</span>
+                            <span>Tableau de bord</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('subscribers')" class="sidebar-link subscribers-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
+                            <span class="text-lg">👥</span>
+                            <span class="font-medium">Abonnés</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('revenue')" class="sidebar-link revenue-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
+                            <span class="text-lg">💰</span>
+                            <span class="font-medium">Revenus</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('accounts')" class="sidebar-link accounts-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
+                            <span class="text-lg">🏦</span>
+                            <span class="font-medium">Mes Comptes</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('analytics')" class="sidebar-link analytics-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
+                            <span class="text-lg">📈</span>
+                            <span class="font-medium">Analyses</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#" onclick="showSection('settings')" class="sidebar-link settings-link flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:text-violet-600 transition-all">
+                            <span class="text-lg">⚙️</span>
+                            <span class="font-medium">Paramètres</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
 
-      const token = localStorage.getItem("token");
-      if (!token) {
-        document.getElementById("errorMsg").textContent = "⚠️ Token manquant. Veuillez vous reconnecter.";
-        return;
-      }
+        <!-- Main Content -->
+        <main id="mainContent" class="flex-1 ml-64 p-8 transition-all duration-300">
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="section active">
+                <!-- Statistics Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Total Abonnés</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-1">2,847</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <span class="text-blue-600 text-xl">👥</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <span class="text-green-500 text-sm font-medium">+12%</span>
+                            <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
+                        </div>
+                    </div>
 
-      try {
-        const res = await fetch(API_BASE + "/admin/utilisateurs", {
-          headers: { Authorization: "Bearer " + token }
+                    <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Abonnés Actifs</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-1">2,634</p>
+                            </div>
+                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                                <span class="text-green-600 text-xl">✅</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <span class="text-green-500 text-sm font-medium">+8%</span>
+                            <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Revenus Mensuels</p>
+                                <p class="text-2xl font-bold text-gray-800 mt-1">€45,230</p>
+                            </div>
+                            <div class="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center">
+                                <span class="text-violet-600 text-xl">💰</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <span class="text-green-500 text-sm font-medium">+15%</span>
+                            <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
+                        </div>
+                    </div>
+
+                    <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-gray-500 text-sm font-medium">Alertes Paiement</p>
+                                <p class="text-2xl font-bold text-red-600 mt-1">3</p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <span class="text-red-600 text-xl">⚠️</span>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <span class="text-red-500 text-sm font-medium">Retards</span>
+                            <span class="text-gray-500 text-sm ml-2">à traiter</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Revenue Chart -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Évolution des Revenus</h2>
+                    </div>
+                    <div class="p-6">
+                        <canvas id="revenueChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Subscribers Section -->
+            <div id="subscribers" class="section">
+                <div class="mb-6 flex justify-between items-center">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Abonnés</h1>
+                        <div class="flex items-center space-x-4">
+                            <input type="text" id="subscriberSearch" placeholder="Rechercher un abonné..." onkeyup="filterSubscribers()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
+                            <select id="statusFilter" onchange="filterSubscribers()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                                <option value="">Tous les statuts</option>
+                                <option value="Actif">Actif</option>
+                                <option value="Bloqué">Bloqué</option>
+                                <option value="En retard">En retard</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button onclick="openAddSubscriberModal()" class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2">
+                        <span class="text-lg">👤</span>
+                        <span>Ajouter Abonné</span>
+                    </button>
+                </div>
+
+                <div id="subscribersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Subscriber cards will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Revenue Section -->
+            <div id="revenue" class="section">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Revenus</h1>
+                    <div class="flex items-center space-x-4 mt-4">
+                        <label class="text-sm font-medium text-gray-700">Période:</label>
+                        <select id="revenuePeriodFilter" onchange="filterRevenue()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
+                            <option value="all">Tous les revenus</option>
+                            <option value="daily">Journalier</option>
+                            <option value="weekly">Hebdomadaire</option>
+                            <option value="monthly" selected>Mensuel</option>
+                        </select>
+                        <div id="revenueFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+                            Revenus mensuels affichés
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Balance Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                    <div class="bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Solde Principal</h3>
+                            <span class="text-2xl">💳</span>
+                        </div>
+                        <p class="text-3xl font-bold mb-2">€127,450.00</p>
+                        <p class="text-violet-200 text-sm">Disponible immédiatement</p>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Revenus ce Mois</h3>
+                            <span class="text-2xl">📈</span>
+                        </div>
+                        <p class="text-3xl font-bold mb-2">€45,230.00</p>
+                        <p class="text-green-200 text-sm">+15% vs mois dernier</p>
+                    </div>
+
+                    <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">En Attente</h3>
+                            <span class="text-2xl">⏳</span>
+                        </div>
+                        <p class="text-3xl font-bold mb-2">€8,750.00</p>
+                        <p class="text-orange-200 text-sm">Paiements en cours</p>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                    <button onclick="openWithdrawModal()" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="text-center">
+                            <span class="text-2xl mb-2 block">💸</span>
+                            <p class="font-medium text-gray-800">Retirer</p>
+                        </div>
+                    </button>
+                    <button onclick="generateReport()" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="text-center">
+                            <span class="text-2xl mb-2 block">📊</span>
+                            <p class="font-medium text-gray-800">Rapport</p>
+                        </div>
+                    </button>
+                    <button onclick="openTransferModal()" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="text-center">
+                            <span class="text-2xl mb-2 block">🔄</span>
+                            <p class="font-medium text-gray-800">Transfert</p>
+                        </div>
+                    </button>
+                    <button onclick="showTransactionHistory()" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div class="text-center">
+                            <span class="text-2xl mb-2 block">📋</span>
+                            <p class="font-medium text-gray-800">Historique</p>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Transactions Récentes</h2>
+                    </div>
+                    <div id="transactionsList" class="divide-y divide-gray-100">
+                        <!-- Transactions will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accounts Section -->
+            <div id="accounts" class="section">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Mes Comptes</h1>
+                    <div class="flex items-center space-x-4 mt-4">
+                        <label class="text-sm font-medium text-gray-700">Période:</label>
+                        <select id="accountsPeriodFilter" onchange="filterAccounts()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
+                            <option value="all">Tous les montants</option>
+                            <option value="daily">Journalier</option>
+                            <option value="weekly">Hebdomadaire</option>
+                            <option value="monthly" selected>Mensuel</option>
+                        </select>
+                        <div id="accountsFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+                            Montants mensuels affichés
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Orange Money Account -->
+                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Orange Money</h3>
+                            <span class="text-2xl">🟠</span>
+                        </div>
+                        <p class="text-2xl font-bold mb-2">€45,230.50</p>
+                        <p class="text-orange-200 text-sm mb-4">Compte principal</p>
+                        <div class="flex space-x-2">
+                            <button onclick="viewAccountDetails('orange')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
+                            <button onclick="transferFromAccount('orange')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Transférer</button>
+                        </div>
+                    </div>
+
+                    <!-- Wave Account -->
+                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Wave</h3>
+                            <span class="text-2xl">🌊</span>
+                        </div>
+                        <p class="text-2xl font-bold mb-2">€32,180.75</p>
+                        <p class="text-blue-200 text-sm mb-4">Compte secondaire</p>
+                        <div class="flex space-x-2">
+                            <button onclick="viewAccountDetails('wave')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
+                            <button onclick="transferFromAccount('wave')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Transférer</button>
+                        </div>
+                    </div>
+
+                    <!-- Cash Account -->
+                    <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-lg font-semibold">Espèces</h3>
+                            <span class="text-2xl">💵</span>
+                        </div>
+                        <p class="text-2xl font-bold mb-2">€15,420.00</p>
+                        <p class="text-green-200 text-sm mb-4">Caisse physique</p>
+                        <div class="flex space-x-2">
+                            <button onclick="viewAccountDetails('cash')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
+                            <button onclick="addCashTransaction()" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Ajouter</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Account Summary -->
+                <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Résumé des Comptes</h2>
+                    </div>
+                    <div class="p-6">
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-gray-800">€92,831.25</p>
+                                <p class="text-sm text-gray-500">Total Disponible</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-green-600">€8,450.00</p>
+                                <p class="text-sm text-gray-500">Entrées Aujourd'hui</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-red-600">€1,250.00</p>
+                                <p class="text-sm text-gray-500">Sorties Aujourd'hui</p>
+                            </div>
+                            <div class="text-center">
+                                <p class="text-2xl font-bold text-violet-600">€7,200.00</p>
+                                <p class="text-sm text-gray-500">Bénéfice Net</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Section -->
+            <div id="analytics" class="section">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Analyses et Chiffres</h1>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500">Chiffre d'Affaires</h3>
+                            <span class="text-green-500">📈</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-800">€542,180</p>
+                        <p class="text-sm text-green-600 mt-2">+18.5% vs année dernière</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500">Taux de Conversion</h3>
+                            <span class="text-blue-500">🎯</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-800">24.8%</p>
+                        <p class="text-sm text-blue-600 mt-2">+3.2% ce mois</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500">Valeur Moyenne</h3>
+                            <span class="text-violet-500">💎</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-800">€89.50</p>
+                        <p class="text-sm text-violet-600 mt-2">Par abonné/mois</p>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-sm font-medium text-gray-500">Taux de Rétention</h3>
+                            <span class="text-orange-500">🔄</span>
+                        </div>
+                        <p class="text-2xl font-bold text-gray-800">92.3%</p>
+                        <p class="text-sm text-orange-600 mt-2">Excellent niveau</p>
+                    </div>
+                </div>
+
+                <!-- Charts -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800">Répartition des Revenus</h2>
+                        </div>
+                        <div class="p-6">
+                            <canvas id="revenueBreakdownChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800">Croissance Mensuelle</h2>
+                        </div>
+                        <div class="p-6">
+                            <canvas id="growthChart" width="400" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settings" class="section">
+                <div class="mb-6">
+                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Paramètres</h1>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <!-- General Settings -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800">Paramètres Généraux</h2>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Nom de l'application</label>
+                                <input type="text" value="Mon SaaS" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Email de contact</label>
+                                <input type="email" value="contact@monsaas.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Fuseau horaire</label>
+                                <select class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                                    <option>Europe/Paris</option>
+                                    <option>Europe/London</option>
+                                    <option>America/New_York</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Payment Settings -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800">Paramètres de Paiement</h2>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Prix Plan Premium (€)</label>
+                                <input type="number" value="29.99" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">Délai de grâce (jours)</label>
+                                <input type="number" value="7" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Alertes automatiques</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notification Settings -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800">Notifications</h2>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Nouveaux abonnements</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Paiements en retard</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                                </label>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Rapports mensuels</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security Settings -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+                        <div class="px-6 py-4 border-b border-gray-200">
+                            <h2 class="text-lg font-semibold text-gray-800">Sécurité</h2>
+                        </div>
+                        <div class="p-6 space-y-6">
+                            <button class="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                                Changer le mot de passe
+                            </button>
+                            <button class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+                                Activer 2FA
+                            </button>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm font-medium text-gray-700">Sessions multiples</span>
+                                <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="checkbox" checked class="sr-only peer">
+                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Save Button -->
+                <div class="mt-8 flex justify-end">
+                    <button onclick="saveSettings()" class="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        Sauvegarder les paramètres
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+    </div>
+
+    <!-- Add Subscriber Modal -->
+    <div id="addSubscriberModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Ajouter un Abonné</h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nom complet</label>
+                        <input type="text" id="newSubscriberName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input type="email" id="newSubscriberEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Téléphone</label>
+                        <input type="tel" id="newSubscriberPhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Plan</label>
+                        <select id="newSubscriberPlan" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            <option value="Free">Free</option>
+                            <option value="Premium">Premium</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Méthode de paiement</label>
+                        <select id="newSubscriberPaymentMethod" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            <option value="wave">Wave</option>
+                            <option value="orange">Orange Money</option>
+                            <option value="cash">Espèces</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                    <button onclick="closeAddSubscriberModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button onclick="addSubscriber()" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg">Ajouter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdrawModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Retirer des Fonds</h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Montant (€)</label>
+                        <input type="number" id="withdrawAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500" placeholder="0.00">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Vers</label>
+                        <select id="withdrawTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            <option value="orange">Orange Money</option>
+                            <option value="wave">Wave</option>
+                            <option value="bank">Compte Bancaire</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                    <button onclick="closeWithdrawModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button onclick="processWithdraw()" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg">Retirer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transfer Modal -->
+    <div id="transferModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal">
+        <div class="flex items-center justify-center min-h-screen p-4">
+            <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-800">Transférer des Fonds</h2>
+                </div>
+                <div class="p-6 space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">De</label>
+                        <select id="transferFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            <option value="main">Compte Principal</option>
+                            <option value="orange">Orange Money</option>
+                            <option value="wave">Wave</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Vers</label>
+                        <select id="transferTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+                            <option value="orange">Orange Money</option>
+                            <option value="wave">Wave</option>
+                            <option value="cash">Espèces</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Montant (€)</label>
+                        <input type="number" id="transferAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500" placeholder="0.00">
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
+                    <button onclick="closeTransferModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
+                    <button onclick="processTransfer()" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg">Transférer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample subscriber data with payment methods
+        const subscribers = [
+            { 
+                id: 1, name: "Jean Dupont", email: "jean.dupont@email.com", phone: "+33 6 12 34 56 78", 
+                status: "Actif", plan: "Premium", expiration: "2024-03-15", avatar: "JD",
+                paymentStatus: "ok", lastPayment: "2024-01-15", amount: "29.99", paymentMethod: "wave"
+            },
+            { 
+                id: 2, name: "Marie Martin", email: "marie.martin@email.com", phone: "+33 6 98 76 54 32", 
+                status: "Actif", plan: "Free", expiration: "2024-02-28", avatar: "MM",
+                paymentStatus: "ok", lastPayment: "2024-01-10", amount: "0.00", paymentMethod: "orange"
+            },
+            { 
+                id: 3, name: "Pierre Durand", email: "pierre.durand@email.com", phone: "+33 6 11 22 33 44", 
+                status: "Bloqué", plan: "Premium", expiration: "2024-04-10", avatar: "PD",
+                paymentStatus: "late", lastPayment: "2023-12-10", amount: "29.99", paymentMethod: "cash"
+            },
+            { 
+                id: 4, name: "Sophie Leroy", email: "sophie.leroy@email.com", phone: "+33 6 55 66 77 88", 
+                status: "Actif", plan: "Premium", expiration: "2024-05-20", avatar: "SL",
+                paymentStatus: "ok", lastPayment: "2024-01-20", amount: "29.99", paymentMethod: "wave"
+            },
+            { 
+                id: 5, name: "Thomas Bernard", email: "thomas.bernard@email.com", phone: "+33 6 99 88 77 66", 
+                status: "Actif", plan: "Free", expiration: "2024-01-30", avatar: "TB",
+                paymentStatus: "warning", lastPayment: "2024-01-05", amount: "0.00", paymentMethod: "orange"
+            },
+            { 
+                id: 6, name: "Julie Moreau", email: "julie.moreau@email.com", phone: "+33 6 44 33 22 11", 
+                status: "Bloqué", plan: "Premium", expiration: "2024-03-05", avatar: "JM",
+                paymentStatus: "late", lastPayment: "2023-11-20", amount: "29.99", paymentMethod: "cash"
+            }
+        ];
+
+        // Sample transactions
+        const transactions = [
+            { id: 1, type: "income", description: "Paiement Premium - Jean Dupont", amount: 29.99, date: "Aujourd'hui, 14:30", method: "wave" },
+            { id: 2, type: "income", description: "Paiement Premium - Sophie Leroy", amount: 29.99, date: "Hier, 09:15", method: "wave" },
+            { id: 3, type: "expense", description: "Frais de service", amount: -125.00, date: "Hier, 08:00", method: "main" },
+            { id: 4, type: "income", description: "Paiement Premium - Thomas Bernard", amount: 29.99, date: "2 jours, 16:45", method: "orange" },
+            { id: 5, type: "income", description: "Paiement Cash - Pierre Durand", amount: 29.99, date: "3 jours, 11:20", method: "cash" }
+        ];
+
+        let sidebarVisible = true;
+        let filteredSubscribers = [...subscribers];
+        let alertCount = 3;
+
+        function logout() {
+            showNotification('Déconnexion réussie', 'info');
+            // Optionally redirect or refresh the page
+            location.reload();
+        }
+
+        // Sidebar toggle function
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            sidebarVisible = !sidebarVisible;
+            
+            if (sidebarVisible) {
+                // Afficher la sidebar
+                sidebar.classList.remove('sidebar-hidden');
+                mainContent.classList.remove('main-expanded');
+                mainContent.style.marginLeft = '16rem'; // 256px = 16rem
+                toggleIcon.textContent = '←';
+            } else {
+                // Masquer la sidebar
+                sidebar.classList.add('sidebar-hidden');
+                mainContent.classList.add('main-expanded');
+                mainContent.style.marginLeft = '0';
+                toggleIcon.textContent = '☰';
+            }
+        }
+
+        // Filter subscribers function
+        function filterSubscribers() {
+            const searchTerm = document.getElementById('subscriberSearch').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            filteredSubscribers = subscribers.filter(subscriber => {
+                const matchesSearch = subscriber.name.toLowerCase().includes(searchTerm) || 
+                                    subscriber.email.toLowerCase().includes(searchTerm) ||
+                                    subscriber.phone.includes(searchTerm);
+                
+                const matchesStatus = !statusFilter || subscriber.status === statusFilter ||
+                                    (statusFilter === 'En retard' && subscriber.paymentStatus === 'late');
+                
+                return matchesSearch && matchesStatus;
+            });
+            
+            populateSubscribersGrid();
+        }
+
+        // Filter revenue function
+        function filterRevenue() {
+            const period = document.getElementById('revenuePeriodFilter').value;
+            const info = document.getElementById('revenueFilterInfo');
+            
+            const periodTexts = {
+                'all': 'Tous les revenus affichés',
+                'daily': 'Revenus journaliers affichés',
+                'weekly': 'Revenus hebdomadaires affichés',
+                'monthly': 'Revenus mensuels affichés'
+            };
+            
+            info.textContent = periodTexts[period];
+            
+            // Update revenue display based on period
+            updateRevenueDisplay(period);
+        }
+
+        // Filter accounts function
+        function filterAccounts() {
+            const period = document.getElementById('accountsPeriodFilter').value;
+            const info = document.getElementById('accountsFilterInfo');
+            
+            const periodTexts = {
+                'all': 'Tous les montants affichés',
+                'daily': 'Montants journaliers affichés',
+                'weekly': 'Montants hebdomadaires affichés',
+                'monthly': 'Montants mensuels affichés'
+            };
+            
+            info.textContent = periodTexts[period];
+            
+            // Update accounts display based on period
+            updateAccountsDisplay(period);
+        }
+
+        // Update revenue display
+        function updateRevenueDisplay(period) {
+            const amounts = {
+                'daily': { main: '€4,230.00', monthly: '€1,450.00', pending: '€320.00' },
+                'weekly': { main: '€28,450.00', monthly: '€9,850.00', pending: '€1,200.00' },
+                'monthly': { main: '€127,450.00', monthly: '€45,230.00', pending: '€8,750.00' },
+                'all': { main: '€542,180.00', monthly: '€198,450.00', pending: '€25,300.00' }
+            };
+            
+            const data = amounts[period];
+            document.querySelector('.bg-gradient-to-r.from-violet-500 .text-3xl').textContent = data.main;
+            document.querySelector('.bg-gradient-to-r.from-green-500 .text-3xl').textContent = data.monthly;
+            document.querySelector('.bg-gradient-to-r.from-orange-500 .text-3xl').textContent = data.pending;
+        }
+
+        // Update accounts display
+        function updateAccountsDisplay(period) {
+            const amounts = {
+                'daily': { orange: '€1,230.50', wave: '€890.75', cash: '€420.00' },
+                'weekly': { orange: '€8,450.50', wave: '€6,180.75', cash: '€2,840.00' },
+                'monthly': { orange: '€45,230.50', wave: '€32,180.75', cash: '€15,420.00' },
+                'all': { orange: '€198,450.50', wave: '€145,680.75', cash: '€67,890.00' }
+            };
+            
+            const data = amounts[period];
+            document.querySelectorAll('.bg-gradient-to-r')[3].querySelector('.text-2xl').textContent = data.orange;
+            document.querySelectorAll('.bg-gradient-to-r')[4].querySelector('.text-2xl').textContent = data.wave;
+            document.querySelectorAll('.bg-gradient-to-r')[5].querySelector('.text-2xl').textContent = data.cash;
+        }
+
+        // Alert functions
+        function closeAlert(alertId) {
+            const alert = document.getElementById(alertId);
+            alert.style.transition = 'all 0.3s ease';
+            alert.style.opacity = '0';
+            alert.style.transform = 'translateX(100%)';
+            
+            setTimeout(() => {
+                alert.remove();
+                alertCount--;
+                updateAlertBadge();
+            }, 300);
+            
+            showNotification('Alerte fermée', 'info');
+        }
+
+        function ignoreAlert(alertId) {
+            const alert = document.getElementById(alertId);
+            alert.style.opacity = '0.5';
+            alert.querySelector('.w-2.h-2').classList.remove('bg-red-500', 'bg-orange-500');
+            alert.querySelector('.w-2.h-2').classList.add('bg-gray-400');
+            
+            showNotification('Alerte ignorée', 'info');
+        }
+
+        function updateAlertBadge() {
+            const badge = document.getElementById('alertBadge');
+            if (alertCount > 0) {
+                badge.textContent = alertCount;
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // Navigation functions
+        function showSection(sectionName) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all sidebar links
+            document.querySelectorAll('.sidebar-link').forEach(link => {
+                link.classList.remove('active');
+                link.classList.add('text-gray-700');
+                link.classList.remove('text-violet-600', 'font-medium');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionName).classList.add('active');
+            
+            // Add active class to selected sidebar link
+            const activeLink = document.querySelector(`.${sectionName}-link`);
+            if (activeLink) {
+                activeLink.classList.add('active', 'text-violet-600', 'font-medium');
+                activeLink.classList.remove('text-gray-700');
+            }
+        }
+
+        // Populate subscribers grid
+        function populateSubscribersGrid() {
+            const grid = document.getElementById('subscribersGrid');
+            grid.innerHTML = '';
+
+            filteredSubscribers.forEach((subscriber, index) => {
+                const originalIndex = subscribers.findIndex(s => s.id === subscriber.id);
+                const paymentStatusColor = {
+                    'ok': 'bg-green-100 text-green-800',
+                    'warning': 'bg-orange-100 text-orange-800',
+                    'late': 'bg-red-100 text-red-800'
+                };
+
+                const paymentMethodIcons = {
+                    'wave': '🌊',
+                    'orange': '🟠',
+                    'cash': '💵'
+                };
+
+                const statusBadge = subscriber.status === 'Actif' 
+                    ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Actif</span>'
+                    : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Bloqué</span>';
+                
+                const planBadge = subscriber.plan === 'Premium'
+                    ? '<span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">Premium</span>'
+                    : '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
+
+                const paymentBadge = `<span class="px-2 py-1 text-xs font-medium ${paymentStatusColor[subscriber.paymentStatus]} rounded-full">
+                    ${subscriber.paymentStatus === 'ok' ? 'À jour' : subscriber.paymentStatus === 'warning' ? 'Attention' : 'En retard'}
+                </span>`;
+
+                const actions = subscriber.status === 'Actif'
+                    ? `<button onclick="blockUser(${originalIndex})" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Bloquer</button>
+                       <button onclick="sendReminder(${originalIndex})" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rappel</button>
+                       <button onclick="deleteUser(${originalIndex})" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>`
+                    : `<button onclick="activateUser(${originalIndex})" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Réactiver</button>
+                       <button onclick="deleteUser(${originalIndex})" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>`;
+
+                const card = document.createElement('div');
+                card.className = 'subscriber-card bg-white rounded-xl shadow-sm border border-gray-100 p-6';
+                card.innerHTML = `
+                    <div class="flex items-center space-x-4 mb-4">
+                        <div class="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center">
+                            <span class="text-violet-600 font-semibold">${subscriber.avatar}</span>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="font-semibold text-gray-800">${subscriber.name}</h3>
+                            <p class="text-sm text-gray-500">${subscriber.email}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3 mb-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Statut:</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Plan:</span>
+                            ${planBadge}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Paiement:</span>
+                            ${paymentBadge}
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Méthode:</span>
+                            <span class="text-sm font-medium">${paymentMethodIcons[subscriber.paymentMethod]} ${subscriber.paymentMethod.charAt(0).toUpperCase() + subscriber.paymentMethod.slice(1)}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Expiration:</span>
+                            <span class="text-sm font-medium">${subscriber.expiration}</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">Montant:</span>
+                            <span class="text-sm font-medium">€${subscriber.amount}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="border-t pt-4">
+                        <div class="flex flex-wrap">
+                            ${actions}
+                        </div>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Populate transactions list
+        function populateTransactionsList() {
+            const list = document.getElementById('transactionsList');
+            list.innerHTML = '';
+
+            transactions.forEach(transaction => {
+                const methodIcons = {
+                    'wave': '🌊',
+                    'orange': '🟠',
+                    'cash': '💵',
+                    'main': '💳'
+                };
+
+                const div = document.createElement('div');
+                div.className = `transaction-item ${transaction.type} p-4 hover:bg-gray-50`;
+                div.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 ${transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'} rounded-full flex items-center justify-center">
+                                <span class="${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}">${transaction.type === 'income' ? '💰' : '💸'}</span>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-800">${transaction.description}</p>
+                                <p class="text-sm text-gray-500">${transaction.date} • ${methodIcons[transaction.method]} ${transaction.method.charAt(0).toUpperCase() + transaction.method.slice(1)}</p>
+                            </div>
+                        </div>
+                        <span class="${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'} font-semibold">
+                            ${transaction.type === 'income' ? '+' : ''}€${Math.abs(transaction.amount).toFixed(2)}
+                        </span>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+        }
+
+        // Modal functions
+        function openAddSubscriberModal() {
+            document.getElementById('addSubscriberModal').classList.remove('hidden');
+        }
+
+        function closeAddSubscriberModal() {
+            document.getElementById('addSubscriberModal').classList.add('hidden');
+            // Clear form
+            document.getElementById('newSubscriberName').value = '';
+            document.getElementById('newSubscriberEmail').value = '';
+            document.getElementById('newSubscriberPhone').value = '';
+            document.getElementById('newSubscriberPlan').value = 'Free';
+            document.getElementById('newSubscriberPaymentMethod').value = 'wave';
+        }
+
+        function addSubscriber() {
+            const name = document.getElementById('newSubscriberName').value;
+            const email = document.getElementById('newSubscriberEmail').value;
+            const phone = document.getElementById('newSubscriberPhone').value;
+            const plan = document.getElementById('newSubscriberPlan').value;
+            const paymentMethod = document.getElementById('newSubscriberPaymentMethod').value;
+
+            if (!name || !email || !phone) {
+                showNotification('Veuillez remplir tous les champs obligatoires', 'error');
+                return;
+            }
+
+            const newSubscriber = {
+                id: subscribers.length + 1,
+                name: name,
+                email: email,
+                phone: phone,
+                status: "Actif",
+                plan: plan,
+                expiration: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0],
+                avatar: name.split(' ').map(n => n[0]).join('').toUpperCase(),
+                paymentStatus: "ok",
+                lastPayment: new Date().toISOString().split('T')[0],
+                amount: plan === 'Premium' ? '29.99' : '0.00',
+                paymentMethod: paymentMethod
+            };
+
+            subscribers.push(newSubscriber);
+            populateSubscribersGrid();
+            closeAddSubscriberModal();
+            showNotification('Abonné ajouté avec succès', 'success');
+        }
+
+        function openWithdrawModal() {
+            document.getElementById('withdrawModal').classList.remove('hidden');
+        }
+
+        function closeWithdrawModal() {
+            document.getElementById('withdrawModal').classList.add('hidden');
+        }
+
+        function processWithdraw() {
+            const amount = document.getElementById('withdrawAmount').value;
+            const to = document.getElementById('withdrawTo').value;
+            
+            if (!amount || amount <= 0) {
+                showNotification('Veuillez entrer un montant valide', 'error');
+                return;
+            }
+
+            showNotification(`Retrait de €${amount} vers ${to} en cours...`, 'info');
+            closeWithdrawModal();
+        }
+
+        function openTransferModal() {
+            document.getElementById('transferModal').classList.remove('hidden');
+        }
+
+        function closeTransferModal() {
+            document.getElementById('transferModal').classList.add('hidden');
+        }
+
+        function processTransfer() {
+            const amount = document.getElementById('transferAmount').value;
+            const from = document.getElementById('transferFrom').value;
+            const to = document.getElementById('transferTo').value;
+            
+            if (!amount || amount <= 0) {
+                showNotification('Veuillez entrer un montant valide', 'error');
+                return;
+            }
+
+            showNotification(`Transfert de €${amount} de ${from} vers ${to} effectué`, 'success');
+            closeTransferModal();
+        }
+
+        function generateReport() {
+            showNotification('Génération du rapport en cours...', 'info');
+            setTimeout(() => {
+                showNotification('Rapport généré et envoyé par email', 'success');
+            }, 2000);
+        }
+
+        function showTransactionHistory() {
+            showSection('revenue');
+            showNotification('Affichage de l\'historique complet', 'info');
+        }
+
+        function viewAccountDetails(account) {
+            showNotification(`Détails du compte ${account} affichés`, 'info');
+        }
+
+        function transferFromAccount(account) {
+            showNotification(`Transfert depuis ${account} initié`, 'info');
+        }
+
+        function addCashTransaction() {
+            showNotification('Ajout de transaction en espèces', 'info');
+        }
+
+        // Action functions
+        function blockUser(index) {
+            subscribers[index].status = 'Bloqué';
+            filteredSubscribers = [...subscribers];
+            filterSubscribers();
+            showNotification('Utilisateur bloqué avec succès', 'success');
+        }
+
+        function activateUser(index) {
+            subscribers[index].status = 'Actif';
+            subscribers[index].paymentStatus = 'ok';
+            filteredSubscribers = [...subscribers];
+            filterSubscribers();
+            showNotification('Utilisateur réactivé avec succès', 'success');
+        }
+
+        function deleteUser(index) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
+                subscribers.splice(index, 1);
+                filteredSubscribers = [...subscribers];
+                filterSubscribers();
+                showNotification('Utilisateur supprimé avec succès', 'error');
+            }
+        }
+
+        function sendReminder(index) {
+            showNotification(`Rappel envoyé à ${subscribers[index].name}`, 'info');
+        }
+
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationPanel');
+            panel.classList.toggle('hidden');
+        }
+
+        function saveSettings() {
+            showNotification('Paramètres sauvegardés avec succès', 'success');
+        }
+
+        function showNotification(message, type) {
+            const colors = {
+                'success': 'bg-green-500',
+                'error': 'bg-red-500',
+                'info': 'bg-blue-500'
+            };
+            
+            const notification = document.createElement('div');
+            notification.className = `fixed top-20 right-4 px-4 py-2 rounded-lg text-white z-50 ${colors[type]}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Initialize charts
+        function initCharts() {
+            // Revenue Chart
+            const ctx1 = document.getElementById('revenueChart').getContext('2d');
+            new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
+                    datasets: [{
+                        label: 'Revenus (€)',
+                        data: [32000, 35000, 38000, 42000, 39000, 45000, 48000, 52000, 49000, 55000, 58000, 62000],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: { color: '#f3f4f6' },
+                            ticks: { callback: function(value) { return '€' + value.toLocaleString(); } }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Revenue Breakdown Chart
+            const ctx2 = document.getElementById('revenueBreakdownChart');
+            if (ctx2) {
+                new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Wave', 'Orange Money', 'Espèces'],
+                        datasets: [{
+                            data: [45, 35, 20],
+                            backgroundColor: ['#3b82f6', '#f97316', '#10b981']
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false
+                    }
+                });
+            }
+
+            // Growth Chart
+            const ctx3 = document.getElementById('growthChart');
+            if (ctx3) {
+                new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'],
+                        datasets: [{
+                            label: 'Croissance (%)',
+                            data: [12, 15, 8, 18, 22, 15],
+                            backgroundColor: '#8b5cf6'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+        }
+
+        // Close modals when clicking outside
+        document.addEventListener('click', function(event) {
+            const modals = ['addSubscriberModal', 'withdrawModal', 'transferModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+
+            const panel = document.getElementById('notificationPanel');
+            const button = event.target.closest('button');
+            
+            if (!panel.contains(event.target) && (!button || !button.onclick || button.onclick.toString().indexOf('toggleNotifications') === -1)) {
+                panel.classList.add('hidden');
+            }
         });
 
-        if (!res.ok) {
-          throw new Error("Erreur API: " + res.status);
-        }
-
-        const users = await res.json();
-        const tbody = document.querySelector("#usersTable tbody");
-        tbody.innerHTML = "";
-
-        if (users.length === 0) {
-          tbody.innerHTML = "<tr><td colspan='5'>Aucun utilisateur trouvé</td></tr>";
-        } else {
-          users.forEach(u => {
-            const tr = document.createElement("tr");
-            tr.innerHTML = `
-              <td>${u.email}</td>
-              <td>${u.nom_complet || "-"}</td>
-              <td>${u.role}</td>
-              <td>${u.plan}</td>
-              <td>${u.expiration || "-"}</td>
-            `;
-            tbody.appendChild(tr);
-          });
-        }
-      } catch (err) {
-        console.error(err);
-        document.getElementById("errorMsg").textContent = "❌ " + err.message;
-      }
-    });
-  </script>
-</body>
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize dashboard directly
+            populateSubscribersGrid();
+            populateTransactionsList();
+            initCharts();
+            
+            // Initialize sidebar state
+            const mainContent = document.getElementById('mainContent');
+            const toggleIcon = document.getElementById('toggleIcon');
+            
+            if (sidebarVisible) {
+                mainContent.style.marginLeft = '16rem';
+                toggleIcon.textContent = '←';
+            } else {
+                mainContent.style.marginLeft = '0';
+                toggleIcon.textContent = '☰';
+            }
+            
+            // Show welcome message
+            showNotification('Bienvenue dans votre tableau de bord !', 'success');
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'988e5a4466b6d7c8',t:'MTc1OTUxNDU2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
-```
