@@ -4770,15 +4770,23 @@ document.getElementById("upgradeForm")?.addEventListener("submit", async (e) => 
 
 function handleCreateClick() {
   const plan = localStorage.getItem("userPlan") || "Free";
+  const paymentStatus = localStorage.getItem("paymentStatus") || "none";
   const count = getUserTontineCount();
 
+  // 🚫 Cas 1 : Free avec limite atteinte
   if (plan === "Free" && count >= 2) {
-    // 🚫 Bloqué → ouvre la modale Premium
     showModalById("premiumModal");
-  } else {
-    // ✅ Peut créer
-    ouvrirPage("creer");
+    return;
   }
+
+  // 🚫 Cas 2 : Premium en attente (l’admin doit valider)
+  if (plan === "Premium" && paymentStatus === "en_attente") {
+    showNotification("⏳ Votre abonnement Premium est en attente de validation par un administrateur.", "warning");
+    return;
+  }
+
+  // ✅ Cas autorisé
+  ouvrirPage("creer");
 }
 
     </script>
