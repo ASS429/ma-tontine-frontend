@@ -1038,26 +1038,38 @@ function populateSubscribersGrid() {
             null: ''
         };
 
-        // ✅ badges
+        // ✅ Badge statut utilisateur
         const statusBadge = subscriber.status === 'Actif'
             ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Actif</span>'
             : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Bloqué</span>';
 
-        const planBadge = subscriber.plan === 'Premium'
-            ? '<span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">Premium</span>'
-            : '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
+        // ✅ Badge plan
+        let planBadge = "";
+        if (subscriber.plan === "Premium") {
+            if (subscriber.payment_status === "effectue") {
+                planBadge = '<span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">Premium ✅</span>';
+            } else if (subscriber.payment_status === "en_attente") {
+                planBadge = '<span class="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">Premium ⏳</span>';
+            } else if (subscriber.payment_status === "rejete") {
+                planBadge = '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Premium ❌</span>';
+            } else {
+                planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Premium</span>';
+            }
+        } else {
+            planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
+        }
 
+        // ✅ Badge paiement
         const paymentBadge = `<span class="px-2 py-1 text-xs font-medium ${paymentStatusColor[subscriber.payment_status] || 'bg-gray-100 text-gray-800'} rounded-full">
             ${subscriber.payment_status === 'effectue' ? 'À jour' :
               subscriber.payment_status === 'en_attente' ? 'En attente' :
               subscriber.payment_status === 'rejete' ? 'Rejeté' : 'N/A'}
         </span>`;
 
-        // ✅ actions dynamiques
+        // ✅ Actions dynamiques
         let actions = "";
 
         if (subscriber.payment_status === "en_attente" && subscriber.plan === "Premium") {
-            // 👉 Admin doit valider ou rejeter la demande d’upgrade
             actions = `
                 <button onclick="approveSubscriber('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Valider</button>
                 <button onclick="rejectSubscriber('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rejeter</button>
