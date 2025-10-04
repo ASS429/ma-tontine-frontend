@@ -802,7 +802,7 @@ let filteredSubscribers = [];
     // 🔹 Adapter les données de l’API aux champs attendus par le front
     subscribers = data.map(user => ({
       id: user.id,
-      name: user.nom_complet,
+      nom_complet: user.nom_complet,
       email: user.email,
       phone: user.phone || "",
       status: user.status || "Actif", // utilise le vrai champ "status" de ta table
