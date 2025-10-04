@@ -839,10 +839,18 @@ let filteredSubscribers = [];
         let alertCount = 3;
 
         function logout() {
-            showNotification('Déconnexion réussie', 'info');
-            // Optionally redirect or refresh the page
-            location.reload();
-        }
+    // 1. Supprimer le token et autres infos utilisateur
+    localStorage.removeItem("token");
+    localStorage.removeItem("user"); // si tu stockes aussi les infos profil
+
+    // 2. Notifier
+    showNotification('Déconnexion réussie', 'info');
+
+    // 3. Rediriger vers la page de login (ou accueil public)
+    setTimeout(() => {
+        window.location.href = "index.html"; // 👈 mets le chemin de ta page de connexion
+    }, 1000);
+}
 
         // Sidebar toggle function
         function toggleSidebar() {
