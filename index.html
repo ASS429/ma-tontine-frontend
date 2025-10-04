@@ -1559,6 +1559,10 @@ async function hashPassword(plain) {
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
+function getUserTontineCount() {
+  return tontines ? tontines.length : 0;
+}
+
 function showModalById(id) {
   document.getElementById(id)?.classList.remove("hidden");
 }
