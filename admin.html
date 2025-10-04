@@ -1255,7 +1255,7 @@ function closeAddSubscriberModal() {
   }
 
   try {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
     const res = await fetch(API_BASE + "/utilisateurs", {
       method: "POST",
       headers: {
