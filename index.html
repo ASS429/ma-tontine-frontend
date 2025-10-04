@@ -1603,7 +1603,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
         // Système d'authentification
 
-      async function seConnecter(event) { 
+      // ➤ Connexion utilisateur
+async function seConnecter(event) { 
   event.preventDefault();
   const email = document.getElementById('emailConnexion').value.trim();
   const motPasse = document.getElementById('motPasseConnexion').value;
@@ -1655,9 +1656,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (res.ok) {
       const profilBackend = await res.json();
 
-      // Sauvegarder rôle et plan
+      // Sauvegarder rôle, plan et statut paiement
       localStorage.setItem("userRole", profilBackend.role);
       localStorage.setItem("userPlan", profilBackend.plan);
+      localStorage.setItem("paymentStatus", profilBackend.payment_status);
 
       // 🔹 Redirection si admin
       if (profilBackend.role === "admin") {
@@ -2119,6 +2121,15 @@ async function creerTontine() {
     return showNotification("⚠️ Veuillez remplir les champs requis.", "error");
   }
 
+  // ✅ Vérifier plan et statut AVANT de lancer la requête
+  const plan = localStorage.getItem("userPlan");
+  const paymentStatus = localStorage.getItem("paymentStatus");
+
+  if (plan === "Premium" && paymentStatus === "en_attente") {
+    showNotification("⏳ Votre abonnement Premium est en attente de validation par un administrateur. Vous ne pouvez pas encore créer de nouvelles tontines.", "warning");
+    return;
+  }
+
   try {
     const res = await apiFetch(API_BASE + "/tontines", {
       method: "POST",
@@ -2146,15 +2157,6 @@ async function creerTontine() {
     }
 
     const tontine = await res.json();
-
-    // ✅ Vérifier plan et statut avant d’accepter définitivement
-    const plan = localStorage.getItem("userPlan");
-    const paymentStatus = localStorage.getItem("paymentStatus");
-
-    if (plan === "Premium" && paymentStatus === "en_attente") {
-      showNotification("⏳ Votre abonnement Premium est en attente de validation par un administrateur.", "warning");
-      return;
-    }
 
     tontines.push(mapTontineRowToLocal({ ...tontine, membres: [], cotisations: [] }));
     ouvrirPage("accueil");
