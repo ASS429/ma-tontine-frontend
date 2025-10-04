@@ -30,7 +30,7 @@
         #mainContent { transition: margin-left 0.3s ease; }
         .modal { backdrop-filter: blur(4px); }
     </style>
-    
+
     <script>
   const API_BASE = "https://ma-tontine-backend.onrender.com/api";
 </script>
@@ -781,6 +781,7 @@ let filteredSubscribers = [];
        async function fetchSubscribers() {
   try {
     const token = localStorage.getItem("token");
+    console.log("🔑 Token utilisé:", token);
     const res = await fetch(API_BASE + "/utilisateurs", {
       headers: { "Authorization": "Bearer " + token }
     });
