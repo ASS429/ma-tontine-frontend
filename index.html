@@ -770,10 +770,11 @@ label { font-size: 0.95rem; font-weight: 600; }
         <div id="page-accueil" class="page">
             <!-- Navigation principale avec effets glass -->
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 md:gap-6 mb-8 md:mb-12">
-                <button onclick="ouvrirPage('creer')" class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
-                    <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce">➕</div>
-                    <div class="font-semibold text-xs sm:text-sm md:text-base">Créer</div>
-                </button>
+                <button onclick="handleCreateClick()" 
+        class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
+  <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce">➕</div>
+  <div class="font-semibold text-xs sm:text-sm md:text-base">Créer</div>
+</button>
                 <button onclick="ouvrirPage('gestion')" class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
                     <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce" style="animation-delay: 0.2s">⚙️</div>
                     <div class="font-semibold text-xs sm:text-sm md:text-base">Gérer</div>
@@ -1558,6 +1559,13 @@ async function hashPassword(plain) {
   return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
 
+function showModalById(id) {
+  document.getElementById(id)?.classList.remove("hidden");
+}
+
+function hideModalById(id) {
+  document.getElementById(id)?.classList.add("hidden");
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   const token = localStorage.getItem("token");
@@ -4753,6 +4761,19 @@ document.getElementById("upgradeForm")?.addEventListener("submit", async (e) => 
     showNotification("❌ Erreur réseau: " + err.message, "error");
   }
 });
+
+function handleCreateClick() {
+  const plan = localStorage.getItem("userPlan") || "Free";
+  const count = getUserTontineCount();
+
+  if (plan === "Free" && count >= 2) {
+    // 🚫 Bloqué → ouvre la modale Premium
+    showModalById("premiumModal");
+  } else {
+    // ✅ Peut créer
+    ouvrirPage("creer");
+  }
+}
 
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
