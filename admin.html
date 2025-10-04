@@ -1219,18 +1219,28 @@ function populateSubscribersGrid() {
 
         // Modal functions
         function openAddSubscriberModal() {
-            document.getElementById('c').classList.remove('hidden');
-        }
+  const modal = document.getElementById('addSubscriberModal');
+  if (!modal) {
+    console.error("⚠️ Modale introuvable : vérifie que l'ID 'addSubscriberModal' est bien présent dans ton HTML");
+    return;
+  }
+  modal.classList.remove('hidden');
+}
 
-        function closeAddSubscriberModal() {
-            document.getElementById('addSubscriberModal').classList.add('hidden');
-            // Clear form
-            document.getElementById('newSubscriberName').value = '';
-            document.getElementById('newSubscriberEmail').value = '';
-            document.getElementById('newSubscriberPhone').value = '';
-            document.getElementById('newSubscriberPlan').value = 'Free';
-            document.getElementById('newSubscriberPaymentMethod').value = 'wave';
-        }
+function closeAddSubscriberModal() {
+  const modal = document.getElementById('addSubscriberModal');
+  if (!modal) return;
+
+  modal.classList.add('hidden');
+
+  // Réinitialiser les champs du formulaire
+  document.getElementById('newSubscriberName').value = '';
+  document.getElementById('newSubscriberEmail').value = '';
+  document.getElementById('newSubscriberPhone').value = '';
+  document.getElementById('newSubscriberPlan').value = 'Free';
+  document.getElementById('newSubscriberPaymentMethod').value = 'wave';
+}
+
 
        async function addSubscriber() {
   const name = document.getElementById('newSubscriberName').value.trim();
