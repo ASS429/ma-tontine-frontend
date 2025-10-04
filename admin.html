@@ -267,7 +267,7 @@
                 <div class="mb-6 flex justify-between items-center">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Abonnés</h1>
-                        <<div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-4">
   <input type="text" id="subscriberSearch" placeholder="Rechercher un abonné..." 
     onkeyup="filterSubscribers()" 
     class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
@@ -277,7 +277,7 @@
     <option value="">Tous les statuts</option>
     <option value="Actif">Actif</option>
     <option value="Bloqué">Bloqué</option>
-    <option value="En retard">En retard</option>
+    <option value="en_attente">En attente</option>
   </select>
 
   <!-- 🆕 Nouveau filtre par plan -->
@@ -915,24 +915,17 @@ async function fetchSubscribers() {
       (subscriber.email && subscriber.email.toLowerCase().includes(searchTerm)) ||
       (subscriber.phone && subscriber.phone.includes(searchTerm));
 
-    // ⚙️ Vérifie si l’utilisateur est en retard (expiration dépassée)
-    const isLate =
-      subscriber.plan === "Premium" &&
-      subscriber.payment_status === "effectue" &&
-      subscriber.expiration &&
-      new Date(subscriber.expiration) < new Date();
-
-    // 🎯 Filtrage par statut
+    // 🎯 Filtre par statut utilisateur (Actif / Bloqué / En attente)
     let matchesStatus = true;
     if (statusFilter) {
-      if (statusFilter === "En retard") {
-        matchesStatus = isLate;
+      if (statusFilter === "en_attente") {
+        matchesStatus = subscriber.payment_status === "en_attente";
       } else {
         matchesStatus = subscriber.status === statusFilter;
       }
     }
 
-    // 🎯 Filtrage par plan
+    // 🎯 Filtre par plan (Free / Premium / en_attente / rejeté)
     let matchesPlan = true;
     if (planFilter) {
       if (planFilter === "en_attente") {
