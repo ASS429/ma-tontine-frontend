@@ -778,7 +778,8 @@
 let subscribers = [];
 let filteredSubscribers = [];
 
-       async function fetchSubscribers() {
+       // 🔹 Charger les abonnés depuis l’API
+async function fetchSubscribers() {
   try {
     const token = localStorage.getItem("token");
     console.log("🔑 Token utilisé:", token);
@@ -799,18 +800,30 @@ let filteredSubscribers = [];
       return;
     }
 
-    // 🔹 Adapter les données de l’API aux champs attendus par le front
+    // 🔹 On garde payment_status brut + une classe utilitaire
     subscribers = data.map(user => ({
       id: user.id,
       nom_complet: user.nom_complet,
       email: user.email,
       phone: user.phone || "",
-      status: user.status || "Actif", // utilise le vrai champ "status" de ta table
+      status: user.status || "Actif",
       plan: user.plan || "Free",
       expiration: user.expiration ? new Date(user.expiration).toISOString().split("T")[0] : "—",
       avatar: user.nom_complet ? user.nom_complet.charAt(0).toUpperCase() : "U",
-      paymentStatus: user.payment_status === "en_retard" ? "late" :
-                     user.payment_status === "en_attente" ? "warning" : "ok",
+
+      // 🔑 important : on garde la valeur brute
+      payment_status: user.payment_status || "N/A",
+
+      // 🌈 utile pour les couleurs
+      paymentStatusClass:
+        user.payment_status === "effectue"
+          ? "bg-green-100 text-green-800"
+          : user.payment_status === "en_attente"
+          ? "bg-orange-100 text-orange-800"
+          : user.payment_status === "rejete"
+          ? "bg-red-100 text-red-800"
+          : "bg-gray-100 text-gray-800",
+
       amount: user.plan === "Premium" ? "29.99" : "0.00",
       paymentMethod: user.payment_method || "cash"
     }));
@@ -1019,119 +1032,113 @@ let filteredSubscribers = [];
             }
         }
 
-        // Populate subscribers grid
+       // 🔹 Affichage des abonnés
 function populateSubscribersGrid() {
-    const grid = document.getElementById('subscribersGrid');
-    grid.innerHTML = '';
+  const grid = document.getElementById('subscribersGrid');
+  grid.innerHTML = '';
 
-    filteredSubscribers.forEach((subscriber) => {
-        const paymentStatusColor = {
-            'effectue': 'bg-green-100 text-green-800',
-            'en_attente': 'bg-orange-100 text-orange-800',
-            'rejete': 'bg-red-100 text-red-800'
-        };
+  filteredSubscribers.forEach((subscriber) => {
+    const paymentMethodIcons = {
+      'wave': '🌊',
+      'orange': '🟠',
+      'cash': '💵',
+      null: ''
+    };
 
-        const paymentMethodIcons = {
-            'wave': '🌊',
-            'orange': '🟠',
-            'cash': '💵',
-            null: ''
-        };
+    // ✅ Badge statut utilisateur
+    const statusBadge = subscriber.status === 'Actif'
+      ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Actif</span>'
+      : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Bloqué</span>';
 
-        // ✅ Badge statut utilisateur
-        const statusBadge = subscriber.status === 'Actif'
-            ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Actif</span>'
-            : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Bloqué</span>';
+    // ✅ Badge plan
+    let planBadge = "";
+    if (subscriber.plan === "Premium") {
+      if (subscriber.payment_status === "effectue") {
+        planBadge = '<span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">Premium ✅</span>';
+      } else if (subscriber.payment_status === "en_attente") {
+        planBadge = '<span class="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">Premium ⏳</span>';
+      } else if (subscriber.payment_status === "rejete") {
+        planBadge = '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Premium ❌</span>';
+      } else {
+        planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Premium</span>';
+      }
+    } else {
+      planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
+    }
 
-        // ✅ Badge plan
-        let planBadge = "";
-        if (subscriber.plan === "Premium") {
-            if (subscriber.payment_status === "effectue") {
-                planBadge = '<span class="px-2 py-1 text-xs font-medium bg-violet-100 text-violet-800 rounded-full">Premium ✅</span>';
-            } else if (subscriber.payment_status === "en_attente") {
-                planBadge = '<span class="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">Premium ⏳</span>';
-            } else if (subscriber.payment_status === "rejete") {
-                planBadge = '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Premium ❌</span>';
-            } else {
-                planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Premium</span>';
-            }
-        } else {
-            planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
-        }
+    // ✅ Badge paiement
+    const paymentBadge = `<span class="px-2 py-1 text-xs font-medium ${subscriber.paymentStatusClass} rounded-full">
+      ${subscriber.payment_status === 'effectue' ? 'À jour' :
+        subscriber.payment_status === 'en_attente' ? 'En attente' :
+        subscriber.payment_status === 'rejete' ? 'Rejeté' : 'N/A'}
+    </span>`;
 
-        // ✅ Badge paiement
-        const paymentBadge = `<span class="px-2 py-1 text-xs font-medium ${paymentStatusColor[subscriber.payment_status] || 'bg-gray-100 text-gray-800'} rounded-full">
-            ${subscriber.payment_status === 'effectue' ? 'À jour' :
-              subscriber.payment_status === 'en_attente' ? 'En attente' :
-              subscriber.payment_status === 'rejete' ? 'Rejeté' : 'N/A'}
-        </span>`;
+    // ✅ Actions dynamiques
+    let actions = "";
 
-        // ✅ Actions dynamiques
-        let actions = "";
+    if (subscriber.payment_status === "en_attente" && subscriber.plan === "Premium") {
+      actions = `
+        <button onclick="approveSubscriber('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Valider</button>
+        <button onclick="rejectSubscriber('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rejeter</button>
+      `;
+    } else if (subscriber.status === "Actif") {
+      actions = `
+        <button onclick="blockUser('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Bloquer</button>
+        <button onclick="sendReminder('${subscriber.id}')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rappel</button>
+        <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>
+      `;
+    } else {
+      actions = `
+        <button onclick="activateUser('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Réactiver</button>
+        <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>
+      `;
+    }
 
-        if (subscriber.payment_status === "en_attente" && subscriber.plan === "Premium") {
-            actions = `
-                <button onclick="approveSubscriber('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Valider</button>
-                <button onclick="rejectSubscriber('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rejeter</button>
-            `;
-        } else if (subscriber.status === "Actif") {
-            actions = `
-                <button onclick="blockUser('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Bloquer</button>
-                <button onclick="sendReminder('${subscriber.id}')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rappel</button>
-                <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>
-            `;
-        } else {
-            actions = `
-                <button onclick="activateUser('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Réactiver</button>
-                <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>
-            `;
-        }
-
-        const card = document.createElement('div');
-        card.className = 'subscriber-card bg-white rounded-xl shadow-sm border border-gray-100 p-6';
-        card.innerHTML = `
-            <div class="flex items-center space-x-4 mb-4">
-                <div class="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center">
-                    <span class="text-violet-600 font-semibold">${subscriber.nom_complet ? subscriber.nom_complet[0].toUpperCase() : "?"}</span>
-                </div>
-                <div class="flex-1">
-                    <h3 class="font-semibold text-gray-800">${subscriber.nom_complet || "Utilisateur"}</h3>
-                    <p class="text-sm text-gray-500">${subscriber.email}</p>
-                </div>
-            </div>
-            
-            <div class="space-y-3 mb-4">
-                <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-600">Statut:</span>
-                    ${statusBadge}
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-600">Plan:</span>
-                    ${planBadge}
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-600">Paiement:</span>
-                    ${paymentBadge}
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-600">Méthode:</span>
-                    <span class="text-sm font-medium">${paymentMethodIcons[subscriber.payment_method] || ""} ${subscriber.payment_method || "-"}</span>
-                </div>
-                <div class="flex justify-between items-center">
-                    <span class="text-sm text-gray-600">Expiration:</span>
-                    <span class="text-sm font-medium">${subscriber.expiration || "-"}</span>
-                </div>
-            </div>
-            
-            <div class="border-t pt-4">
-                <div class="flex flex-wrap">
-                    ${actions}
-                </div>
-            </div>
-        `;
-        
-        grid.appendChild(card);
-    });
+    const card = document.createElement('div');
+    card.className = 'subscriber-card bg-white rounded-xl shadow-sm border border-gray-100 p-6';
+    card.innerHTML = `
+      <div class="flex items-center space-x-4 mb-4">
+        <div class="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center">
+          <span class="text-violet-600 font-semibold">${subscriber.avatar}</span>
+        </div>
+        <div class="flex-1">
+          <h3 class="font-semibold text-gray-800">${subscriber.nom_complet || "Utilisateur"}</h3>
+          <p class="text-sm text-gray-500">${subscriber.email}</p>
+        </div>
+      </div>
+      
+      <div class="space-y-3 mb-4">
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Statut:</span>
+          ${statusBadge}
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Plan:</span>
+          ${planBadge}
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Paiement:</span>
+          ${paymentBadge}
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Méthode:</span>
+          <span class="text-sm font-medium">${paymentMethodIcons[subscriber.paymentMethod] || ""} ${subscriber.paymentMethod || "-"}</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-sm text-gray-600">Expiration:</span>
+          <span class="text-sm font-medium">${subscriber.expiration || "-"}</span>
+        </div>
+      </div>
+      
+      <div class="border-t pt-4">
+        <div class="flex flex-wrap">
+          ${actions}
+        </div>
+      </div>
+    `;
+    
+    grid.appendChild(card);
+  });
 }
 
         // Populate transactions list
@@ -1289,35 +1296,6 @@ function populateSubscribersGrid() {
 
         function addCashTransaction() {
             showNotification('Ajout de transaction en espèces', 'info');
-        }
-
-        // Action functions
-        function blockUser(index) {
-            subscribers[index].status = 'Bloqué';
-            filteredSubscribers = [...subscribers];
-            filterSubscribers();
-            showNotification('Utilisateur bloqué avec succès', 'success');
-        }
-
-        function activateUser(index) {
-            subscribers[index].status = 'Actif';
-            subscribers[index].paymentStatus = 'ok';
-            filteredSubscribers = [...subscribers];
-            filterSubscribers();
-            showNotification('Utilisateur réactivé avec succès', 'success');
-        }
-
-        function deleteUser(index) {
-            if (confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')) {
-                subscribers.splice(index, 1);
-                filteredSubscribers = [...subscribers];
-                filterSubscribers();
-                showNotification('Utilisateur supprimé avec succès', 'error');
-            }
-        }
-
-        function sendReminder(index) {
-            showNotification(`Rappel envoyé à ${subscribers[index].name}`, 'info');
         }
 
         function toggleNotifications() {
