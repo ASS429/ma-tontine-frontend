@@ -888,24 +888,39 @@ async function fetchSubscribers() {
             }
         }
 
-        // Filter subscribers function
         function filterSubscribers() {
-            const searchTerm = document.getElementById('subscriberSearch').value.toLowerCase();
-            const statusFilter = document.getElementById('statusFilter').value;
-            
-            filteredSubscribers = subscribers.filter(subscriber => {
-                const matchesSearch = subscriber.name.toLowerCase().includes(searchTerm) || 
-                                    subscriber.email.toLowerCase().includes(searchTerm) ||
-                                    subscriber.phone.includes(searchTerm);
-                
-                const matchesStatus = !statusFilter || subscriber.status === statusFilter ||
-                                    (statusFilter === 'En retard' && subscriber.paymentStatus === 'late');
-                
-                return matchesSearch && matchesStatus;
-            });
-            
-            populateSubscribersGrid();
-        }
+  const searchTerm = document.getElementById('subscriberSearch').value.trim().toLowerCase();
+  const statusFilter = document.getElementById('statusFilter').value;
+
+  filteredSubscribers = subscribers.filter(subscriber => {
+    // 🔍 Recherche par nom, email ou téléphone
+    const matchesSearch =
+      (subscriber.nom_complet && subscriber.nom_complet.toLowerCase().includes(searchTerm)) ||
+      (subscriber.email && subscriber.email.toLowerCase().includes(searchTerm)) ||
+      (subscriber.phone && subscriber.phone.includes(searchTerm));
+
+    // ⚙️ Vérifie si l’utilisateur est en retard
+    const isLate =
+      subscriber.plan === "Premium" &&
+      subscriber.payment_status === "effectue" &&
+      subscriber.expiration &&
+      new Date(subscriber.expiration) < new Date();
+
+    // 🎯 Filtrage par statut
+    let matchesStatus = true;
+    if (statusFilter) {
+      if (statusFilter === "En retard") {
+        matchesStatus = isLate;
+      } else {
+        matchesStatus = subscriber.status === statusFilter;
+      }
+    }
+
+    return matchesSearch && matchesStatus;
+  });
+
+  populateSubscribersGrid();
+}
 
         // Filter revenue function
         function filterRevenue() {
