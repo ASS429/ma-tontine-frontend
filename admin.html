@@ -1242,7 +1242,7 @@ function closeAddSubscriberModal() {
 }
 
 
-       async function addSubscriber() {
+async function addSubscriber() {
   const name = document.getElementById('newSubscriberName').value.trim();
   const email = document.getElementById('newSubscriberEmail').value.trim();
   const phone = document.getElementById('newSubscriberPhone').value.trim();
@@ -1252,6 +1252,14 @@ function closeAddSubscriberModal() {
   if (!name || !email || !phone) {
     showNotification('⚠️ Veuillez remplir tous les champs obligatoires', 'error');
     return;
+  }
+
+  // 👉 Déterminer le payment_status côté frontend
+  let payment_status;
+  if (plan === "Premium") {
+    payment_status = "effectue"; // car ajouté directement par admin
+  } else {
+    payment_status = "none"; // Free → pas de paiement en attente
   }
 
   try {
@@ -1267,7 +1275,8 @@ function closeAddSubscriberModal() {
         email,
         phone,
         plan,
-        payment_method: paymentMethod
+        payment_method: paymentMethod,
+        payment_status // ✅ envoyé aussi côté front
       })
     });
 
@@ -1279,7 +1288,7 @@ function closeAddSubscriberModal() {
     closeAddSubscriberModal();
     fetchSubscribers(); // Rafraîchir la liste
   } catch (err) {
-    console.error(err);
+    console.error("❌ addSubscriber error:", err);
     showNotification("❌ " + err.message, "error");
   }
 }
