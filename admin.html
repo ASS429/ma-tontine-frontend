@@ -267,15 +267,30 @@
                 <div class="mb-6 flex justify-between items-center">
                     <div>
                         <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Abonnés</h1>
-                        <div class="flex items-center space-x-4">
-                            <input type="text" id="subscriberSearch" placeholder="Rechercher un abonné..." onkeyup="filterSubscribers()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
-                            <select id="statusFilter" onchange="filterSubscribers()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                                <option value="">Tous les statuts</option>
-                                <option value="Actif">Actif</option>
-                                <option value="Bloqué">Bloqué</option>
-                                <option value="En retard">En retard</option>
-                            </select>
-                        </div>
+                        <<div class="flex items-center space-x-4">
+  <input type="text" id="subscriberSearch" placeholder="Rechercher un abonné..." 
+    onkeyup="filterSubscribers()" 
+    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
+  
+  <select id="statusFilter" onchange="filterSubscribers()" 
+    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+    <option value="">Tous les statuts</option>
+    <option value="Actif">Actif</option>
+    <option value="Bloqué">Bloqué</option>
+    <option value="En retard">En retard</option>
+  </select>
+
+  <!-- 🆕 Nouveau filtre par plan -->
+  <select id="planFilter" onchange="filterSubscribers()" 
+    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+    <option value="">Tous les plans</option>
+    <option value="Free">Free</option>
+    <option value="Premium">Premium</option>
+    <option value="en_attente">En attente</option>
+    <option value="rejete">Rejeté</option>
+  </select>
+</div>
+
                     </div>
                     <button onclick="openAddSubscriberModal()" class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2">
                         <span class="text-lg">👤</span>
@@ -888,9 +903,10 @@ async function fetchSubscribers() {
             }
         }
 
-        function filterSubscribers() {
+       function filterSubscribers() {
   const searchTerm = document.getElementById('subscriberSearch').value.trim().toLowerCase();
   const statusFilter = document.getElementById('statusFilter').value;
+  const planFilter = document.getElementById('planFilter').value;
 
   filteredSubscribers = subscribers.filter(subscriber => {
     // 🔍 Recherche par nom, email ou téléphone
@@ -899,7 +915,7 @@ async function fetchSubscribers() {
       (subscriber.email && subscriber.email.toLowerCase().includes(searchTerm)) ||
       (subscriber.phone && subscriber.phone.includes(searchTerm));
 
-    // ⚙️ Vérifie si l’utilisateur est en retard
+    // ⚙️ Vérifie si l’utilisateur est en retard (expiration dépassée)
     const isLate =
       subscriber.plan === "Premium" &&
       subscriber.payment_status === "effectue" &&
@@ -916,7 +932,19 @@ async function fetchSubscribers() {
       }
     }
 
-    return matchesSearch && matchesStatus;
+    // 🎯 Filtrage par plan
+    let matchesPlan = true;
+    if (planFilter) {
+      if (planFilter === "en_attente") {
+        matchesPlan = subscriber.payment_status === "en_attente";
+      } else if (planFilter === "rejete") {
+        matchesPlan = subscriber.payment_status === "rejete";
+      } else {
+        matchesPlan = subscriber.plan === planFilter;
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesPlan;
   });
 
   populateSubscribersGrid();
