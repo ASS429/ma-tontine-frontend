@@ -1405,6 +1405,8 @@ async function addSubscriber() {
   }
 }
 
+let transactions = [];
+
 // 🔹 Charger les transactions depuis le backend
 async function loadTransactions() {
   const token = localStorage.getItem("token");
