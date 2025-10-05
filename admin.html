@@ -1377,6 +1377,40 @@ async function addSubscriber() {
   }
 }
 
+// 🔹 Charger les transactions depuis le backend
+async function loadTransactions() {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(`${API_BASE}/api/revenus/transactions`, {
+      headers: { "Authorization": "Bearer " + token },
+    });
+
+    if (!res.ok) throw new Error("Erreur chargement transactions");
+
+    const data = await res.json();
+    console.log("💰 Transactions:", data);
+
+    // Transforme les données en format attendu par populateTransactionsList
+    window.transactions = data.map(t => ({
+      description: t.description,
+      amount: Number(t.amount),
+      method: t.method || "cash",
+      date: new Date(t.date).toLocaleDateString("fr-FR"),
+      type: t.status === "effectue" ? "income" : "expense",
+    }));
+
+    populateTransactionsList();
+  } catch (err) {
+    console.error("Erreur loadTransactions:", err);
+    showNotification("❌ Impossible de charger les transactions", "error");
+  }
+}
+
+// Charger les transactions automatiquement
+document.addEventListener("DOMContentLoaded", () => {
+  loadTransactions();
+});
+
         function openWithdrawModal() {
             document.getElementById('withdrawModal').classList.remove('hidden');
         }
