@@ -1022,7 +1022,7 @@ function updateRevenueDisplayWithData(revenus, period) {
 async function loadRevenueStats() {
   const token = localStorage.getItem('token');
   try {
-    const res = await fetch(`${API_BASE}/api/revenus/stats`, {
+    const res = await fetch(`${API_BASE}/revenus/stats`, {
   headers: { Authorization: "Bearer " + token },
 });
 
