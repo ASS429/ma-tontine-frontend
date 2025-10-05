@@ -303,92 +303,96 @@
                 </div>
             </div>
 
-            <!-- Revenue Section -->
             <div id="revenue" class="section">
-                <div class="mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Revenus</h1>
-                    <div class="flex items-center space-x-4 mt-4">
-                        <label class="text-sm font-medium text-gray-700">Période:</label>
-                        <select id="revenuePeriodFilter" onchange="filterRevenue()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
-                            <option value="all">Tous les revenus</option>
-                            <option value="daily">Journalier</option>
-                            <option value="weekly">Hebdomadaire</option>
-                            <option value="monthly" selected>Mensuel</option>
-                        </select>
-                        <div id="revenueFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
-                            Revenus mensuels affichés
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Balance Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                    <div class="bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-6 text-white">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold">Solde Principal</h3>
-                            <span class="text-2xl">💳</span>
-                        </div>
-                        <p class="text-3xl font-bold mb-2">€127,450.00</p>
-                        <p class="text-violet-200 text-sm">Disponible immédiatement</p>
-                    </div>
-
-                    <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold">Revenus ce Mois</h3>
-                            <span class="text-2xl">📈</span>
-                        </div>
-                        <p class="text-3xl font-bold mb-2">€45,230.00</p>
-                        <p class="text-green-200 text-sm">+15% vs mois dernier</p>
-                    </div>
-
-                    <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold">En Attente</h3>
-                            <span class="text-2xl">⏳</span>
-                        </div>
-                        <p class="text-3xl font-bold mb-2">€8,750.00</p>
-                        <p class="text-orange-200 text-sm">Paiements en cours</p>
-                    </div>
-                </div>
-
-                <!-- Quick Actions -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                    <button onclick="openWithdrawModal()" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div class="text-center">
-                            <span class="text-2xl mb-2 block">💸</span>
-                            <p class="font-medium text-gray-800">Retirer</p>
-                        </div>
-                    </button>
-                    <button onclick="generateReport()" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div class="text-center">
-                            <span class="text-2xl mb-2 block">📊</span>
-                            <p class="font-medium text-gray-800">Rapport</p>
-                        </div>
-                    </button>
-                    <button onclick="openTransferModal()" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div class="text-center">
-                            <span class="text-2xl mb-2 block">🔄</span>
-                            <p class="font-medium text-gray-800">Transfert</p>
-                        </div>
-                    </button>
-                    <button onclick="showTransactionHistory()" class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div class="text-center">
-                            <span class="text-2xl mb-2 block">📋</span>
-                            <p class="font-medium text-gray-800">Historique</p>
-                        </div>
-                    </button>
-                </div>
-
-                <!-- Recent Transactions -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800">Transactions Récentes</h2>
-                    </div>
-                    <div id="transactionsList" class="divide-y divide-gray-100">
-                        <!-- Transactions will be populated by JavaScript -->
-                    </div>
-                </div>
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Revenus</h1>
+        <div class="flex items-center space-x-4 mt-4">
+            <label class="text-sm font-medium text-gray-700">Période:</label>
+            <select id="revenuePeriodFilter" onchange="filterRevenue()" 
+                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
+                <option value="all">Tous les revenus</option>
+                <option value="daily">Journalier</option>
+                <option value="weekly">Hebdomadaire</option>
+                <option value="monthly" selected>Mensuel</option>
+            </select>
+            <div id="revenueFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+                Revenus mensuels affichés
             </div>
+        </div>
+    </div>
+
+    <!-- Cartes principales -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div class="bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-6 text-white">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Solde Principal</h3>
+                <span class="text-2xl">💳</span>
+            </div>
+            <p class="text-3xl font-bold mb-2">€0.00</p>
+            <p class="text-violet-200 text-sm">Disponible immédiatement</p>
+        </div>
+
+        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Revenus ce Mois</h3>
+                <span class="text-2xl">📈</span>
+            </div>
+            <p class="text-3xl font-bold mb-2">€0.00</p>
+            <p class="text-green-200 text-sm">+0% vs mois dernier</p>
+        </div>
+
+        <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Croissance</h3>
+                <span class="text-2xl">📊</span>
+            </div>
+            <p class="text-3xl font-bold mb-2">0%</p>
+            <p class="text-orange-200 text-sm">Évolution mensuelle</p>
+        </div>
+    </div>
+
+    <!-- Actions rapides -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <button onclick="openWithdrawModal()" 
+            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div class="text-center">
+                <span class="text-2xl mb-2 block">💸</span>
+                <p class="font-medium text-gray-800">Retirer</p>
+            </div>
+        </button>
+        <button onclick="generateReport()" 
+            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div class="text-center">
+                <span class="text-2xl mb-2 block">📊</span>
+                <p class="font-medium text-gray-800">Rapport</p>
+            </div>
+        </button>
+        <button onclick="openTransferModal()" 
+            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div class="text-center">
+                <span class="text-2xl mb-2 block">🔄</span>
+                <p class="font-medium text-gray-800">Transfert</p>
+            </div>
+        </button>
+        <button onclick="showTransactionHistory()" 
+            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div class="text-center">
+                <span class="text-2xl mb-2 block">📋</span>
+                <p class="font-medium text-gray-800">Historique</p>
+            </div>
+        </button>
+    </div>
+
+    <!-- Transactions récentes -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-800">Transactions Récentes</h2>
+        </div>
+        <div id="transactionsList" class="divide-y divide-gray-100">
+            <!-- Transactions ajoutées dynamiquement -->
+        </div>
+    </div>
+</div>
 
             <!-- Accounts Section -->
             <div id="accounts" class="section">
