@@ -319,6 +319,13 @@
                 Revenus mensuels affichés
             </div>
         </div>
+        <button onclick="openAddRevenueModal()" 
+    class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div class="text-center">
+        <span class="text-2xl mb-2 block">➕</span>
+        <p class="font-medium text-gray-800">Ajouter Revenu</p>
+    </div>
+</button>
     </div>
 
     <!-- Cartes principales -->
@@ -782,6 +789,37 @@
         </div>
     </div>
 
+    <!-- Modal Ajout Revenu -->
+<div id="addRevenueModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+    <h2 class="text-xl font-semibold mb-4">Ajouter un Revenu</h2>
+    <div class="space-y-4">
+      <input id="revSource" type="text" placeholder="Source (ex: Abonnement)" 
+             class="w-full border rounded-lg px-3 py-2" required>
+      <input id="revMontant" type="number" placeholder="Montant (€)" 
+             class="w-full border rounded-lg px-3 py-2" required>
+      <select id="revMethode" class="w-full border rounded-lg px-3 py-2">
+        <option value="wave">Wave</option>
+        <option value="orange_money">Orange Money</option>
+        <option value="especes">Espèces</option>
+        <option value="autre">Autre</option>
+      </select>
+      <select id="revStatut" class="w-full border rounded-lg px-3 py-2">
+        <option value="effectue">Effectué</option>
+        <option value="en_attente">En attente</option>
+        <option value="annule">Annulé</option>
+      </select>
+      <textarea id="revDescription" placeholder="Description (optionnelle)" 
+                class="w-full border rounded-lg px-3 py-2"></textarea>
+    </div>
+    <div class="flex justify-end space-x-2 mt-6">
+      <button onclick="closeAddRevenueModal()" class="px-4 py-2 bg-gray-200 rounded-lg">Annuler</button>
+      <button onclick="submitRevenue()" class="px-4 py-2 bg-violet-600 text-white rounded-lg">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+
     <script>
 
         document.addEventListener("DOMContentLoaded", () => {
@@ -857,16 +895,6 @@ async function fetchSubscribers() {
     filteredSubscribers = [];
   }
 }
-
-        // Sample transactions
-        const transactions = [
-            { id: 1, type: "income", description: "Paiement Premium - Jean Dupont", amount: 29.99, date: "Aujourd'hui, 14:30", method: "wave" },
-            { id: 2, type: "income", description: "Paiement Premium - Sophie Leroy", amount: 29.99, date: "Hier, 09:15", method: "wave" },
-            { id: 3, type: "expense", description: "Frais de service", amount: -125.00, date: "Hier, 08:00", method: "main" },
-            { id: 4, type: "income", description: "Paiement Premium - Thomas Bernard", amount: 29.99, date: "2 jours, 16:45", method: "orange" },
-            { id: 5, type: "income", description: "Paiement Cash - Pierre Durand", amount: 29.99, date: "3 jours, 11:20", method: "cash" }
-        ];
-
         let sidebarVisible = true;
         
         let alertCount = 3;
@@ -1381,24 +1409,13 @@ async function addSubscriber() {
 async function loadTransactions() {
   const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`${API_BASE}/api/revenus/transactions`, {
+    const res = await fetch(`${API_BASE}/revenus/transactions`, {
       headers: { "Authorization": "Bearer " + token },
     });
 
     if (!res.ok) throw new Error("Erreur chargement transactions");
 
-    const data = await res.json();
-    console.log("💰 Transactions:", data);
-
-    // Transforme les données en format attendu par populateTransactionsList
-    window.transactions = data.map(t => ({
-      description: t.description,
-      amount: Number(t.amount),
-      method: t.method || "cash",
-      date: new Date(t.date).toLocaleDateString("fr-FR"),
-      type: t.status === "effectue" ? "income" : "expense",
-    }));
-
+    window.transactions = await res.json(); // ✅ déjà formaté
     populateTransactionsList();
   } catch (err) {
     console.error("Erreur loadTransactions:", err);
@@ -1682,6 +1699,51 @@ async function sendReminder(userId) {
   } catch (err) {
     console.error(err);
     showNotification("❌ Impossible d’envoyer le rappel", "error");
+  }
+}
+
+function openAddRevenueModal() {
+  document.getElementById("addRevenueModal").classList.remove("hidden");
+}
+
+function closeAddRevenueModal() {
+  document.getElementById("addRevenueModal").classList.add("hidden");
+}
+
+async function submitRevenue() {
+  const source = document.getElementById("revSource").value.trim();
+  const montant = parseFloat(document.getElementById("revMontant").value);
+  const methode = document.getElementById("revMethode").value;
+  const statut = document.getElementById("revStatut").value;
+  const description = document.getElementById("revDescription").value.trim();
+
+  if (!source || !montant || montant <= 0) {
+    showNotification("⚠️ Veuillez remplir correctement les champs obligatoires", "error");
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+    const res = await fetch(API_BASE + "/revenus", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ source, montant, methode, statut, description })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || "Erreur ajout revenu");
+
+    showNotification("✅ Revenu ajouté avec succès", "success");
+    closeAddRevenueModal();
+    loadTransactions();  // recharge les transactions
+    loadRevenueStats();  // recharge les stats
+  } catch (err) {
+    console.error("Erreur ajout revenu:", err);
+    showNotification("❌ " + err.message, "error");
   }
 }
 
