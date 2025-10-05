@@ -1022,9 +1022,9 @@ function updateRevenueDisplayWithData(revenus, period) {
 async function loadRevenueStats() {
   const token = localStorage.getItem('token');
   try {
-    const res = await fetch(API_BASE + "/revenus/stats", {
-      headers: { "Authorization": "Bearer " + token }
-    });
+    const res = await fetch(`${API_BASE}/api/revenus/stats`, {
+  headers: { Authorization: "Bearer " + token },
+});
 
     if (!res.ok) throw new Error("Erreur chargement stats revenus");
 
@@ -1034,7 +1034,8 @@ async function loadRevenueStats() {
     document.querySelector('.bg-gradient-to-r.from-violet-500 .text-3xl').textContent = `€${stats.daily_total.toFixed(2)}`;
     document.querySelector('.bg-gradient-to-r.from-green-500 .text-3xl').textContent = `€${stats.monthly_total.toFixed(2)}`;
     document.querySelector('.bg-gradient-to-r.from-orange-500 .text-3xl').textContent = `+${stats.growth}%`;
-
+    document.querySelector('.bg-gradient-to-r.from-green-500 .text-sm').textContent = 
+            `+${stats.growth}% vs mois dernier`;
   } catch (err) {
     console.error("Erreur stats revenus:", err);
     showNotification("❌ Impossible de charger les statistiques", "error");
