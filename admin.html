@@ -960,6 +960,7 @@ async function fetchSubscribers() {
 
     const data = await res.json();
 
+    // 🔒 Vérifie que c’est bien un tableau
     if (!Array.isArray(data)) {
       console.error("API n’a pas renvoyé un tableau:", data);
       showNotification("❌ Erreur: impossible de charger les abonnés", "error");
@@ -968,15 +969,7 @@ async function fetchSubscribers() {
       return;
     }
 
-    // 🌀 Afficher un loader pendant le rendu
-    const grid = document.getElementById("subscribersGrid");
-    grid.innerHTML = `
-      <div class="col-span-full flex justify-center items-center py-8">
-        <div class="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-violet-600"></div>
-      </div>
-    `;
-
-    // 🔹 Transformation des données
+    // 🔹 On garde payment_status brut + une classe utilitaire
     subscribers = data.map(user => ({
       id: user.id,
       nom_complet: user.nom_complet,
@@ -1000,39 +993,7 @@ async function fetchSubscribers() {
     }));
 
     filteredSubscribers = [...subscribers];
-
-    // 💅 Rendu des cartes abonnés
-    grid.innerHTML = filteredSubscribers.map(sub => `
-      <div class="bg-white rounded-2xl shadow hover:shadow-lg transition-all duration-300 p-5 border border-gray-100 flex flex-col justify-between">
-        <div class="flex items-center space-x-4 mb-4">
-          <div class="w-12 h-12 rounded-full bg-violet-100 flex items-center justify-center text-violet-600 font-semibold text-lg">
-            ${sub.avatar}
-          </div>
-          <div>
-            <p class="font-semibold text-gray-800">${sub.nom_complet}</p>
-            <p class="text-sm text-gray-500">${sub.email}</p>
-          </div>
-        </div>
-
-        <div class="flex flex-col space-y-2 text-sm text-gray-600 mb-4">
-          <div class="flex justify-between"><span>Status:</span><span class="font-medium">${sub.status}</span></div>
-          <div class="flex justify-between"><span>Plan:</span><span class="font-medium">${sub.plan}</span></div>
-          <div class="flex justify-between"><span>Expiration:</span><span class="font-medium">${sub.expiration}</span></div>
-          <div class="flex justify-between"><span>Paiement:</span>
-            <span class="px-2 py-1 rounded-full text-xs ${sub.paymentStatusClass} font-semibold">${sub.payment_status}</span>
-          </div>
-        </div>
-
-        <div class="flex justify-between items-center mt-auto">
-          <span class="text-gray-700 font-medium">💰 ${sub.amount} FCFA</span>
-          <button onclick="openSubscriberDetails(${sub.id})"
-            class="text-violet-600 hover:text-violet-800 text-sm font-medium transition">
-            Détails →
-          </button>
-        </div>
-      </div>
-    `).join("");
-
+    populateSubscribersGrid();
   } catch (err) {
     console.error("Erreur fetchSubscribers:", err);
     showNotification("❌ Impossible de charger les abonnés", "error");
@@ -1041,31 +1002,21 @@ async function fetchSubscribers() {
   }
 }
 
-
-// 🔄 Rafraîchir le tableau de bord des revenus
 async function refreshRevenueDashboard() {
   const token = localStorage.getItem("token");
   if (!token) return;
 
   try {
-    // 🌀 Affiche un petit spinner sur les cartes
-    document.querySelectorAll(".text-3xl.font-bold").forEach(el => {
-      el.innerHTML = `<span class="inline-block animate-pulse text-violet-400">...</span>`;
-    });
-
-    // 🔹 Charger les statistiques
     const statsRes = await fetch(API_BASE + "/revenus/stats", {
       headers: { "Authorization": "Bearer " + token }
     });
     const stats = await statsRes.json();
 
-    // 🔹 Mettre à jour les cartes avec animation douce
     document.querySelectorAll(".bg-gradient-to-r.from-green-500 p.text-3xl")[0].textContent =
       `FCFA${stats.monthly_total.toFixed(2)}`;
     document.querySelectorAll(".bg-gradient-to-r.from-orange-500 p.text-3xl")[0].textContent =
       `${stats.growth.toFixed(2)}%`;
 
-    // 🔹 Recharger les transactions récentes
     const txRes = await fetch(API_BASE + "/revenus/transactions", {
       headers: { "Authorization": "Bearer " + token }
     });
@@ -1075,30 +1026,24 @@ async function refreshRevenueDashboard() {
     list.innerHTML = "";
 
     if (transactions.length === 0) {
-      list.innerHTML = `
-        <div class="p-6 text-gray-500 text-center text-sm bg-gray-50 rounded-b-xl">
-          Aucune transaction récente 📭
-        </div>`;
+      list.innerHTML = `<div class="p-4 text-gray-500 text-sm text-center">Aucune transaction récente</div>`;
     } else {
       transactions.forEach(tx => {
         const color = tx.type === "income" ? "text-green-600" : "text-red-600";
-        const sign = tx.type === "income" ? "+" : "-";
         list.innerHTML += `
-          <div class="flex justify-between items-center px-6 py-4 hover:bg-gray-50 transition">
+          <div class="flex justify-between items-center px-6 py-4 hover:bg-gray-50 transition rounded-lg">
             <div>
               <p class="text-gray-800 font-medium">${tx.description}</p>
-              <p class="text-gray-500 text-sm">${new Date(tx.date).toLocaleDateString()}</p>
+              <p class="text-gray-500 text-sm">${tx.date}</p>
             </div>
-            <p class="${color} font-semibold">${sign}FCFA${tx.amount}</p>
+            <p class="${color} font-semibold">+FCFA${tx.amount}</p>
           </div>`;
       });
     }
-
   } catch (err) {
     console.error("Erreur refreshRevenueDashboard:", err);
   }
 }
-
         let sidebarVisible = true;
         
         let alertCount = 3;
@@ -1509,7 +1454,105 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-       // 🔹 Affichage des abonnés
+       // 🔹 Charger les abonnés depuis l’API
+async function fetchSubscribers() {
+  try {
+    const token = localStorage.getItem("token");
+    console.log("🔑 Token utilisé:", token);
+    const res = await fetch(API_BASE + "/utilisateurs", {
+      headers: { "Authorization": "Bearer " + token }
+    });
+
+    if (!res.ok) throw new Error("Erreur chargement abonnés");
+
+    const data = await res.json();
+
+    // 🔒 Vérifie que c’est bien un tableau
+    if (!Array.isArray(data)) {
+      console.error("API n’a pas renvoyé un tableau:", data);
+      showNotification("❌ Erreur: impossible de charger les abonnés", "error");
+      subscribers = [];
+      filteredSubscribers = [];
+      return;
+    }
+
+    // 🔹 On garde payment_status brut + une classe utilitaire
+    subscribers = data.map(user => ({
+      id: user.id,
+      nom_complet: user.nom_complet,
+      email: user.email,
+      phone: user.phone || "",
+      status: user.status || "Actif",
+      plan: user.plan || "Free",
+      expiration: user.expiration ? new Date(user.expiration).toISOString().split("T")[0] : "—",
+      avatar: user.nom_complet ? user.nom_complet.charAt(0).toUpperCase() : "U",
+      payment_status: user.payment_status || "N/A",
+      paymentStatusClass:
+        user.payment_status === "effectue"
+          ? "bg-green-100 text-green-800"
+          : user.payment_status === "en_attente"
+          ? "bg-orange-100 text-orange-800"
+          : user.payment_status === "rejete"
+          ? "bg-red-100 text-red-800"
+          : "bg-gray-100 text-gray-800",
+      amount: user.plan === "Premium" ? "29.99" : "0.00",
+      paymentMethod: user.payment_method || "cash"
+    }));
+
+    filteredSubscribers = [...subscribers];
+    populateSubscribersGrid();
+  } catch (err) {
+    console.error("Erreur fetchSubscribers:", err);
+    showNotification("❌ Impossible de charger les abonnés", "error");
+    subscribers = [];
+    filteredSubscribers = [];
+  }
+}
+
+async function refreshRevenueDashboard() {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  try {
+    const statsRes = await fetch(API_BASE + "/revenus/stats", {
+      headers: { "Authorization": "Bearer " + token }
+    });
+    const stats = await statsRes.json();
+
+    document.querySelectorAll(".bg-gradient-to-r.from-green-500 p.text-3xl")[0].textContent =
+      `FCFA${stats.monthly_total.toFixed(2)}`;
+    document.querySelectorAll(".bg-gradient-to-r.from-orange-500 p.text-3xl")[0].textContent =
+      `${stats.growth.toFixed(2)}%`;
+
+    const txRes = await fetch(API_BASE + "/revenus/transactions", {
+      headers: { "Authorization": "Bearer " + token }
+    });
+    const transactions = await txRes.json();
+
+    const list = document.getElementById("transactionsList");
+    list.innerHTML = "";
+
+    if (transactions.length === 0) {
+      list.innerHTML = `<div class="p-4 text-gray-500 text-sm text-center">Aucune transaction récente</div>`;
+    } else {
+      transactions.forEach(tx => {
+        const color = tx.type === "income" ? "text-green-600" : "text-red-600";
+        list.innerHTML += `
+          <div class="flex justify-between items-center px-6 py-4 hover:bg-gray-50 transition rounded-lg">
+            <div>
+              <p class="text-gray-800 font-medium">${tx.description}</p>
+              <p class="text-gray-500 text-sm">${tx.date}</p>
+            </div>
+            <p class="${color} font-semibold">+FCFA${tx.amount}</p>
+          </div>`;
+      });
+    }
+  } catch (err) {
+    console.error("Erreur refreshRevenueDashboard:", err);
+  }
+}
+
+// 🔹 Affichage des abonnés
 function populateSubscribersGrid() {
   const grid = document.getElementById('subscribersGrid');
   grid.innerHTML = '';
@@ -1522,12 +1565,10 @@ function populateSubscribersGrid() {
       null: ''
     };
 
-    // ✅ Badge statut utilisateur
     const statusBadge = subscriber.status === 'Actif'
       ? '<span class="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">Actif</span>'
       : '<span class="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">Bloqué</span>';
 
-    // ✅ Badge plan
     let planBadge = "";
     if (subscriber.plan === "Premium") {
       if (subscriber.payment_status === "effectue") {
@@ -1543,78 +1584,55 @@ function populateSubscribersGrid() {
       planBadge = '<span class="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">Free</span>';
     }
 
-    // ✅ Badge paiement
     const paymentBadge = `<span class="px-2 py-1 text-xs font-medium ${subscriber.paymentStatusClass} rounded-full">
       ${subscriber.payment_status === 'effectue' ? 'À jour' :
         subscriber.payment_status === 'en_attente' ? 'En attente' :
         subscriber.payment_status === 'rejete' ? 'Rejeté' : 'N/A'}
     </span>`;
 
-    // ✅ Actions dynamiques
     let actions = "";
-
     if (subscriber.payment_status === "en_attente" && subscriber.plan === "Premium") {
       actions = `
-        <button onclick="approveSubscriber('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Valider</button>
-        <button onclick="rejectSubscriber('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rejeter</button>
+        <button onclick="approveSubscriber('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs mr-2 mb-2 shadow-sm">Valider</button>
+        <button onclick="rejectSubscriber('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs mr-2 mb-2 shadow-sm">Rejeter</button>
       `;
     } else if (subscriber.status === "Actif") {
       actions = `
-        <button onclick="blockUser('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Bloquer</button>
-        <button onclick="sendReminder('${subscriber.id}')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Rappel</button>
-        <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>
+        <button onclick="blockUser('${subscriber.id}')" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs mr-2 mb-2 shadow-sm">Bloquer</button>
+        <button onclick="sendReminder('${subscriber.id}')" class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded-lg text-xs mr-2 mb-2 shadow-sm">Rappel</button>
+        <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-lg text-xs mb-2 shadow-sm">Supprimer</button>
       `;
     } else {
       actions = `
-        <button onclick="activateUser('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs mr-2 mb-2">Réactiver</button>
-        <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs mb-2">Supprimer</button>
+        <button onclick="activateUser('${subscriber.id}')" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-lg text-xs mr-2 mb-2 shadow-sm">Réactiver</button>
+        <button onclick="deleteUser('${subscriber.id}')" class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded-lg text-xs mb-2 shadow-sm">Supprimer</button>
       `;
     }
 
     const card = document.createElement('div');
-    card.className = 'subscriber-card bg-white rounded-xl shadow-sm border border-gray-100 p-6';
+    card.className = 'subscriber-card bg-white rounded-2xl shadow-md border border-gray-100 p-6 hover:shadow-lg hover:-translate-y-1 transition transform';
     card.innerHTML = `
       <div class="flex items-center space-x-4 mb-4">
-        <div class="w-12 h-12 bg-violet-100 rounded-full flex items-center justify-center">
-          <span class="text-violet-600 font-semibold">${subscriber.avatar}</span>
+        <div class="w-14 h-14 bg-gradient-to-br from-violet-100 to-purple-100 rounded-full flex items-center justify-center shadow-inner">
+          <span class="text-violet-600 font-bold text-lg">${subscriber.avatar}</span>
         </div>
         <div class="flex-1">
-          <h3 class="font-semibold text-gray-800">${subscriber.nom_complet || "Utilisateur"}</h3>
-          <p class="text-sm text-gray-500">${subscriber.email}</p>
+          <h3 class="font-semibold text-gray-800 text-base">${subscriber.nom_complet || "Utilisateur"}</h3>
+          <p class="text-sm text-gray-500 truncate">${subscriber.email}</p>
         </div>
       </div>
       
-      <div class="space-y-3 mb-4">
-        <div class="flex justify-between items-center">
-          <span class="text-sm text-gray-600">Statut:</span>
-          ${statusBadge}
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-sm text-gray-600">Plan:</span>
-          ${planBadge}
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-sm text-gray-600">Paiement:</span>
-          ${paymentBadge}
-        </div>
-        <div class="flex justify-between items-center">
-          <span class="text-sm text-gray-600">Méthode:</span>
-          <span class="text-sm font-medium">${paymentMethodIcons[subscriber.paymentMethod] || ""} ${subscriber.paymentMethod || "-"}</span>
-        </div>
-        <div class="flex justify-between items-center">
-    <span class="text-sm text-gray-600">Téléphone:</span>
-    <span class="text-sm font-medium">${subscriber.phone || "—"}</span>
-  </div>
-        <div class="flex justify-between items-center">
-          <span class="text-sm text-gray-600">Expiration:</span>
-          <span class="text-sm font-medium">${subscriber.expiration || "-"}</span>
-        </div>
+      <div class="space-y-3 mb-4 text-sm">
+        <div class="flex justify-between"><span class="text-gray-600">Statut:</span>${statusBadge}</div>
+        <div class="flex justify-between"><span class="text-gray-600">Plan:</span>${planBadge}</div>
+        <div class="flex justify-between"><span class="text-gray-600">Paiement:</span>${paymentBadge}</div>
+        <div class="flex justify-between"><span class="text-gray-600">Méthode:</span><span class="font-medium">${paymentMethodIcons[subscriber.paymentMethod] || ""} ${subscriber.paymentMethod || "-"}</span></div>
+        <div class="flex justify-between"><span class="text-gray-600">Téléphone:</span><span class="font-medium">${subscriber.phone || "—"}</span></div>
+        <div class="flex justify-between"><span class="text-gray-600">Expiration:</span><span class="font-medium">${subscriber.expiration || "-"}</span></div>
       </div>
       
-      <div class="border-t pt-4">
-        <div class="flex flex-wrap">
-          ${actions}
-        </div>
+      <div class="border-t pt-3">
+        <div class="flex flex-wrap">${actions}</div>
       </div>
     `;
     
