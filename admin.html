@@ -6,6 +6,7 @@
     <title>Admin Dashboard - SaaS</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; }
@@ -307,6 +308,45 @@
     <div class="mb-6">
         <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Revenus</h1>
         <div class="flex items-center space-x-4 mt-4">
+            <!-- 🔍 Barre de recherche + filtre méthode -->
+<div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
+  <input
+    type="text"
+    id="revenueSearchInput"
+    onkeyup="filterRevenue()"
+    placeholder="Rechercher un revenu (description, montant, date)..."
+    class="w-full md:w-2/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500"
+  >
+  <select
+    id="revenueMethodFilter"
+    onchange="filterRevenue()"
+    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white"
+  >
+    <option value="">Toutes les méthodes</option>
+    <option value="wave">Wave</option>
+    <option value="orange">Orange Money</option>
+    <option value="cash">Espèces</option>
+  </select>
+</div>
+
+<!-- 📄 Bouton PDF -->
+<div class="flex justify-end mt-3">
+  <button onclick="exportRevenuePDF()" 
+    class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow">
+    📄 Exporter en PDF
+  </button>
+</div>
+
+<!-- Liste filtrée -->
+<div id="filteredRevenueList" class="bg-white rounded-xl shadow-sm border border-gray-100 mt-4">
+  <div class="px-6 py-4 border-b border-gray-200">
+    <h2 class="text-lg font-semibold text-gray-800">Revenus filtrés</h2>
+  </div>
+  <div id="revenueTableBody" class="divide-y divide-gray-100">
+    <!-- Données dynamiques -->
+  </div>
+</div>
+
             <label class="text-sm font-medium text-gray-700">Période:</label>
             <select id="revenuePeriodFilter" onchange="filterRevenue()" 
                 class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
@@ -819,6 +859,55 @@
   </div>
 </div>
 
+<!-- Modal Historique des Transactions -->
+<div id="transactionHistoryModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+  <div class="bg-white rounded-2xl shadow-xl p-6 w-11/12 md:w-2/3 max-h-[85vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4 border-b pb-2">
+      <h2 class="text-2xl font-bold text-gray-800">Historique des Transactions</h2>
+      <button onclick="closeTransactionHistory()" class="text-gray-500 hover:text-gray-700 text-xl">✖</button>
+    </div>
+
+    <!-- 🔍 Barre de recherche et filtre -->
+    <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
+      <input 
+        type="text" 
+        id="transactionSearchInput" 
+        onkeyup="filterTransactionHistory()" 
+        placeholder="Rechercher une transaction..." 
+        class="w-full md:w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+      >
+      <select 
+        id="transactionMethodFilter" 
+        onchange="filterTransactionHistory()" 
+        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white"
+      >
+        <option value="">Toutes les méthodes</option>
+        <option value="wave">Wave</option>
+        <option value="orange">Orange Money</option>
+        <option value="cash">Espèces</option>
+      </select>
+    </div>
+
+    <!-- 📄 Bouton PDF -->
+    <div class="flex justify-end mb-3">
+      <button onclick="exportTransactionsPDF()" 
+        class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow">
+        📄 Exporter en PDF
+      </button>
+    </div>
+
+    <!-- Liste des transactions -->
+    <div id="transactionHistoryList" class="divide-y divide-gray-200">
+      <!-- Transactions dynamiques ici -->
+    </div>
+
+    <div class="mt-6 flex justify-end">
+      <button onclick="closeTransactionHistory()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
+        Fermer
+      </button>
+    </div>
+  </div>
+</div>
 
     <script>
 
@@ -1118,8 +1207,132 @@ async function loadRevenueStats() {
   }
 }
 
+let allRevenues = [];
+
+// 📦 Charger les revenus (liste complète)
+async function loadRevenues() {
+  const token = localStorage.getItem("token");
+  try {
+    const res = await fetch(`${API_BASE}/revenus`, {
+      headers: { Authorization: "Bearer " + token },
+    });
+
+    if (!res.ok) throw new Error("Erreur lors du chargement des revenus");
+
+    allRevenues = await res.json();
+    filterRevenue();
+  } catch (err) {
+    console.error(err);
+    showNotification("❌ Impossible de charger les revenus", "error");
+  }
+}
+
+// 🔍 Filtrer les revenus
+async function filterRevenue() {
+  const token = localStorage.getItem("token");
+  const period = document.getElementById("revenuePeriodFilter")?.value || "all";
+  const searchTerm = document.getElementById("revenueSearchInput")?.value.toLowerCase() || "";
+  const method = document.getElementById("revenueMethodFilter")?.value || "";
+
+  try {
+    const res = await fetch(`${API_BASE}/revenus?period=${period}`, {
+      headers: { Authorization: "Bearer " + token },
+    });
+    if (!res.ok) throw new Error("Erreur filtrage revenus");
+    let data = await res.json();
+
+    // 🔹 Appliquer filtre méthode
+    if (method) data = data.filter(r => r.methode === method);
+
+    // 🔹 Appliquer recherche texte
+    if (searchTerm) {
+      data = data.filter(r =>
+        (r.source && r.source.toLowerCase().includes(searchTerm)) ||
+        (r.description && r.description.toLowerCase().includes(searchTerm)) ||
+        (r.montant && r.montant.toString().includes(searchTerm)) ||
+        (r.cree_le && r.cree_le.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    renderRevenueTable(data);
+    updateRevenueFilterInfo(period);
+  } catch (err) {
+    console.error(err);
+    showNotification("❌ Erreur filtrage revenus", "error");
+  }
+}
+
+// 🧩 Afficher les revenus filtrés
+function renderRevenueTable(data) {
+  const container = document.getElementById("revenueTableBody");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (data.length === 0) {
+    container.innerHTML = `<p class="text-center text-gray-500 py-4">Aucun revenu trouvé.</p>`;
+    return;
+  }
+
+  data.forEach(r => {
+    const div = document.createElement("div");
+    div.className = "px-6 py-3 flex justify-between items-center hover:bg-gray-50";
+    div.innerHTML = `
+      <div>
+        <p class="font-medium text-gray-800">${r.source || "Revenu"}</p>
+        <p class="text-sm text-gray-500">${new Date(r.cree_le).toLocaleDateString("fr-FR")} • ${r.methode}</p>
+      </div>
+      <p class="font-semibold text-green-600">+${r.montant} FCFA</p>
+    `;
+    container.appendChild(div);
+  });
+}
+
+// 🧭 Mettre à jour l’info de période
+function updateRevenueFilterInfo(period) {
+  const info = document.getElementById("revenueFilterInfo");
+  if (!info) return;
+  const map = {
+    all: "Tous les revenus affichés",
+    daily: "Revenus du jour",
+    weekly: "Revenus de la semaine",
+    monthly: "Revenus du mois"
+  };
+  info.textContent = map[period] || "Revenus affichés";
+}
+
+// 📄 Export PDF
+async function exportRevenuePDF() {
+  if (!allRevenues.length) {
+    showNotification("Aucun revenu à exporter", "warning");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(16);
+  doc.text("Rapport des Revenus", 20, 20);
+  doc.setFontSize(12);
+
+  let y = 35;
+  allRevenues.forEach((r, i) => {
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.text(
+      `${i + 1}. ${r.source || "Revenu"} - ${r.montant} FCFA (${r.methode}) - ${new Date(r.cree_le).toLocaleDateString("fr-FR")}`,
+      20,
+      y
+    );
+    y += 8;
+  });
+
+  doc.save("revenus.pdf");
+  showNotification("✅ Rapport PDF exporté avec succès", "success");
+}
+
+
 document.addEventListener("DOMContentLoaded", () => {
   loadRevenueStats();
+  loadRevenues();
 });
 
         // Filter accounts function
@@ -1522,17 +1735,138 @@ document.addEventListener("DOMContentLoaded", () => {
             closeTransferModal();
         }
 
-        function generateReport() {
-            showNotification('Génération du rapport en cours...', 'info');
-            setTimeout(() => {
-                showNotification('Rapport généré et envoyé par email', 'success');
-            }, 2000);
-        }
+// 📊 Générer un rapport PDF simplifié des revenus
+async function generateReport() {
+  try {
+    showNotification('📊 Génération du rapport en cours...', 'info');
 
-        function showTransactionHistory() {
-            showSection('revenue');
-            showNotification('Affichage de l\'historique complet', 'info');
-        }
+    const token = localStorage.getItem("authToken");
+    const res = await fetch(`${API_BASE}/revenus`, {
+      headers: { "Authorization": "Bearer " + token }
+    });
+
+    if (!res.ok) throw new Error("Impossible de charger les revenus");
+    const revenus = await res.json();
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.setFontSize(16);
+    doc.text("Rapport Mensuel des Revenus", 20, 20);
+    doc.setFontSize(12);
+
+    let y = 40;
+    revenus.forEach((rev, i) => {
+      if (y > 270) { doc.addPage(); y = 20; }
+      doc.text(`${i + 1}. ${rev.source} - ${rev.montant} FCFA (${rev.methode || "cash"})`, 20, y);
+      y += 8;
+    });
+
+    doc.save("rapport_revenus.pdf");
+    showNotification("✅ Rapport PDF généré avec succès", "success");
+
+  } catch (err) {
+    console.error(err);
+    showNotification("❌ Erreur lors de la génération du rapport", "error");
+  }
+}
+
+let allTransactions = []; // 🔹 stockage global
+
+// 📋 Charger et afficher l’historique
+async function showTransactionHistory() {
+  try {
+    const token = localStorage.getItem("authToken");
+    const res = await fetch(`${API_BASE}/revenus/transactions`, {
+      headers: { "Authorization": "Bearer " + token }
+    });
+
+    if (!res.ok) throw new Error("Erreur chargement transactions");
+    allTransactions = await res.json();
+
+    renderTransactionHistory(allTransactions);
+    document.getElementById("transactionHistoryModal").classList.remove("hidden");
+    showNotification("📋 Historique chargé avec succès", "success");
+  } catch (err) {
+    console.error(err);
+    showNotification("❌ Impossible de charger l’historique", "error");
+  }
+}
+
+// 🧩 Afficher les transactions dans la modale
+function renderTransactionHistory(transactions) {
+  const list = document.getElementById("transactionHistoryList");
+  list.innerHTML = "";
+
+  if (transactions.length === 0) {
+    list.innerHTML = `<p class="text-center text-gray-500 py-4">Aucune transaction trouvée.</p>`;
+    return;
+  }
+
+  transactions.forEach(tx => {
+    const div = document.createElement("div");
+    div.className = "py-3 px-2 flex justify-between items-center hover:bg-gray-50 transition";
+    div.innerHTML = `
+      <div>
+        <p class="font-medium text-gray-800">${tx.description}</p>
+        <p class="text-sm text-gray-500">${tx.date} • ${tx.method}</p>
+      </div>
+      <p class="font-semibold ${tx.type === "income" ? "text-green-600" : "text-red-600"}">
+        ${tx.type === "income" ? "+" : "-"}${tx.amount} FCFA
+      </p>
+    `;
+    list.appendChild(div);
+  });
+}
+
+// 🔍 Filtrage dynamique
+function filterTransactionHistory() {
+  const searchTerm = document.getElementById("transactionSearchInput").value.toLowerCase();
+  const methodFilter = document.getElementById("transactionMethodFilter").value;
+
+  const filtered = allTransactions.filter(tx => {
+    const matchSearch =
+      tx.description.toLowerCase().includes(searchTerm) ||
+      tx.date.toLowerCase().includes(searchTerm) ||
+      tx.amount.toString().includes(searchTerm);
+
+    const matchMethod = !methodFilter || tx.method === methodFilter;
+
+    return matchSearch && matchMethod;
+  });
+
+  renderTransactionHistory(filtered);
+}
+
+// ❌ Fermer la modale
+function closeTransactionHistory() {
+  document.getElementById("transactionHistoryModal").classList.add("hidden");
+}
+
+// 📄 Exporter PDF
+async function exportTransactionsPDF() {
+  if (allTransactions.length === 0) {
+    showNotification("Aucune transaction à exporter", "warning");
+    return;
+  }
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  doc.setFontSize(16);
+  doc.text("Historique des Transactions", 20, 20);
+  doc.setFontSize(12);
+
+  let y = 35;
+  allTransactions.forEach((tx, i) => {
+    if (y > 270) { doc.addPage(); y = 20; }
+    doc.text(`${i + 1}. ${tx.description} - ${tx.amount} FCFA (${tx.method}) - ${tx.date}`, 20, y);
+    y += 8;
+  });
+
+  doc.save("historique_transactions.pdf");
+  showNotification("✅ PDF exporté avec succès", "success");
+}
 
         function viewAccountDetails(account) {
             showNotification(`Détails du compte ${account} affichés`, 'info');
