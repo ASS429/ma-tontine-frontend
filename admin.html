@@ -1825,13 +1825,24 @@ async function generateReport() {
   try {
     showNotification('📊 Génération du rapport en cours...', 'info');
 
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      showNotification("❌ Vous devez être connecté", "error");
+      return;
+    }
+
     const res = await fetch(`${API_BASE}/revenus`, {
       headers: { "Authorization": "Bearer " + token }
     });
 
     if (!res.ok) throw new Error("Impossible de charger les revenus");
+
     const revenus = await res.json();
+
+    if (!revenus.length) {
+      showNotification("Aucun revenu à inclure dans le rapport", "info");
+      return;
+    }
 
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
@@ -1841,11 +1852,19 @@ async function generateReport() {
     doc.setFontSize(12);
 
     let y = 40;
+    let total = 0;
+
     revenus.forEach((rev, i) => {
       if (y > 270) { doc.addPage(); y = 20; }
-      doc.text(`${i + 1}. ${rev.source} - ${rev.montant} FCFA (${rev.methode || "cash"})`, 20, y);
+      const montant = Number(rev.montant).toFixed(2);
+      total += parseFloat(montant);
+      doc.text(`${i + 1}. ${rev.source} - ${montant} FCFA (${rev.methode || "cash"})`, 20, y);
       y += 8;
     });
+
+    y += 10;
+    doc.setFontSize(14);
+    doc.text(`💰 Total: ${total.toFixed(2)} FCFA`, 20, y);
 
     doc.save("rapport_revenus.pdf");
     showNotification("✅ Rapport PDF généré avec succès", "success");
@@ -1858,22 +1877,29 @@ async function generateReport() {
 
 let allTransactions = []; // 🔹 stockage global
 
-// 📋 Charger et afficher l’historique
+// 📋 Charger et afficher l’historique dans la modale
 async function showTransactionHistory() {
   try {
-    const token = localStorage.getItem("authToken");
+    const token = localStorage.getItem("token");
+    if (!token) {
+      showNotification("❌ Vous devez être connecté", "error");
+      return;
+    }
+
     const res = await fetch(`${API_BASE}/revenus/transactions`, {
       headers: { "Authorization": "Bearer " + token }
     });
 
     if (!res.ok) throw new Error("Erreur chargement transactions");
+
     allTransactions = await res.json();
 
     renderTransactionHistory(allTransactions);
     document.getElementById("transactionHistoryModal").classList.remove("hidden");
     showNotification("📋 Historique chargé avec succès", "success");
+
   } catch (err) {
-    console.error(err);
+    console.error("Erreur historique:", err);
     showNotification("❌ Impossible de charger l’historique", "error");
   }
 }
@@ -1903,6 +1929,7 @@ function renderTransactionHistory(transactions) {
     list.appendChild(div);
   });
 }
+
 
 // 🔍 Filtrage dynamique
 function filterTransactionHistory() {
