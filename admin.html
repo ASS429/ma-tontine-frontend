@@ -263,182 +263,204 @@
                 </div>
             </div>
 
-            <!-- Subscribers Section -->
-            <div id="subscribers" class="section">
-                <div class="mb-6 flex justify-between items-center">
-                    <div>
-                        <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Abonnés</h1>
-                        <div class="flex items-center space-x-4">
-  <input type="text" id="subscriberSearch" placeholder="Rechercher un abonné..." 
-    onkeyup="filterSubscribers()" 
-    class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent">
-  
-  <select id="statusFilter" onchange="filterSubscribers()" 
-    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-    <option value="">Tous les statuts</option>
-    <option value="Actif">Actif</option>
-    <option value="Bloqué">Bloqué</option>
-    <option value="en_attente">En attente</option>
-  </select>
+            <!-- 🌟 Section Abonnés -->
+<div id="subscribers" class="section px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 rounded-2xl shadow-sm">
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Abonnés</h1>
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <input
+          type="text"
+          id="subscriberSearch"
+          placeholder="🔍 Rechercher un abonné..."
+          onkeyup="filterSubscribers()"
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+        />
+        <select
+          id="statusFilter"
+          onchange="filterSubscribers()"
+          class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white"
+        >
+          <option value="">Tous les statuts</option>
+          <option value="Actif">Actif</option>
+          <option value="Bloqué">Bloqué</option>
+          <option value="en_attente">En attente</option>
+        </select>
 
-  <!-- 🆕 Nouveau filtre par plan -->
-  <select id="planFilter" onchange="filterSubscribers()" 
-    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-    <option value="">Tous les plans</option>
-    <option value="Free">Free</option>
-    <option value="Premium">Premium</option>
-    <option value="en_attente">En attente</option>
-    <option value="rejete">Rejeté</option>
-  </select>
-</div>
+        <select
+          id="planFilter"
+          onchange="filterSubscribers()"
+          class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white"
+        >
+          <option value="">Tous les plans</option>
+          <option value="Free">Free</option>
+          <option value="Premium">Premium</option>
+          <option value="en_attente">En attente</option>
+          <option value="rejete">Rejeté</option>
+        </select>
+      </div>
+    </div>
 
-                    </div>
-                    <button onclick="openAddSubscriberModal()" class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2">
-                        <span class="text-lg">👤</span>
-                        <span>Ajouter Abonné</span>
-                    </button>
-                </div>
-
-                <div id="subscribersGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Subscriber cards will be populated by JavaScript -->
-                </div>
-            </div>
-
-            <div id="revenue" class="section">
-    <div class="mb-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Revenus</h1>
-        <div class="flex items-center space-x-4 mt-4">
-            <!-- 🔍 Barre de recherche + filtre méthode -->
-<div class="flex flex-col md:flex-row items-center justify-between gap-4 mt-4">
-  <input
-    type="text"
-    id="revenueSearchInput"
-    onkeyup="filterRevenue()"
-    placeholder="Rechercher un revenu (description, montant, date)..."
-    class="w-full md:w-2/3 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500"
-  >
-  <select
-    id="revenueMethodFilter"
-    onchange="filterRevenue()"
-    class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white"
-  >
-    <option value="">Toutes les méthodes</option>
-    <option value="wave">Wave</option>
-    <option value="orange">Orange Money</option>
-    <option value="cash">Espèces</option>
-  </select>
-</div>
-
-<!-- 📄 Bouton PDF -->
-<div class="flex justify-end mt-3">
-  <button onclick="exportRevenuePDF()" 
-    class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow">
-    📄 Exporter en PDF
-  </button>
-</div>
-
-<!-- Liste filtrée -->
-<div id="filteredRevenueList" class="bg-white rounded-xl shadow-sm border border-gray-100 mt-4">
-  <div class="px-6 py-4 border-b border-gray-200">
-    <h2 class="text-lg font-semibold text-gray-800">Revenus filtrés</h2>
+    <button
+      onclick="openAddSubscriberModal()"
+      class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2"
+    >
+      <span class="text-lg">👤</span>
+      <span>Ajouter Abonné</span>
+    </button>
   </div>
-  <div id="revenueTableBody" class="divide-y divide-gray-100">
-    <!-- Données dynamiques -->
+
+  <!-- 🧩 Grille des abonnés -->
+  <div id="subscribersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Les cartes seront ajoutées dynamiquement -->
   </div>
 </div>
 
-            <label class="text-sm font-medium text-gray-700">Période:</label>
-            <select id="revenuePeriodFilter" onchange="filterRevenue()" 
-                class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
-                <option value="all">Tous les revenus</option>
-                <option value="daily">Journalier</option>
-                <option value="weekly">Hebdomadaire</option>
-                <option value="monthly" selected>Mensuel</option>
-            </select>
-            <div id="revenueFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
-                Revenus mensuels affichés
-            </div>
-        </div>
-        <button onclick="openAddRevenueModal()" 
-    class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-    <div class="text-center">
-        <span class="text-2xl mb-2 block">➕</span>
-        <p class="font-medium text-gray-800">Ajouter Revenu</p>
-    </div>
-</button>
-    </div>
+<!-- 💰 Section Revenus -->
+<div id="revenue" class="section mt-10 px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 rounded-2xl shadow-sm">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-4">Gestion des Revenus</h1>
 
-    <!-- Cartes principales -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-6 text-white">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">Solde Principal</h3>
-                <span class="text-2xl">💳</span>
-            </div>
-            <p class="text-3xl font-bold mb-2">FCFA0.00</p>
-            <p class="text-violet-200 text-sm">Disponible immédiatement</p>
-        </div>
-
-        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">Revenus ce Mois</h3>
-                <span class="text-2xl">📈</span>
-            </div>
-            <p class="text-3xl font-bold mb-2">FCFA0.00</p>
-            <p class="text-green-200 text-sm">+0% vs mois dernier</p>
-        </div>
-
-        <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white">
-            <div class="flex items-center justify-between mb-4">
-                <h3 class="text-lg font-semibold">Croissance</h3>
-                <span class="text-2xl">📊</span>
-            </div>
-            <p class="text-3xl font-bold mb-2">0%</p>
-            <p class="text-orange-200 text-sm">Évolution mensuelle</p>
-        </div>
+    <!-- Filtres et recherche -->
+    <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+      <input
+        type="text"
+        id="revenueSearchInput"
+        onkeyup="filterRevenue()"
+        placeholder="🔍 Rechercher un revenu..."
+        class="w-full md:w-2/3 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500"
+      />
+      <select
+        id="revenueMethodFilter"
+        onchange="filterRevenue()"
+        class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white"
+      >
+        <option value="">Toutes les méthodes</option>
+        <option value="wave">Wave</option>
+        <option value="orange">Orange Money</option>
+        <option value="cash">Espèces</option>
+      </select>
     </div>
 
-    <!-- Actions rapides -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <button onclick="openWithdrawModal()" 
-            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div class="text-center">
-                <span class="text-2xl mb-2 block">💸</span>
-                <p class="font-medium text-gray-800">Retirer</p>
-            </div>
-        </button>
-        <button onclick="generateReport()" 
-            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div class="text-center">
-                <span class="text-2xl mb-2 block">📊</span>
-                <p class="font-medium text-gray-800">Rapport</p>
-            </div>
-        </button>
-        <button onclick="openTransferModal()" 
-            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div class="text-center">
-                <span class="text-2xl mb-2 block">🔄</span>
-                <p class="font-medium text-gray-800">Transfert</p>
-            </div>
-        </button>
-        <button onclick="showTransactionHistory()" 
-            class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-            <div class="text-center">
-                <span class="text-2xl mb-2 block">📋</span>
-                <p class="font-medium text-gray-800">Historique</p>
-            </div>
-        </button>
+    <!-- Bouton PDF -->
+    <div class="flex justify-end mt-3">
+      <button
+        onclick="exportRevenuePDF()"
+        class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-5 py-2 rounded-xl text-sm font-medium shadow-lg transition-transform hover:scale-105"
+      >
+        📄 Exporter en PDF
+      </button>
     </div>
 
-    <!-- Transactions récentes -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-        <div class="px-6 py-4 border-b border-gray-200">
-            <h2 class="text-lg font-semibold text-gray-800">Transactions Récentes</h2>
-        </div>
-        <div id="transactionsList" class="divide-y divide-gray-100">
-            <!-- Transactions ajoutées dynamiquement -->
-        </div>
+    <!-- Liste filtrée -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 mt-6 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+        <h2 class="text-lg font-semibold text-gray-800">Revenus filtrés</h2>
+      </div>
+      <div id="revenueTableBody" class="divide-y divide-gray-100">
+        <!-- Contenu généré dynamiquement -->
+      </div>
     </div>
+
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
+      <div>
+        <label class="text-sm font-medium text-gray-700">Période:</label>
+        <select
+          id="revenuePeriodFilter"
+          onchange="filterRevenue()"
+          class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white"
+        >
+          <option value="all">Tous les revenus</option>
+          <option value="daily">Journalier</option>
+          <option value="weekly">Hebdomadaire</option>
+          <option value="monthly" selected>Mensuel</option>
+        </select>
+      </div>
+      <div id="revenueFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+        Revenus mensuels affichés
+      </div>
+    </div>
+  </div>
+
+  <!-- Cartes principales -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-6 text-white shadow-md">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Solde Principal</h3>
+        <span class="text-2xl">💳</span>
+      </div>
+      <p class="text-3xl font-bold mb-2">FCFA0.00</p>
+      <p class="text-violet-200 text-sm">Disponible immédiatement</p>
+    </div>
+
+    <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white shadow-md">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Revenus ce Mois</h3>
+        <span class="text-2xl">📈</span>
+      </div>
+      <p class="text-3xl font-bold mb-2">FCFA0.00</p>
+      <p class="text-green-200 text-sm">+0% vs mois dernier</p>
+    </div>
+
+    <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white shadow-md">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">Croissance</h3>
+        <span class="text-2xl">📊</span>
+      </div>
+      <p class="text-3xl font-bold mb-2">0%</p>
+      <p class="text-orange-200 text-sm">Évolution mensuelle</p>
+    </div>
+  </div>
+
+  <!-- Actions rapides -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+    <button
+      onclick="openWithdrawModal()"
+      class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition transform hover:-translate-y-1"
+    >
+      <div class="text-center">
+        <span class="text-2xl mb-2 block">💸</span>
+        <p class="font-medium text-gray-800">Retirer</p>
+      </div>
+    </button>
+    <button
+      onclick="generateReport()"
+      class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition transform hover:-translate-y-1"
+    >
+      <div class="text-center">
+        <span class="text-2xl mb-2 block">📊</span>
+        <p class="font-medium text-gray-800">Rapport</p>
+      </div>
+    </button>
+    <button
+      onclick="openTransferModal()"
+      class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition transform hover:-translate-y-1"
+    >
+      <div class="text-center">
+        <span class="text-2xl mb-2 block">🔄</span>
+        <p class="font-medium text-gray-800">Transfert</p>
+      </div>
+    </button>
+    <button
+      onclick="showTransactionHistory()"
+      class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition transform hover:-translate-y-1"
+    >
+      <div class="text-center">
+        <span class="text-2xl mb-2 block">📋</span>
+        <p class="font-medium text-gray-800">Historique</p>
+      </div>
+    </button>
+  </div>
+
+  <!-- Transactions récentes -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+      <h2 class="text-lg font-semibold text-gray-800">Transactions Récentes</h2>
+    </div>
+    <div id="transactionsList" class="divide-y divide-gray-100">
+      <!-- Contenu dynamique -->
+    </div>
+  </div>
 </div>
 
             <!-- Accounts Section -->
