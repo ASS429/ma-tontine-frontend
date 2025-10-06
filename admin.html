@@ -1330,53 +1330,53 @@ document.addEventListener("DOMContentLoaded", () => {
   loadRevenues();
 });
 
-        // Filter accounts function
-        function filterAccounts() {
-            const period = document.getElementById('accountsPeriodFilter').value;
-            const info = document.getElementById('accountsFilterInfo');
-            
-            const periodTexts = {
-                'all': 'Tous les montants affichés',
-                'daily': 'Montants journaliers affichés',
-                'weekly': 'Montants hebdomadaires affichés',
-                'monthly': 'Montants mensuels affichés'
-            };
-            
-            info.textContent = periodTexts[period];
-            
-            // Update accounts display based on period
-            updateAccountsDisplay(period);
-        }
 
-        // Update revenue display
-        function updateRevenueDisplay(period) {
-            const amounts = {
-                'daily': { main: 'FCFA4,230.00', monthly: 'FCFA1,450.00', pending: 'FCFA320.00' },
-                'weekly': { main: 'FCFA28,450.00', monthly: 'FCFA9,850.00', pending: 'FCFA1,200.00' },
-                'monthly': { main: 'FCFA127,450.00', monthly: 'FCFA45,230.00', pending: 'FCFA8,750.00' },
-                'all': { main: 'FCFA542,180.00', monthly: 'FCFA198,450.00', pending: 'FCFA25,300.00' }
-            };
-            
-            const data = amounts[period];
-            document.querySelector('.bg-gradient-to-r.from-violet-500 .text-3xl').textContent = data.main;
-            document.querySelector('.bg-gradient-to-r.from-green-500 .text-3xl').textContent = data.monthly;
-            document.querySelector('.bg-gradient-to-r.from-orange-500 .text-3xl').textContent = data.pending;
-        }
+// 🔹 Filtrer selon la période
+function filterAccounts() {
+  const period = document.getElementById('accountsPeriodFilter').value;
+  const info = document.getElementById('accountsFilterInfo');
 
-        // Update accounts display
-        function updateAccountsDisplay(period) {
-            const amounts = {
-                'daily': { orange: 'FCFA1,230.50', wave: 'FCFA890.75', cash: 'FCFA420.00' },
-                'weekly': { orange: 'FCFA8,450.50', wave: 'FCFA6,180.75', cash: 'FCFA2,840.00' },
-                'monthly': { orange: 'FCFA45,230.50', wave: 'FCFA32,180.75', cash: 'FCFA15,420.00' },
-                'all': { orange: 'FCFA198,450.50', wave: 'FCFA145,680.75', cash: 'FCFA67,890.00' }
-            };
-            
-            const data = amounts[period];
-            document.querySelectorAll('.bg-gradient-to-r')[3].querySelector('.text-2xl').textContent = data.orange;
-            document.querySelectorAll('.bg-gradient-to-r')[4].querySelector('.text-2xl').textContent = data.wave;
-            document.querySelectorAll('.bg-gradient-to-r')[5].querySelector('.text-2xl').textContent = data.cash;
-        }
+  const periodTexts = {
+    all: 'Tous les montants affichés',
+    daily: 'Montants journaliers affichés',
+    weekly: 'Montants hebdomadaires affichés',
+    monthly: 'Montants mensuels affichés'
+  };
+
+  info.textContent = periodTexts[period];
+  loadAdminAccounts(period);
+}
+
+// 🔹 Charger les comptes au démarrage
+document.addEventListener("DOMContentLoaded", () => loadAdminAccounts());
+
+        // ===============================================
+// 🔹 Charger les comptes de l'admin depuis backend
+// ===============================================
+async function loadAdminAccounts(period = 'monthly') {
+  const token = localStorage.getItem('token');
+  try {
+    const res = await fetch(`${API_BASE}/api/comptes/admin?period=${period}`, {
+      headers: { Authorization: "Bearer " + token },
+    });
+
+    if (!res.ok) throw new Error("Erreur chargement comptes admin");
+
+    const data = await res.json();
+    console.log("💳 Comptes admin:", data);
+
+    // 🔸 Mettre à jour les 3 cartes
+    document.querySelector('.from-orange-500 .text-2xl').textContent = `FCFA${data.orange.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}`;
+    document.querySelector('.from-blue-500 .text-2xl').textContent = `FCFA${data.wave.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}`;
+    document.querySelector('.from-green-500 .text-2xl').textContent = `FCFA${data.cash.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}`;
+
+    // 🔸 Résumé total
+    document.querySelector('#accounts .text-gray-800').textContent = `FCFA${data.total.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}`;
+  } catch (err) {
+    console.error("Erreur loadAdminAccounts:", err);
+    showNotification("❌ Impossible de charger les comptes admin", "error");
+  }
+}
 
         // Alert functions
         function closeAlert(alertId) {
