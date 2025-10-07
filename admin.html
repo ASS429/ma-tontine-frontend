@@ -30,6 +30,27 @@
         .main-expanded { margin-left: 0 !important; }
         #mainContent { transition: margin-left 0.3s ease; }
         .modal { backdrop-filter: blur(4px); }
+
+          /* 💳 Cartes de comptes */
+  #accountsGrid > div {
+    transition: all 0.3s ease;
+  }
+  #accountsGrid > div:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+  }
+
+  /* 📊 Résumé plus aéré */
+  #accounts .text-center p:first-child {
+    font-size: 1.4rem;
+  }
+
+  /* 📱 Responsive padding */
+  @media (max-width: 640px) {
+    #accountsGrid > div {
+      padding: 1.2rem !important;
+    }
+  }
     </style>
 
     <script>
@@ -446,7 +467,7 @@
   </div>
 </div>
 
-           <!-- Accounts Section -->
+          <!-- Accounts Section -->
 <div id="accounts" class="section">
   <div class="mb-6">
     <h1 class="text-2xl font-bold text-gray-800 mb-2">Mes Comptes</h1>
@@ -464,12 +485,12 @@
     </div>
   </div>
 
-  <!-- Comptes dynamiques -->
+  <!-- 🔹 Comptes dynamiques -->
   <div id="accountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <!-- Les comptes seront injectés ici par JavaScript -->
+    <!-- Les comptes sont insérés ici via JS -->
   </div>
 
-  <!-- Résumé des comptes -->
+  <!-- 🔹 Résumé des comptes -->
   <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100">
     <div class="px-6 py-4 border-b border-gray-200">
       <h2 class="text-lg font-semibold text-gray-800">Résumé des Comptes</h2>
@@ -1303,8 +1324,16 @@ async function loadAdminAccounts(period = 'monthly') {
 
     if (!res.ok) throw new Error("Erreur chargement comptes admin");
 
-    comptes = await res.json();
-    console.log("💰 Comptes reçus:", comptes);
+    const data = await res.json();
+    console.log("💰 Comptes reçus:", data);
+
+    // 🔁 Reformater pour ton affichage dynamique
+    comptes = [
+      { type: "orange_money", solde: data.orange || 0, cree_le: new Date() },
+      { type: "wave", solde: data.wave || 0, cree_le: new Date() },
+      { type: "especes", solde: data.cash || 0, cree_le: new Date() },
+    ];
+
     populateAccountsGrid();
     updateAccountsSummary();
   } catch (err) {
