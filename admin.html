@@ -446,95 +446,56 @@
   </div>
 </div>
 
-            <!-- Accounts Section -->
-            <div id="accounts" class="section">
-                <div class="mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Mes Comptes</h1>
-                    <div class="flex items-center space-x-4 mt-4">
-                        <label class="text-sm font-medium text-gray-700">Période:</label>
-                        <select id="accountsPeriodFilter" onchange="filterAccounts()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
-                            <option value="all">Tous les montants</option>
-                            <option value="daily">Journalier</option>
-                            <option value="weekly">Hebdomadaire</option>
-                            <option value="monthly" selected>Mensuel</option>
-                        </select>
-                        <div id="accountsFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
-                            Montants mensuels affichés
-                        </div>
-                    </div>
-                </div>
+           <!-- Accounts Section -->
+<div id="accounts" class="section">
+  <div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-800 mb-2">Mes Comptes</h1>
+    <div class="flex items-center space-x-4 mt-4">
+      <label class="text-sm font-medium text-gray-700">Période:</label>
+      <select id="accountsPeriodFilter" onchange="filterAccounts()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
+        <option value="all">Tous les montants</option>
+        <option value="daily">Journalier</option>
+        <option value="weekly">Hebdomadaire</option>
+        <option value="monthly" selected>Mensuel</option>
+      </select>
+      <div id="accountsFilterInfo" class="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-lg">
+        Montants mensuels affichés
+      </div>
+    </div>
+  </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Orange Money Account -->
-                    <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl p-6 text-white">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold">Orange Money</h3>
-                            <span class="text-2xl">🟠</span>
-                        </div>
-                        <p class="text-2xl font-bold mb-2">FCFA45,230.50</p>
-                        <p class="text-orange-200 text-sm mb-4">Compte principal</p>
-                        <div class="flex space-x-2">
-                            <button onclick="viewAccountDetails('orange')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
-                            <button onclick="transferFromAccount('orange')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Transférer</button>
-                        </div>
-                    </div>
+  <!-- Comptes dynamiques -->
+  <div id="accountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Les comptes seront injectés ici par JavaScript -->
+  </div>
 
-                    <!-- Wave Account -->
-                    <div class="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-6 text-white">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold">Wave</h3>
-                            <span class="text-2xl">🌊</span>
-                        </div>
-                        <p class="text-2xl font-bold mb-2">FCFA32,180.75</p>
-                        <p class="text-blue-200 text-sm mb-4">Compte secondaire</p>
-                        <div class="flex space-x-2">
-                            <button onclick="viewAccountDetails('wave')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
-                            <button onclick="transferFromAccount('wave')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Transférer</button>
-                        </div>
-                    </div>
-
-                    <!-- Cash Account -->
-                    <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl p-6 text-white">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-lg font-semibold">Espèces</h3>
-                            <span class="text-2xl">💵</span>
-                        </div>
-                        <p class="text-2xl font-bold mb-2">FCFA15,420.00</p>
-                        <p class="text-green-200 text-sm mb-4">Caisse physique</p>
-                        <div class="flex space-x-2">
-                            <button onclick="viewAccountDetails('cash')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
-                            <button onclick="addCashTransaction()" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Ajouter</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Account Summary -->
-                <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800">Résumé des Comptes</h2>
-                    </div>
-                    <div class="p-6">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div class="text-center">
-                                <p class="text-2xl font-bold text-gray-800">FCFA92,831.25</p>
-                                <p class="text-sm text-gray-500">Total Disponible</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-2xl font-bold text-green-600">FCFA8,450.00</p>
-                                <p class="text-sm text-gray-500">Entrées Aujourd'hui</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-2xl font-bold text-red-600">FCFA1,250.00</p>
-                                <p class="text-sm text-gray-500">Sorties Aujourd'hui</p>
-                            </div>
-                            <div class="text-center">
-                                <p class="text-2xl font-bold text-violet-600">FCFA7,200.00</p>
-                                <p class="text-sm text-gray-500">Bénéfice Net</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+  <!-- Résumé des comptes -->
+  <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-800">Résumé des Comptes</h2>
+    </div>
+    <div class="p-6">
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
+        <div>
+          <p id="totalDisponible" class="text-2xl font-bold text-gray-800">FCFA0</p>
+          <p class="text-sm text-gray-500">Total Disponible</p>
+        </div>
+        <div>
+          <p id="totalEntrees" class="text-2xl font-bold text-green-600">FCFA0</p>
+          <p class="text-sm text-gray-500">Entrées Aujourd'hui</p>
+        </div>
+        <div>
+          <p id="totalSorties" class="text-2xl font-bold text-red-600">FCFA0</p>
+          <p class="text-sm text-gray-500">Sorties Aujourd'hui</p>
+        </div>
+        <div>
+          <p id="beneficeNet" class="text-2xl font-bold text-violet-600">FCFA0</p>
+          <p class="text-sm text-gray-500">Bénéfice Net</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
             <!-- Analytics Section -->
             <div id="analytics" class="section">
@@ -1330,26 +1291,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loadRevenues();
 });
 
-
-// 🔹 Filtrer selon la période
-function filterAccounts() {
-  const period = document.getElementById('accountsPeriodFilter').value;
-  const info = document.getElementById('accountsFilterInfo');
-
-  const periodTexts = {
-    all: 'Tous les montants affichés',
-    daily: 'Montants journaliers affichés',
-    weekly: 'Montants hebdomadaires affichés',
-    monthly: 'Montants mensuels affichés'
-  };
-
-  info.textContent = periodTexts[period];
-  loadAdminAccounts(period);
-}
-
-// 🔹 Charger les comptes au démarrage
-document.addEventListener("DOMContentLoaded", () => loadAdminAccounts());
-
         // ===============================================
 // 🔹 Charger les comptes de l'admin depuis backend
 // ===============================================
@@ -1362,21 +1303,94 @@ async function loadAdminAccounts(period = 'monthly') {
 
     if (!res.ok) throw new Error("Erreur chargement comptes admin");
 
-    const data = await res.json();
-    console.log("💳 Comptes admin:", data);
-
-    // 🔸 Mettre à jour les 3 cartes
-    document.querySelector('.from-orange-500 .text-2xl').textContent = `FCFA${data.orange.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}`;
-    document.querySelector('.from-blue-500 .text-2xl').textContent = `FCFA${data.wave.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}`;
-    document.querySelector('.from-green-500 .text-2xl').textContent = `FCFA${data.cash.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}`;
-
-    // 🔸 Résumé total
-    document.querySelector('#accounts .text-gray-800').textContent = `FCFA${data.total.toLocaleString('fr-FR', { minimumFractionDigits: 2 })}`;
+    comptes = await res.json();
+    console.log("💰 Comptes reçus:", comptes);
+    populateAccountsGrid();
+    updateAccountsSummary();
   } catch (err) {
     console.error("Erreur loadAdminAccounts:", err);
-    showNotification("❌ Impossible de charger les comptes admin", "error");
+    showNotification("❌ Impossible de charger les comptes", "error");
   }
 }
+
+// 🔹 Afficher dynamiquement les comptes
+function populateAccountsGrid() {
+  const grid = document.getElementById("accountsGrid");
+  grid.innerHTML = "";
+
+  const icons = {
+    "orange_money": "🟠",
+    "wave": "🌊",
+    "especes": "💵",
+  };
+
+  const gradients = {
+    "orange_money": "from-orange-500 to-orange-600",
+    "wave": "from-blue-500 to-blue-600",
+    "especes": "from-green-500 to-green-600",
+  };
+
+  comptes.forEach((compte) => {
+    const div = document.createElement("div");
+    div.className = `bg-gradient-to-r ${gradients[compte.type]} rounded-xl p-6 text-white`;
+    div.innerHTML = `
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold">${formatType(compte.type)}</h3>
+        <span class="text-2xl">${icons[compte.type]}</span>
+      </div>
+      <p class="text-2xl font-bold mb-2">FCFA${Number(compte.solde).toLocaleString()}</p>
+      <p class="text-white text-opacity-70 text-sm mb-4">Dernière mise à jour : ${new Date(compte.cree_le).toLocaleDateString("fr-FR")}</p>
+      <div class="flex space-x-2">
+        <button onclick="viewAccountDetails('${compte.type}')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
+        <button onclick="transferFromAccount('${compte.type}')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Transférer</button>
+      </div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+// 🔹 Filtrer les comptes selon la période
+function filterAccounts() {
+  const period = document.getElementById("accountsPeriodFilter").value;
+  const info = document.getElementById("accountsFilterInfo");
+  const texts = {
+    all: "Tous les montants affichés",
+    daily: "Montants journaliers affichés",
+    weekly: "Montants hebdomadaires affichés",
+    monthly: "Montants mensuels affichés",
+  };
+  info.textContent = texts[period];
+  loadAdminAccounts(period);
+}
+
+// 🔹 Mettre à jour le résumé
+function updateAccountsSummary() {
+  const total = comptes.reduce((acc, c) => acc + Number(c.solde), 0);
+  document.getElementById("totalDisponible").textContent = "FCFA" + total.toLocaleString();
+
+  // Pour l’instant, entrées/sorties simulées
+  document.getElementById("totalEntrees").textContent = "FCFA" + (total * 0.15).toLocaleString();
+  document.getElementById("totalSorties").textContent = "FCFA" + (total * 0.05).toLocaleString();
+  document.getElementById("beneficeNet").textContent = "FCFA" + (total * 0.10).toLocaleString();
+}
+
+// 🔹 Helpers
+function formatType(type) {
+  return type === "orange_money" ? "Orange Money"
+       : type === "wave" ? "Wave"
+       : "Espèces";
+}
+
+function viewAccountDetails(account) {
+  showNotification(`📊 Détails du compte ${account} affichés`, "info");
+}
+
+function transferFromAccount(account) {
+  showNotification(`🔄 Transfert depuis ${account} initié`, "info");
+}
+
+document.addEventListener("DOMContentLoaded", () => loadAdminAccounts());
+
 
         // Alert functions
         function closeAlert(alertId) {
@@ -1962,14 +1976,6 @@ async function exportTransactionsPDF() {
   doc.save("historique_transactions.pdf");
   showNotification("✅ PDF exporté avec succès", "success");
 }
-
-        function viewAccountDetails(account) {
-            showNotification(`Détails du compte ${account} affichés`, 'info');
-        }
-
-        function transferFromAccount(account) {
-            showNotification(`Transfert depuis ${account} initié`, 'info');
-        }
 
         function addCashTransaction() {
             showNotification('Ajout de transaction en espèces', 'info');
