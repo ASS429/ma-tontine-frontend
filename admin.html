@@ -1317,7 +1317,7 @@ document.addEventListener("DOMContentLoaded", () => {
 async function loadAdminAccounts(period = "monthly") {
   const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`${API_BASE}/api/admin/comptes?period=${period}`, {
+    const res = await fetch(`${API_BASE}/admin/comptes?period=${period}`, {
       headers: { Authorization: "Bearer " + token },
     });
 
