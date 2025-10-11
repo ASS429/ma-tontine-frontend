@@ -2074,92 +2074,102 @@ async function exportTransactionsPDF() {
   // ============================================================
   // 📈 Charger la répartition des revenus (pour Doughnut chart)
   // ============================================================
-  async function chargerRepartitionRevenus() {
-    try {
-      const res = await apiFetch(`${API_BASE}/admin/revenus/transactions`);
-      if (!res.ok) throw new Error("Erreur chargement transactions");
-      const data = await res.json();
+  let chartRepartition = null; // ajouter cette variable globale au-dessus de toutes tes fonctions
 
-      const parMethode = {};
-      data.forEach(t => {
-        const methode = t.method || "autre";
-        parMethode[methode] = (parMethode[methode] || 0) + t.amount;
+async function chargerRepartitionRevenus() {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/revenus/transactions`);
+    if (!res.ok) throw new Error("Erreur chargement transactions");
+    const data = await res.json();
+
+    const parMethode = {};
+    data.forEach(t => {
+      const methode = t.method || "autre";
+      parMethode[methode] = (parMethode[methode] || 0) + t.amount;
+    });
+
+    const labels = Object.keys(parMethode);
+    const values = Object.values(parMethode);
+
+    const ctx = document.getElementById("revenueBreakdownChart");
+    if (ctx) {
+      // ✅ Si un graphique existe déjà sur ce canvas, on le détruit
+      if (chartRepartition) chartRepartition.destroy();
+
+      chartRepartition = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: ["#3b82f6", "#f97316", "#10b981", "#6366f1"]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: "bottom" } }
+        }
       });
-
-      const labels = Object.keys(parMethode);
-      const values = Object.values(parMethode);
-
-      const ctx = document.getElementById("revenueBreakdownChart");
-      if (ctx) {
-        new Chart(ctx, {
-          type: "doughnut",
-          data: {
-            labels,
-            datasets: [{
-              data: values,
-              backgroundColor: ["#3b82f6", "#f97316", "#10b981", "#6366f1"]
-            }]
-          },
-          options: {
-            responsive: true,
-            plugins: { legend: { position: "bottom" } }
-          }
-        });
-      }
-    } catch (err) {
-      console.error("Erreur graph répartition:", err.message);
     }
+  } catch (err) {
+    console.error("Erreur graph répartition:", err.message);
   }
+}
 
   // ============================================================
   // 📈 Charger la croissance mensuelle (pour Bar chart)
   // ============================================================
-  async function chargerCroissanceMensuelle() {
-    try {
-      const res = await apiFetch(`${API_BASE}/admin/revenus?period=monthly`);
-      if (!res.ok) throw new Error("Erreur chargement croissance mensuelle");
-      const revenus = await res.json();
+  let chartCroissance = null; // variable globale aussi, à placer tout en haut du script
 
-      const mois = {};
-      revenus.forEach(r => {
-        const m = new Date(r.cree_le).toLocaleString("fr-FR", { month: "short" });
-        mois[m] = (mois[m] || 0) + Number(r.montant);
+async function chargerCroissanceMensuelle() {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/revenus?period=monthly`);
+    if (!res.ok) throw new Error("Erreur chargement croissance mensuelle");
+    const revenus = await res.json();
+
+    const mois = {};
+    revenus.forEach(r => {
+      const m = new Date(r.cree_le).toLocaleString("fr-FR", { month: "short" });
+      mois[m] = (mois[m] || 0) + Number(r.montant);
+    });
+
+    const labels = Object.keys(mois);
+    const values = Object.values(mois);
+
+    const ctx = document.getElementById("growthChart");
+    if (ctx) {
+      // ✅ détruire l'ancien graphique avant d'en créer un nouveau
+      if (chartCroissance) chartCroissance.destroy();
+
+      chartCroissance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "Revenus mensuels (FCFA)",
+            data: values,
+            backgroundColor: "#8b5cf6"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
       });
-
-      const labels = Object.keys(mois);
-      const values = Object.values(mois);
-
-      const ctx = document.getElementById("growthChart");
-      if (ctx) {
-        new Chart(ctx, {
-          type: "bar",
-          data: {
-            labels,
-            datasets: [{
-              label: "Revenus mensuels (FCFA)",
-              data: values,
-              backgroundColor: "#8b5cf6"
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
-          }
-        });
-      }
-    } catch (err) {
-      console.error("Erreur croissance:", err.message);
     }
+  } catch (err) {
+    console.error("Erreur croissance:", err.message);
   }
+}
 
   // ============================================================
   // 📊 Charger les comptes admin (pour total global)
   // ============================================================
   async function chargerComptesAdmin() {
     try {
-      const res = await apiFetch(`${API_BASE}/api/admin/comptes`);
+      const res = await apiFetch(`${API_BASE}/admin/comptes`);
       if (!res.ok) throw new Error("Erreur chargement comptes");
       const comptes = await res.json();
 
