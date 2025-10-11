@@ -526,42 +526,42 @@
 
                 <!-- KPI Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-sm font-medium text-gray-500">Chiffre d'Affaires</h3>
-                            <span class="text-green-500">📈</span>
-                        </div>
-                        <p class="text-2xl font-bold text-gray-800">FCFA542,180</p>
-                        <p class="text-sm text-green-600 mt-2">+18.5% vs année dernière</p>
-                    </div>
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-medium text-gray-500">Chiffre d'Affaires</h3>
+      <span class="text-green-500">📈</span>
+    </div>
+    <p id="kpiChiffreAffaires" class="text-2xl font-bold text-gray-800">--</p>
+    <p id="kpiCroissance" class="text-sm text-green-600 mt-2">Chargement...</p>
+  </div>
 
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-sm font-medium text-gray-500">Taux de Conversion</h3>
-                            <span class="text-blue-500">🎯</span>
-                        </div>
-                        <p class="text-2xl font-bold text-gray-800">24.8%</p>
-                        <p class="text-sm text-blue-600 mt-2">+3.2% ce mois</p>
-                    </div>
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-medium text-gray-500">Taux de Conversion</h3>
+      <span class="text-blue-500">🎯</span>
+    </div>
+    <p class="text-2xl font-bold text-gray-800">24.8%</p>
+    <p class="text-sm text-blue-600 mt-2">+3.2% ce mois</p>
+  </div>
 
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-sm font-medium text-gray-500">Valeur Moyenne</h3>
-                            <span class="text-violet-500">💎</span>
-                        </div>
-                        <p class="text-2xl font-bold text-gray-800">FCFA89.50</p>
-                        <p class="text-sm text-violet-600 mt-2">Par abonné/mois</p>
-                    </div>
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-medium text-gray-500">Valeur Totale Comptes</h3>
+      <span class="text-violet-500">💎</span>
+    </div>
+    <p id="kpiValeurMoyenne" class="text-2xl font-bold text-gray-800">--</p>
+    <p class="text-sm text-violet-600 mt-2">Total Wave / Orange / Espèces</p>
+  </div>
 
-                    <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-sm font-medium text-gray-500">Taux de Rétention</h3>
-                            <span class="text-orange-500">🔄</span>
-                        </div>
-                        <p class="text-2xl font-bold text-gray-800">92.3%</p>
-                        <p class="text-sm text-orange-600 mt-2">Excellent niveau</p>
-                    </div>
-                </div>
+  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="text-sm font-medium text-gray-500">Taux de Rétention</h3>
+      <span class="text-orange-500">🔄</span>
+    </div>
+    <p class="text-2xl font-bold text-gray-800">92.3%</p>
+    <p class="text-sm text-orange-600 mt-2">Excellent niveau</p>
+  </div>
+</div>
 
                 <!-- Charts -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -2036,79 +2036,146 @@ async function exportTransactionsPDF() {
             }, 3000);
         }
 
-        // Initialize charts
-        function initCharts() {
-            // Revenue Chart
-            const ctx1 = document.getElementById('revenueChart').getContext('2d');
-            new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'],
-                    datasets: [{
-                        label: 'Revenus (FCFA)',
-                        data: [32000, 35000, 38000, 42000, 39000, 45000, 48000, 52000, 49000, 55000, 58000, 62000],
-                        borderColor: '#8b5cf6',
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            grid: { color: '#f3f4f6' },
-                            ticks: { callback: function(value) { return 'FCFA' + value.toLocaleString(); } }
-                        },
-                        x: { grid: { display: false } }
-                    }
-                }
-            });
+        // ============================================================
+// 📊 Charger les statistiques globales admin
+// ============================================================
+async function chargerStatsAdmin() {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/revenus/stats`);
+    if (!res.ok) throw new Error("Impossible de charger les stats admin");
+    const stats = await res.json();
 
-            // Revenue Breakdown Chart
-            const ctx2 = document.getElementById('revenueBreakdownChart');
-            if (ctx2) {
-                new Chart(ctx2, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Wave', 'Orange Money', 'Espèces'],
-                        datasets: [{
-                            data: [45, 35, 20],
-                            backgroundColor: ['#3b82f6', '#f97316', '#10b981']
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false
-                    }
-                });
-            }
+    // 💰 Chiffre d’affaires
+    document.querySelector("#kpiChiffreAffaires").textContent =
+      "FCFA " + stats.monthly_total.toLocaleString();
 
-            // Growth Chart
-            const ctx3 = document.getElementById('growthChart');
-            if (ctx3) {
-                new Chart(ctx3, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'],
-                        datasets: [{
-                            label: 'Croissance (%)',
-                            data: [12, 15, 8, 18, 22, 15],
-                            backgroundColor: '#8b5cf6'
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } }
-                    }
-                });
-            }
+    // 🪙 Croissance
+    const croissance = Number(stats.growth);
+    const croissanceElt = document.querySelector("#kpiCroissance");
+    croissanceElt.textContent = (croissance >= 0 ? "+" : "") + croissance + "% vs mois précédent";
+    croissanceElt.className =
+      "text-sm mt-2 " + (croissance >= 0 ? "text-green-600" : "text-red-600");
+  } catch (err) {
+    console.error("Erreur stats:", err.message);
+  }
+}
+
+// ============================================================
+// 📈 Charger la répartition des revenus (pour Doughnut chart)
+// ============================================================
+async function chargerRepartitionRevenus() {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/revenus/transactions`);
+    if (!res.ok) throw new Error("Erreur chargement transactions");
+    const data = await res.json();
+
+    // Grouper par méthode de paiement
+    const parMethode = {};
+    data.forEach(t => {
+      const methode = t.method || "autre";
+      parMethode[methode] = (parMethode[methode] || 0) + t.amount;
+    });
+
+    const labels = Object.keys(parMethode);
+    const values = Object.values(parMethode);
+
+    const ctx = document.getElementById("revenueBreakdownChart");
+    if (ctx) {
+      new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels,
+          datasets: [{
+            data: values,
+            backgroundColor: ["#3b82f6", "#f97316", "#10b981", "#6366f1"]
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: "bottom" } }
         }
+      });
+    }
+  } catch (err) {
+    console.error("Erreur graph répartition:", err.message);
+  }
+}
+
+// ============================================================
+// 📈 Charger la croissance mensuelle (pour Bar chart)
+// ============================================================
+async function chargerCroissanceMensuelle() {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/revenus?period=monthly`);
+    if (!res.ok) throw new Error("Erreur chargement croissance mensuelle");
+    const revenus = await res.json();
+
+    // Grouper les montants par mois (format court)
+    const mois = {};
+    revenus.forEach(r => {
+      const m = new Date(r.cree_le).toLocaleString("fr-FR", { month: "short" });
+      mois[m] = (mois[m] || 0) + Number(r.montant);
+    });
+
+    const labels = Object.keys(mois);
+    const values = Object.values(mois);
+
+    const ctx = document.getElementById("growthChart");
+    if (ctx) {
+      new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [{
+            label: "Revenus mensuels (FCFA)",
+            data: values,
+            backgroundColor: "#8b5cf6"
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Erreur croissance:", err.message);
+  }
+}
+
+// ============================================================
+// 📊 Charger les comptes admin (pour total global)
+// ============================================================
+async function chargerComptesAdmin() {
+  try {
+    const res = await apiFetch(`${API_BASE}/api/admin/comptes`);
+    if (!res.ok) throw new Error("Erreur chargement comptes");
+    const comptes = await res.json();
+
+    // Total global tous comptes confondus
+    const total = comptes.reduce((sum, c) => sum + Number(c.solde || 0), 0);
+
+    document.querySelector("#kpiValeurMoyenne").textContent =
+      "FCFA " + total.toLocaleString();
+  } catch (err) {
+    console.error("Erreur comptes:", err.message);
+  }
+}
+
+// ============================================================
+// 🚀 Initialisation des graphiques et KPI
+// ============================================================
+async function initAnalytics() {
+  await chargerStatsAdmin();
+  await chargerRepartitionRevenus();
+  await chargerCroissanceMensuelle();
+  await chargerComptesAdmin();
+}
+
+// Démarrage auto
+initAnalytics();
 
         // Close modals when clicking outside
         document.addEventListener('click', function(event) {
