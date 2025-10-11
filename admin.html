@@ -238,20 +238,21 @@
                     </div>
 
                     <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p id="kpiAbonnesActifs" class="text-2xl font-bold text-gray-800 mt-1">--</p>
-                                <p class="text-2xl font-bold text-gray-800 mt-1">2,634</p>
-                            </div>
-                            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                <span class="text-green-600 text-xl">✅</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex items-center">
-                            <span class="text-green-500 text-sm font-medium">+8%</span>
-                            <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
-                        </div>
-                    </div>
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-gray-500 text-sm font-medium">Abonnés Actifs</p>
+      <p id="kpiAbonnesActifs" class="text-2xl font-bold text-gray-800 mt-1">--</p>
+    </div>
+    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+      <span class="text-green-600 text-xl">✅</span>
+    </div>
+  </div>
+  <div class="mt-4 flex items-center">
+    <span class="text-green-500 text-sm font-medium">+8%</span>
+    <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
+  </div>
+</div>
+
 
                     <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                         <div class="flex items-center justify-between">
@@ -2382,6 +2383,7 @@ async function chargerDashboard() {
     const res = await apiFetch(`${API_BASE}/utilisateurs/dashboard`);
     if (!res.ok) throw new Error("Erreur chargement dashboard");
     const data = await res.json();
+    console.log("📊 Données dashboard:", data);
 
     // 💡 Remplir les KPI
     document.querySelector("#kpiTotalAbonnes").textContent =
@@ -2463,6 +2465,9 @@ async function chargerGraphiqueRevenus() {
     console.error("Erreur graphique revenus:", err.message);
   }
 }
+document.addEventListener("DOMContentLoaded", () => {
+  initDashboard();
+});
 
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'988e5a4466b6d7c8',t:'MTc1OTUxNDU2OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
