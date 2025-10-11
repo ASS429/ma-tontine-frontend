@@ -1312,42 +1312,40 @@ document.addEventListener("DOMContentLoaded", () => {
   loadRevenues();
 });
 // ===============================================
-// 🔹 Charger les comptes de l'admin depuis le backend
+// 🔹 Charger les comptes ADMIN depuis le backend
 // ===============================================
-async function loadAdminAccounts(period = 'monthly') {
-  const token = localStorage.getItem('token');
+async function loadAdminAccounts(period = "monthly") {
+  const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`${API_BASE}/comptes/admin?period=${period}`, {
+    const res = await fetch(`${API_BASE}/api/admin/comptes?period=${period}`, {
       headers: { Authorization: "Bearer " + token },
     });
 
     if (!res.ok) throw new Error("Erreur chargement comptes admin");
 
-    const data = await res.json();
-    console.log("💰 Comptes reçus:", data);
+    const comptesData = await res.json();
+    console.log("💰 Comptes admin reçus:", comptesData);
 
-    // 🧩 Vérifie si data est vide
-    if (!data || data.length === 0) {
+    if (!comptesData || comptesData.length === 0) {
       document.getElementById("accountsGrid").innerHTML = `
-        <div class="col-span-full text-center text-gray-500 py-10">
-          Aucun compte trouvé.
-        </div>
-      `;
+        <div class="col-span-full text-center text-gray-500 py-6">
+          Aucun compte trouvé pour cette période.
+        </div>`;
       return;
     }
 
-    // ✅ Si les comptes existent
-    comptes = data.map(c => ({
+    // 🔁 Reformater les données reçues
+    comptes = comptesData.map((c) => ({
       type: c.type,
       solde: Number(c.solde),
-      cree_le: c.cree_le || new Date(),
+      cree_le: c.cree_le,
     }));
 
     populateAccountsGrid();
     updateAccountsSummary();
   } catch (err) {
     console.error("Erreur loadAdminAccounts:", err);
-    showNotification("❌ Impossible de charger les comptes", "error");
+    showNotification("❌ Impossible de charger les comptes admin", "error");
   }
 }
 
