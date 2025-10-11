@@ -2389,9 +2389,8 @@ async function chargerDashboard() {
     const res = await apiFetch(`${API_BASE}/utilisateurs/dashboard`);
     if (!res.ok) throw new Error("Erreur chargement dashboard");
     const data = await res.json();
-    console.log("📊 Données dashboard:", data);
 
-    // 💡 Remplir les KPI
+    // 📊 Remplir les KPI
     document.querySelector("#kpiTotalAbonnes").textContent =
       data.total_abonnes.toLocaleString();
     document.querySelector("#kpiAbonnesActifs").textContent =
@@ -2401,17 +2400,26 @@ async function chargerDashboard() {
     document.querySelector("#kpiAlertesPaiement").textContent =
       data.alertes_paiement;
 
-    // 📈 Mettre les taux d'évolution
-    document.querySelector("#kpiRevenusCroissance").textContent =
-      (data.croissance_revenus >= 0 ? "+" : "") + data.croissance_revenus + "%";
-    document.querySelector("#kpiRevenusCroissance").className =
-      "text-sm font-medium " +
-      (data.croissance_revenus >= 0 ? "text-green-500" : "text-red-500");
+    // 📈 Croissance (total abonnés)
+    const totalGrowth = document.querySelector("#kpiTotalAbonnes").closest(".stat-card").querySelector(".text-green-500");
+    totalGrowth.textContent = `${data.croissance_abonnes >= 0 ? "+" : ""}${data.croissance_abonnes}%`;
+    totalGrowth.className = `text-sm font-medium ${data.croissance_abonnes >= 0 ? "text-green-500" : "text-red-500"}`;
+
+    // 📈 Croissance (abonnés actifs)
+    const actifsGrowth = document.querySelector("#kpiAbonnesActifs").closest(".stat-card").querySelector(".text-green-500");
+    actifsGrowth.textContent = `${data.croissance_actifs >= 0 ? "+" : ""}${data.croissance_actifs}%`;
+    actifsGrowth.className = `text-sm font-medium ${data.croissance_actifs >= 0 ? "text-green-500" : "text-red-500"}`;
+
+    // 📈 Croissance revenus (déjà affiché)
+    const revGrowth = document.querySelector("#kpiRevenusCroissance");
+    revGrowth.textContent = `${data.croissance_revenus >= 0 ? "+" : ""}${data.croissance_revenus}%`;
+    revGrowth.className = `text-sm font-medium ${data.croissance_revenus >= 0 ? "text-green-500" : "text-red-500"}`;
 
   } catch (err) {
     console.error("Erreur dashboard:", err.message);
   }
 }
+
 async function initDashboard() {
   await chargerDashboard();
   await chargerGraphiqueRevenus();
