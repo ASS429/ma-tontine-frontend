@@ -58,15 +58,21 @@
 
     // ✅ Wrapper générique pour appels backend sécurisés
   async function apiFetch(url, options = {}) {
-    const token = localStorage.getItem("token");
-    return fetch(url, {
-      ...options,
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      }
-    });
+  const token = localStorage.getItem("token");
+  if (!token) {
+    console.error("Aucun token trouvé : l’administrateur doit se reconnecter.");
+    throw new Error("Non authentifié");
   }
+
+  return fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`,
+    },
+  });
+}
+
 
 </script>
 
@@ -2418,6 +2424,11 @@ async function chargerGraphiqueRevenus() {
     if (!res.ok) throw new Error("Erreur chargement revenus");
     const revenus = await res.json();
 
+    if (!revenus || revenus.length === 0) {
+      console.warn("Aucun revenu trouvé pour ce mois");
+      return;
+    }
+
     const mois = {};
     revenus.forEach(r => {
       const m = new Date(r.cree_le).toLocaleString("fr-FR", { month: "short" });
@@ -2428,43 +2439,42 @@ async function chargerGraphiqueRevenus() {
     const values = Object.values(mois);
 
     const ctx = document.getElementById("revenueChart");
-    if (ctx) {
-      if (chartRevenus) chartRevenus.destroy();
-      chartRevenus = new Chart(ctx, {
-        type: "line",
-        data: {
-          labels,
-          datasets: [{
-            label: "Revenus mensuels (FCFA)",
-            data: values,
-            borderColor: "#8b5cf6",
-            backgroundColor: "rgba(139,92,246,0.1)",
-            borderWidth: 3,
-            fill: true,
-            tension: 0.4
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
-          scales: {
-            y: {
-              beginAtZero: true,
-              ticks: {
-                callback: function (val) {
-                  return "FCFA " + val.toLocaleString();
-                }
-              }
+    if (!ctx) return;
+
+    if (chartRevenus) chartRevenus.destroy();
+    chartRevenus = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels,
+        datasets: [{
+          label: "Revenus mensuels (FCFA)",
+          data: values,
+          borderColor: "#8b5cf6",
+          backgroundColor: "rgba(139,92,246,0.1)",
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: val => "FCFA " + val.toLocaleString()
             }
           }
         }
-      });
-    }
+      }
+    });
   } catch (err) {
     console.error("Erreur graphique revenus:", err.message);
   }
 }
+
 document.addEventListener("DOMContentLoaded", () => {
   initDashboard();
 });
