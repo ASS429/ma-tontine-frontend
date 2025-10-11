@@ -1312,21 +1312,36 @@ document.addEventListener("DOMContentLoaded", () => {
   loadRevenues();
 });
 // ===============================================
-// 🔹 Charger les comptes de l'administrateur
+// 🔹 Charger les comptes de l'admin depuis le backend
 // ===============================================
-let comptes = [];
-
-async function loadAdminAccounts(period = "monthly") {
-  const token = localStorage.getItem("token");
+async function loadAdminAccounts(period = 'monthly') {
+  const token = localStorage.getItem('token');
   try {
-    const res = await fetch(`${API_BASE}/admin/comptes?period=${period}`, {
+    const res = await fetch(`${API_BASE}/comptes/admin?period=${period}`, {
       headers: { Authorization: "Bearer " + token },
     });
 
     if (!res.ok) throw new Error("Erreur chargement comptes admin");
 
-    comptes = await res.json();
-    console.log("💰 Comptes admin reçus:", comptes);
+    const data = await res.json();
+    console.log("💰 Comptes reçus:", data);
+
+    // 🧩 Vérifie si data est vide
+    if (!data || data.length === 0) {
+      document.getElementById("accountsGrid").innerHTML = `
+        <div class="col-span-full text-center text-gray-500 py-10">
+          Aucun compte trouvé.
+        </div>
+      `;
+      return;
+    }
+
+    // ✅ Si les comptes existent
+    comptes = data.map(c => ({
+      type: c.type,
+      solde: Number(c.solde),
+      cree_le: c.cree_le || new Date(),
+    }));
 
     populateAccountsGrid();
     updateAccountsSummary();
@@ -1343,11 +1358,6 @@ function populateAccountsGrid() {
   const grid = document.getElementById("accountsGrid");
   grid.innerHTML = "";
 
-  if (!comptes || comptes.length === 0) {
-    grid.innerHTML = `<p class="text-gray-500 text-center col-span-3">Aucun compte trouvé.</p>`;
-    return;
-  }
-
   const icons = {
     orange_money: "🟠",
     wave: "🌊",
@@ -1362,17 +1372,14 @@ function populateAccountsGrid() {
 
   comptes.forEach((compte) => {
     const div = document.createElement("div");
-    div.className = `bg-gradient-to-r ${gradients[compte.type]} rounded-xl p-6 text-white shadow-md hover:shadow-lg transition`;
-
+    div.className = `bg-gradient-to-r ${gradients[compte.type]} rounded-xl p-6 text-white shadow-md`;
     div.innerHTML = `
       <div class="flex items-center justify-between mb-4">
         <h3 class="text-lg font-semibold">${formatType(compte.type)}</h3>
         <span class="text-2xl">${icons[compte.type]}</span>
       </div>
-      <p class="text-2xl font-bold mb-2">FCFA${Number(compte.solde || 0).toLocaleString()}</p>
-      <p class="text-white text-opacity-70 text-sm mb-4">
-        Dernière mise à jour : ${new Date(compte.cree_le).toLocaleDateString("fr-FR")}
-      </p>
+      <p class="text-2xl font-bold mb-2">FCFA${Number(compte.solde).toLocaleString()}</p>
+      <p class="text-white text-opacity-70 text-sm mb-4">Dernière mise à jour : ${new Date(compte.cree_le).toLocaleDateString("fr-FR")}</p>
       <div class="flex space-x-2">
         <button onclick="viewAccountDetails('${compte.type}')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Détails</button>
         <button onclick="transferFromAccount('${compte.type}')" class="bg-white bg-opacity-20 px-3 py-1 rounded text-sm">Transférer</button>
@@ -1383,60 +1390,35 @@ function populateAccountsGrid() {
 }
 
 // ===============================================
-// 🔹 Filtrer les comptes selon la période
-// ===============================================
-function filterAccounts() {
-  const period = document.getElementById("accountsPeriodFilter").value;
-  const info = document.getElementById("accountsFilterInfo");
-  const texts = {
-    all: "Tous les montants affichés",
-    daily: "Montants journaliers affichés",
-    weekly: "Montants hebdomadaires affichés",
-    monthly: "Montants mensuels affichés",
-  };
-  info.textContent = texts[period];
-  loadAdminAccounts(period);
-}
-
-// ===============================================
-// 🔹 Mettre à jour le résumé
+// 🔹 Mettre à jour le résumé global
 // ===============================================
 function updateAccountsSummary() {
-  if (!comptes || comptes.length === 0) {
-    document.getElementById("totalDisponible").textContent = "FCFA0";
-    document.getElementById("totalEntrees").textContent = "FCFA0";
-    document.getElementById("totalSorties").textContent = "FCFA0";
-    document.getElementById("beneficeNet").textContent = "FCFA0";
-    return;
-  }
-
-  const total = comptes.reduce((acc, c) => acc + Number(c.solde || 0), 0);
-
-  document.getElementById("totalDisponible").textContent = "FCFA" + total.toLocaleString();
-  document.getElementById("totalEntrees").textContent = "FCFA" + (total * 0.15).toLocaleString();
-  document.getElementById("totalSorties").textContent = "FCFA" + (total * 0.05).toLocaleString();
-  document.getElementById("beneficeNet").textContent = "FCFA" + (total * 0.10).toLocaleString();
+  const total = comptes.reduce((acc, c) => acc + c.solde, 0);
+  document.getElementById("totalDisponible").textContent = `FCFA${total.toLocaleString()}`;
+  document.getElementById("totalEntrees").textContent = `FCFA${(total * 0.15).toLocaleString()}`;
+  document.getElementById("totalSorties").textContent = `FCFA${(total * 0.05).toLocaleString()}`;
+  document.getElementById("beneficeNet").textContent = `FCFA${(total * 0.10).toLocaleString()}`;
 }
 
 // ===============================================
 // 🔹 Helpers
 // ===============================================
 function formatType(type) {
-  return type === "orange_money" ? "Orange Money"
-       : type === "wave" ? "Wave"
-       : "Espèces";
+  if (type === "orange_money") return "Orange Money";
+  if (type === "wave") return "Wave";
+  return "Espèces";
 }
 
 function viewAccountDetails(account) {
-  showNotification(`📊 Détails du compte ${formatType(account)} affichés`, "info");
+  showNotification(`📊 Détails du compte ${account} affichés`, "info");
 }
 
 function transferFromAccount(account) {
-  showNotification(`🔄 Transfert depuis ${formatType(account)} initié`, "info");
+  showNotification(`🔄 Transfert depuis ${account} initié`, "info");
 }
 
 // ===============================================
-// 🚀 Initialisation au chargement de la page
+// 🚀 Initialisation
 // ===============================================
 document.addEventListener("DOMContentLoaded", () => loadAdminAccounts());
 
