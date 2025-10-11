@@ -225,7 +225,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-500 text-sm font-medium">Total Abonnés</p>
-                                <p class="text-2xl font-bold text-gray-800 mt-1">2,847</p>
+                                <p id="kpiTotalAbonnes" class="text-2xl font-bold text-gray-800 mt-1">--</p>
                             </div>
                             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                                 <span class="text-blue-600 text-xl">👥</span>
@@ -240,7 +240,7 @@
                     <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
                         <div class="flex items-center justify-between">
                             <div>
-                                <p class="text-gray-500 text-sm font-medium">Abonnés Actifs</p>
+                                <p id="kpiAbonnesActifs" class="text-2xl font-bold text-gray-800 mt-1">--</p>
                                 <p class="text-2xl font-bold text-gray-800 mt-1">2,634</p>
                             </div>
                             <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -257,7 +257,8 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-500 text-sm font-medium">Revenus Mensuels</p>
-                                <p class="text-2xl font-bold text-gray-800 mt-1">FCFA45,230</p>
+                                <p id="kpiRevenusMensuels" class="text-2xl font-bold text-gray-800 mt-1">--</p>
+                                <span id="kpiRevenusCroissance" class="text-green-500 text-sm font-medium">--%</span>
                             </div>
                             <div class="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center">
                                 <span class="text-violet-600 text-xl">💰</span>
@@ -273,7 +274,7 @@
                         <div class="flex items-center justify-between">
                             <div>
                                 <p class="text-gray-500 text-sm font-medium">Alertes Paiement</p>
-                                <p class="text-2xl font-bold text-red-600 mt-1">3</p>
+                                <p id="kpiAlertesPaiement" class="text-2xl font-bold text-red-600 mt-1">--</p>
                             </div>
                             <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                                 <span class="text-red-600 text-xl">⚠️</span>
@@ -2370,6 +2371,96 @@ async function submitRevenue() {
   } catch (err) {
     console.error("Erreur ajout revenu:", err);
     showNotification("❌ " + err.message, "error");
+  }
+}
+
+// ============================================================
+// 📊 Charger les données du Dashboard
+// ============================================================
+async function chargerDashboard() {
+  try {
+    const res = await apiFetch(`${API_BASE}/utilisateurs/dashboard`);
+    if (!res.ok) throw new Error("Erreur chargement dashboard");
+    const data = await res.json();
+
+    // 💡 Remplir les KPI
+    document.querySelector("#kpiTotalAbonnes").textContent =
+      data.total_abonnes.toLocaleString();
+    document.querySelector("#kpiAbonnesActifs").textContent =
+      data.abonnes_actifs.toLocaleString();
+    document.querySelector("#kpiRevenusMensuels").textContent =
+      "FCFA " + data.revenus_mensuels.toLocaleString();
+    document.querySelector("#kpiAlertesPaiement").textContent =
+      data.alertes_paiement;
+
+    // 📈 Mettre les taux d'évolution
+    document.querySelector("#kpiRevenusCroissance").textContent =
+      (data.croissance_revenus >= 0 ? "+" : "") + data.croissance_revenus + "%";
+    document.querySelector("#kpiRevenusCroissance").className =
+      "text-sm font-medium " +
+      (data.croissance_revenus >= 0 ? "text-green-500" : "text-red-500");
+
+  } catch (err) {
+    console.error("Erreur dashboard:", err.message);
+  }
+}
+async function initDashboard() {
+  await chargerDashboard();
+  await chargerGraphiqueRevenus();
+}
+let chartRevenus = null;
+
+async function chargerGraphiqueRevenus() {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/revenus?period=monthly`);
+    if (!res.ok) throw new Error("Erreur chargement revenus");
+    const revenus = await res.json();
+
+    const mois = {};
+    revenus.forEach(r => {
+      const m = new Date(r.cree_le).toLocaleString("fr-FR", { month: "short" });
+      mois[m] = (mois[m] || 0) + Number(r.montant);
+    });
+
+    const labels = Object.keys(mois);
+    const values = Object.values(mois);
+
+    const ctx = document.getElementById("revenueChart");
+    if (ctx) {
+      if (chartRevenus) chartRevenus.destroy();
+      chartRevenus = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{
+            label: "Revenus mensuels (FCFA)",
+            data: values,
+            borderColor: "#8b5cf6",
+            backgroundColor: "rgba(139,92,246,0.1)",
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                callback: function (val) {
+                  return "FCFA " + val.toLocaleString();
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  } catch (err) {
+    console.error("Erreur graphique revenus:", err.message);
   }
 }
 
