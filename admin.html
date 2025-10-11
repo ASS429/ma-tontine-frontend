@@ -1164,7 +1164,7 @@ function updateRevenueDisplayWithData(revenus, period) {
 async function loadRevenueStats() {
   const token = localStorage.getItem('token');
   try {
-    const res = await fetch(`${API_BASE}/revenus/stats`, {
+    const res = await fetch(`${API_BASE}/admin/revenus/stats`, {
   headers: { Authorization: "Bearer " + token },
 });
 
@@ -1190,7 +1190,7 @@ let allRevenues = [];
 async function loadRevenues() {
   const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`${API_BASE}/revenus`, {
+    const res = await fetch(`${API_BASE}/admin/revenus`, {
       headers: { Authorization: "Bearer " + token },
     });
 
@@ -1784,7 +1784,7 @@ let transactions = [];
 async function loadTransactions() {
   const token = localStorage.getItem("token");
   try {
-    const res = await fetch(`${API_BASE}/revenus/transactions`, {
+    const res = await fetch(`${API_BASE}/admin/revenus/transactions`, {
       headers: { "Authorization": "Bearer " + token },
     });
 
@@ -1857,7 +1857,7 @@ async function generateReport() {
       return;
     }
 
-    const res = await fetch(`${API_BASE}/revenus`, {
+    const res = await fetch(`${API_BASE}/admin/revenus`, {
       headers: { "Authorization": "Bearer " + token }
     });
 
@@ -1912,7 +1912,7 @@ async function showTransactionHistory() {
       return;
     }
 
-    const res = await fetch(`${API_BASE}/revenus/transactions`, {
+    const res = await fetch(`${API_BASE}/admin/revenus/transactions`, {
       headers: { "Authorization": "Bearer " + token }
     });
 
