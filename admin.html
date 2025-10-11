@@ -972,7 +972,7 @@ async function refreshRevenueDashboard() {
   if (!token) return;
 
   try {
-    const statsRes = await fetch(API_BASE + "/revenus/stats", {
+    const statsRes = await fetch(API_BASE + "/admin/revenus/stats", {
       headers: { "Authorization": "Bearer " + token }
     });
     const stats = await statsRes.json();
@@ -982,7 +982,7 @@ async function refreshRevenueDashboard() {
     document.querySelectorAll(".bg-gradient-to-r.from-orange-500 p.text-3xl")[0].textContent =
       `${stats.growth.toFixed(2)}%`;
 
-    const txRes = await fetch(API_BASE + "/revenus/transactions", {
+    const txRes = await fetch(API_BASE + "/admin/revenus/transactions", {
       headers: { "Authorization": "Bearer " + token }
     });
     const transactions = await txRes.json();
@@ -1106,7 +1106,7 @@ async function refreshRevenueDashboard() {
   info.textContent = periodTexts[period] || 'Tous les revenus affichés';
 
   try {
-    const res = await fetch(API_BASE + `/revenus?period=${period}`, {
+    const res = await fetch(API_BASE + `/admin/revenus?period=${period}`, {
       headers: { "Authorization": "Bearer " + token }
     });
 
@@ -1212,7 +1212,7 @@ async function filterRevenue() {
   const method = document.getElementById("revenueMethodFilter")?.value || "";
 
   try {
-    const res = await fetch(`${API_BASE}/revenus?period=${period}`, {
+    const res = await fetch(`${API_BASE}/admin/revenus?period=${period}`, {
       headers: { Authorization: "Bearer " + token },
     });
     if (!res.ok) throw new Error("Erreur filtrage revenus");
@@ -1540,7 +1540,7 @@ async function refreshRevenueDashboard() {
   if (!token) return;
 
   try {
-    const statsRes = await fetch(API_BASE + "/revenus/stats", {
+    const statsRes = await fetch(API_BASE + "/admin/revenus/stats", {
       headers: { "Authorization": "Bearer " + token }
     });
     const stats = await statsRes.json();
@@ -1550,7 +1550,7 @@ async function refreshRevenueDashboard() {
     document.querySelectorAll(".bg-gradient-to-r.from-orange-500 p.text-3xl")[0].textContent =
       `${stats.growth.toFixed(2)}%`;
 
-    const txRes = await fetch(API_BASE + "/revenus/transactions", {
+    const txRes = await fetch(API_BASE + "/admin/revenus/transactions", {
       headers: { "Authorization": "Bearer " + token }
     });
     const transactions = await txRes.json();
@@ -2240,7 +2240,7 @@ async function submitRevenue() {
 
   try {
     const token = localStorage.getItem("token");
-    const res = await fetch(API_BASE + "/revenus", {
+    const res = await fetch(API_BASE + "/admin/revenus", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
