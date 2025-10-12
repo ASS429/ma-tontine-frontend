@@ -1972,10 +1972,10 @@ document.addEventListener("DOMContentLoaded", () => {
             closeTransferModal();
         }
 
-// 📊 Générer un rapport PDF simplifié des revenus
+// 📊 Générer un rapport mensuel côté serveur + PDF
 async function generateReport() {
   try {
-    showNotification('📊 Génération du rapport en cours...', 'info');
+    showNotification('📊 Génération du rapport mensuel en cours...', 'info');
 
     const token = localStorage.getItem("token");
     if (!token) {
@@ -1983,6 +1983,21 @@ async function generateReport() {
       return;
     }
 
+    // 🔹 Étape 1 : générer le rapport côté serveur
+    const gen = await fetch(`${API_BASE}/admin/rapports/generate`, {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer " + token,
+        "Content-Type": "application/json"
+      }
+    });
+
+    const genData = await gen.json();
+    if (!gen.ok) throw new Error(genData.error || "Erreur génération serveur");
+
+    showNotification("✅ Rapport serveur généré avec succès", "success");
+
+    // 🔹 Étape 2 : continuer ton export PDF
     const res = await fetch(`${API_BASE}/admin/revenus`, {
       headers: { "Authorization": "Bearer " + token }
     });
@@ -1992,7 +2007,7 @@ async function generateReport() {
     const revenus = await res.json();
 
     if (!revenus.length) {
-      showNotification("Aucun revenu à inclure dans le rapport", "info");
+      showNotification("Aucun revenu à inclure dans le rapport PDF", "info");
       return;
     }
 
