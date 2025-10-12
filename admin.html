@@ -95,69 +95,14 @@
                         <span id="alertBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center alert-badge">3</span>
                     </button>
                     <div id="notificationPanel" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-                        <div class="p-4 border-b border-gray-200">
-                            <h3 class="font-semibold text-gray-800">Alertes de Paiement</h3>
-                        </div>
-                        <div class="max-h-64 overflow-y-auto">
-                            <div class="p-3 border-b border-gray-100 hover:bg-gray-50" id="alert-1">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-                                        <div class="flex-1">
-                                            <p class="text-sm font-medium text-gray-800">Pierre Durand</p>
-                                            <p class="text-xs text-gray-500">Paiement en retard de 5 jours</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex space-x-1">
-                                        <button onclick="ignoreAlert('alert-1')" class="text-gray-400 hover:text-orange-500 p-1" title="Ignorer">
-                                            <span class="text-xs">👁️‍🗨️</span>
-                                        </button>
-                                        <button onclick="closeAlert('alert-1')" class="text-gray-400 hover:text-red-500 p-1" title="Fermer">
-                                            <span class="text-xs">✕</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="p-3 border-b border-gray-100 hover:bg-gray-50" id="alert-2">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-2 h-2 bg-orange-500 rounded-full"></div>
-                                        <div class="flex-1">
-                                            <p class="text-sm font-medium text-gray-800">Julie Moreau</p>
-                                            <p class="text-xs text-gray-500">Paiement dû dans 2 jours</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex space-x-1">
-                                        <button onclick="ignoreAlert('alert-2')" class="text-gray-400 hover:text-orange-500 p-1" title="Ignorer">
-                                            <span class="text-xs">👁️‍🗨️</span>
-                                        </button>
-                                        <button onclick="closeAlert('alert-2')" class="text-gray-400 hover:text-red-500 p-1" title="Fermer">
-                                            <span class="text-xs">✕</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="p-3 hover:bg-gray-50" id="alert-3">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-2 h-2 bg-red-500 rounded-full"></div>
-                                        <div class="flex-1">
-                                            <p class="text-sm font-medium text-gray-800">Marc Petit</p>
-                                            <p class="text-xs text-gray-500">Paiement en retard de 12 jours</p>
-                                        </div>
-                                    </div>
-                                    <div class="flex space-x-1">
-                                        <button onclick="ignoreAlert('alert-3')" class="text-gray-400 hover:text-orange-500 p-1" title="Ignorer">
-                                            <span class="text-xs">👁️‍🗨️</span>
-                                        </button>
-                                        <button onclick="closeAlert('alert-3')" class="text-gray-400 hover:text-red-500 p-1" title="Fermer">
-                                            <span class="text-xs">✕</span>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+  <div class="p-4 border-b border-gray-200">
+    <h3 class="font-semibold text-gray-800">Alertes de Paiement</h3>
+  </div>
+  <div class="max-h-64 overflow-y-auto" id="alertContainer">
+    <!-- Les alertes seront injectées ici dynamiquement -->
+  </div>
+</div>
+
                 </div>
                 <span class="text-gray-600">Marie Dubois</span>
                 <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
@@ -1031,8 +976,6 @@ async function refreshRevenueDashboard() {
   }
 }
         let sidebarVisible = true;
-        
-        let alertCount = 3;
 
         function logout() {
     // 1. Supprimer le token et autres infos utilisateur
@@ -1441,31 +1384,112 @@ function transferFromAccount(account) {
 // ===============================================
 document.addEventListener("DOMContentLoaded", () => loadAdminAccounts());
 
+let alertCount = 0;
 
-        // Alert functions
-        function closeAlert(alertId) {
-            const alert = document.getElementById(alertId);
-            alert.style.transition = 'all 0.3s ease';
-            alert.style.opacity = '0';
-            alert.style.transform = 'translateX(100%)';
-            
-            setTimeout(() => {
-                alert.remove();
-                alertCount--;
-                updateAlertBadge();
-            }, 300);
-            
-            showNotification('Alerte fermée', 'info');
-        }
+// ✅ Charger les alertes depuis l’API
+async function loadAdminAlerts() {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/alertes`);
+    if (!res.ok) throw new Error("Erreur chargement alertes");
+    const alertes = await res.json();
 
-        function ignoreAlert(alertId) {
-            const alert = document.getElementById(alertId);
-            alert.style.opacity = '0.5';
-            alert.querySelector('.w-2.h-2').classList.remove('bg-red-500', 'bg-orange-500');
-            alert.querySelector('.w-2.h-2').classList.add('bg-gray-400');
-            
-            showNotification('Alerte ignorée', 'info');
-        }
+    renderAlerts(alertes);
+  } catch (err) {
+    console.error("Erreur loadAdminAlerts:", err.message);
+    showNotification("❌ Impossible de charger les alertes", "error");
+  }
+}
+
+// 🖼️ Afficher dynamiquement les alertes dans le panneau
+function renderAlerts(alertes) {
+  const panel = document.getElementById("alertContainer");
+  panel.innerHTML = ""; // Nettoyer avant d’ajouter
+
+  if (!alertes.length) {
+    panel.innerHTML = `<p class="text-center text-gray-500 py-4">Aucune alerte à afficher</p>`;
+    document.getElementById("alertBadge").style.display = "none";
+    return;
+  }
+
+  alertCount = alertes.length;
+  updateAlertBadge();
+
+  alertes.forEach((a, i) => {
+    const color = a.type === "paiement" ? "bg-red-500"
+                 : a.type === "expiration" ? "bg-orange-500"
+                 : "bg-gray-400";
+
+    const div = document.createElement("div");
+    div.className = "p-3 border-b border-gray-100 hover:bg-gray-50";
+    div.id = `alert-${a.id}`;
+    div.innerHTML = `
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-2 h-2 ${color} rounded-full"></div>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-gray-800">${a.prenom || ""} ${a.nom || ""}</p>
+            <p class="text-xs text-gray-500">${a.message}</p>
+          </div>
+        </div>
+        <div class="flex space-x-1">
+          <button onclick="ignoreAlertBackend('${a.id}')" class="text-gray-400 hover:text-orange-500 p-1" title="Ignorer">
+            <span class="text-xs">👁️‍🗨️</span>
+          </button>
+          <button onclick="resolveAlert('${a.id}')" class="text-gray-400 hover:text-red-500 p-1" title="Fermer">
+            <span class="text-xs">✕</span>
+          </button>
+        </div>
+      </div>
+    `;
+    panel.appendChild(div);
+  });
+}
+
+// ✅ Ignorer une alerte (PATCH backend)
+async function ignoreAlertBackend(id) {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/alertes/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ statut: "ignoree" })
+    });
+
+    if (!res.ok) throw new Error("Erreur API");
+
+    document.getElementById(`alert-${id}`)?.remove();
+    alertCount--;
+    updateAlertBadge();
+    showNotification("Alerte ignorée", "info");
+  } catch (err) {
+    console.error("Erreur ignoreAlertBackend:", err.message);
+    showNotification("❌ Impossible d’ignorer l’alerte", "error");
+  }
+}
+
+// ✅ Résoudre (fermer) une alerte
+async function resolveAlert(id) {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/alertes/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ statut: "resolue" })
+    });
+
+    if (!res.ok) throw new Error("Erreur API");
+
+    document.getElementById(`alert-${id}`)?.remove();
+    alertCount--;
+    updateAlertBadge();
+    showNotification("Alerte résolue", "success");
+  } catch (err) {
+    console.error("Erreur resolveAlert:", err.message);
+    showNotification("❌ Impossible de marquer comme résolue", "error");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadAdminAlerts();
+  setInterval(loadAdminAlerts, 120000);
+});
+
 
         function updateAlertBadge() {
             const badge = document.getElementById('alertBadge');
