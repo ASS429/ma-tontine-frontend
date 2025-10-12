@@ -2120,9 +2120,69 @@ function closeOnClickOutside(e) {
 }
 
 
-        function saveSettings() {
-            showNotification('Paramètres sauvegardés avec succès', 'success');
-        }
+        async function saveSettings() {
+  try {
+    const data = {
+      nom_app: document.querySelector('input[type="text"]').value,
+      email_contact: document.querySelector('input[type="email"]').value,
+      fuseau_horaire: document.querySelector('select').value,
+      prix_plan_premium: parseFloat(document.querySelectorAll('input[type="number"]')[0].value),
+      delai_grace: parseInt(document.querySelectorAll('input[type="number"]')[1].value),
+      alertes_automatiques: document.querySelectorAll('input[type="checkbox"]')[0].checked,
+      notif_nouveaux_abonnements: document.querySelectorAll('input[type="checkbox"]')[1].checked,
+      notif_paiements_retard: document.querySelectorAll('input[type="checkbox"]')[2].checked,
+      notif_rapports_mensuels: document.querySelectorAll('input[type="checkbox"]')[3].checked,
+      sessions_multiples: document.querySelectorAll('input[type="checkbox"]')[4].checked,
+      deux_fa: document.querySelectorAll('input[type="checkbox"]')[5].checked,
+    };
+
+    const res = await apiFetch(`${API_BASE}/admin/parametres`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+
+    if (!res.ok) throw new Error("Erreur de sauvegarde");
+
+    showNotification("✅ Paramètres sauvegardés avec succès", "success");
+  } catch (err) {
+    console.error("Erreur saveSettings:", err.message);
+    showNotification("❌ Impossible de sauvegarder les paramètres", "error");
+  }
+}
+
+async function loadSettings() {
+  try {
+    const res = await apiFetch(`${API_BASE}/admin/parametres`);
+    if (!res.ok) throw new Error("Erreur de chargement");
+    const data = await res.json();
+
+    if (data.nom_app)
+      document.querySelector('input[type="text"]').value = data.nom_app;
+    if (data.email_contact)
+      document.querySelector('input[type="email"]').value = data.email_contact;
+    if (data.fuseau_horaire)
+      document.querySelector('select').value = data.fuseau_horaire;
+
+    const nums = document.querySelectorAll('input[type="number"]');
+    nums[0].value = data.prix_plan_premium || 0;
+    nums[1].value = data.delai_grace || 7;
+
+    const checks = document.querySelectorAll('input[type="checkbox"]');
+    checks[0].checked = data.alertes_automatiques;
+    checks[1].checked = data.notif_nouveaux_abonnements;
+    checks[2].checked = data.notif_paiements_retard;
+    checks[3].checked = data.notif_rapports_mensuels;
+    checks[4].checked = data.sessions_multiples;
+    checks[5].checked = data.deux_fa;
+
+  } catch (err) {
+    console.error("Erreur loadSettings:", err.message);
+    showNotification("⚠️ Impossible de charger les paramètres", "error");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", loadSettings);
+
 
         function showNotification(message, type) {
             const colors = {
