@@ -51,6 +51,20 @@
       padding: 1.2rem !important;
     }
   }
+
+  #notificationPanel {
+  transition: all 0.2s ease-in-out;
+  transform-origin: top right;
+}
+#notificationPanel.hidden {
+  opacity: 0;
+  transform: scaleY(0.8);
+}
+#notificationPanel:not(.hidden) {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
     </style>
 
     <script>
@@ -104,7 +118,7 @@
 </div>
 
                 </div>
-                <span class="text-gray-600">Marie Dubois</span>
+                <span id="adminName" class="text-gray-600">Chargement...</span>
                 <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
                     Déconnexion
                 </button>
@@ -871,6 +885,26 @@
   if (!token || role !== "admin") {
     alert("⛔ Accès réservé aux administrateurs.");
     window.location.href = "index.html"; // ta page de connexion
+  }
+});
+
+document.addEventListener("DOMContentLoaded", async () => {
+  try {
+    const res = await apiFetch(`${API_BASE}/utilisateurs/me`);
+    if (!res.ok) throw new Error("Erreur chargement profil");
+
+    const user = await res.json();
+
+    // Vérifie qu'il s'agit bien d'un admin
+    if (user.role === "admin") {
+      document.getElementById("adminName").textContent =
+  user.nom_complet?.charAt(0).toUpperCase() + user.nom_complet?.slice(1).toLowerCase() || "Admin";
+    } else {
+      document.getElementById("adminName").textContent = "Utilisateur non-admin";
+    }
+  } catch (err) {
+    console.error("Erreur chargement admin:", err.message);
+    document.getElementById("adminName").textContent = "Inconnu";
   }
 });
 
@@ -2056,9 +2090,35 @@ async function exportTransactionsPDF() {
         }
 
         function toggleNotifications() {
-            const panel = document.getElementById('notificationPanel');
-            panel.classList.toggle('hidden');
-        }
+  const panel = document.getElementById('notificationPanel');
+
+  // Fermer les autres menus potentiels
+  document.querySelectorAll('.dropdown-panel').forEach(p => {
+    if (p !== panel) p.classList.add('hidden');
+  });
+
+  // Basculer la visibilité du panneau
+  panel.classList.toggle('hidden');
+
+  // Fermer automatiquement si on clique à l’extérieur
+  if (!panel.classList.contains('hidden')) {
+    document.addEventListener('click', closeOnClickOutside);
+  } else {
+    document.removeEventListener('click', closeOnClickOutside);
+  }
+}
+
+// 👇 Fonction utilitaire pour fermer si clic en dehors du panneau
+function closeOnClickOutside(e) {
+  const panel = document.getElementById('notificationPanel');
+  const button = document.querySelector('button[onclick="toggleNotifications()"]');
+
+  if (panel && !panel.contains(e.target) && !button.contains(e.target)) {
+    panel.classList.add('hidden');
+    document.removeEventListener('click', closeOnClickOutside);
+  }
+}
+
 
         function saveSettings() {
             showNotification('Paramètres sauvegardés avec succès', 'success');
