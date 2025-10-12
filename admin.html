@@ -262,6 +262,19 @@
                         <canvas id="revenueChart" width="400" height="200"></canvas>
                     </div>
                 </div>
+                <!-- Journal Système -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 mt-8">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <h2 class="text-lg font-semibold text-gray-800">🪶 Journal du Système</h2>
+    <button onclick="chargerDashboard()" class="text-sm text-violet-600 hover:underline">
+      🔄 Rafraîchir
+    </button>
+  </div>
+  <div class="p-4 max-h-96 overflow-y-auto" id="systemLogsContainer">
+    <p class="text-gray-500 text-sm text-center">Chargement des journaux...</p>
+  </div>
+</div>
+
             </div>
 
             <!-- 🌟 Section Abonnés -->
@@ -2564,6 +2577,41 @@ async function chargerDashboard() {
     revGrowth.textContent = `${data.croissance_revenus >= 0 ? "+" : ""}${data.croissance_revenus}%`;
     revGrowth.className = `text-sm font-medium ${data.croissance_revenus >= 0 ? "text-green-500" : "text-red-500"}`;
 
+    // ==============================
+// 🪶 Affichage des logs système
+// ==============================
+const logsContainer = document.getElementById("systemLogsContainer");
+logsContainer.innerHTML = "";
+
+if (data.system_logs && data.system_logs.length > 0) {
+  data.system_logs.forEach(log => {
+    const date = new Date(log.cree_le).toLocaleString("fr-FR", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+
+    // Choisir une icône selon le type d’action
+    let icon = "⚙️";
+    if (log.action.includes("checkGrace")) icon = "⏰";
+    if (log.action.includes("checkLate")) icon = "💸";
+
+    logsContainer.innerHTML += `
+      <div class="flex items-start space-x-3 border-b border-gray-100 py-3">
+        <div class="text-xl">${icon}</div>
+        <div>
+          <p class="text-gray-800 font-medium">${log.action}</p>
+          <p class="text-gray-600 text-sm">${log.details || "(aucun détail)"}</p>
+          <p class="text-gray-400 text-xs">${date}</p>
+        </div>
+      </div>`;
+  });
+} else {
+  logsContainer.innerHTML = `<p class="text-gray-500 text-sm text-center py-4">Aucun log système récent.</p>`;
+}
+
   } catch (err) {
     console.error("Erreur dashboard:", err.message);
   }
@@ -2634,6 +2682,7 @@ async function chargerGraphiqueRevenus() {
 
 document.addEventListener("DOMContentLoaded", () => {
   initDashboard();
+  setInterval(chargerDashboard, 5 * 60 * 1000);
 });
 
     </script>
