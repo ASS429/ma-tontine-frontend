@@ -707,9 +707,12 @@
                             <button class="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
                                 Changer le mot de passe
                             </button>
-                            <button class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-                                Activer 2FA
-                            </button>
+                            <button 
+  id="btn-2fa" 
+  class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
+  Activer 2FA
+</button>
+
                             <div class="flex items-center justify-between">
                                 <span class="text-sm font-medium text-gray-700">Sessions multiples</span>
                                 <label class="relative inline-flex items-center cursor-pointer">
@@ -2205,7 +2208,9 @@ async function loadSettings() {
     document.getElementById("chk-paiements-retard").checked = !!data.notif_paiements_retard;
     document.getElementById("chk-rapports").checked = !!data.notif_rapports_mensuels;
     document.getElementById("chk-sessions").checked = !!data.sessions_multiples;
-    // ⚠️ Le 2FA n’est pas encore activé côté table, on garde la valeur par défaut
+    document.getElementById("btn-2fa").textContent = data.deux_fa ? "Désactiver 2FA" : "Activer 2FA";
+    document.getElementById("btn-2fa").dataset.active = data.deux_fa ? "true" : "false";
+
   } catch (err) {
     console.error("Erreur loadSettings:", err.message);
     showNotification("⚠️ Impossible de charger les paramètres", "error");
@@ -2246,6 +2251,39 @@ async function saveSettings() {
     showNotification("❌ Échec de la sauvegarde", "error");
   }
 }
+
+// ============================================================
+// 🔐 ACTIVER / DÉSACTIVER LA DOUBLE AUTHENTIFICATION (2FA)
+// ============================================================
+document.getElementById("btn-2fa").addEventListener("click", async () => {
+  try {
+    const btn = document.getElementById("btn-2fa");
+    const currentState = btn.dataset.active === "true";
+    const newState = !currentState;
+
+    // Confirmer l’action
+    if (!confirm(`Voulez-vous vraiment ${newState ? "activer" : "désactiver"} la double authentification ?`)) {
+      return;
+    }
+
+    // 🔄 Envoi au backend pour mise à jour du paramètre `deux_fa`
+    const res = await apiFetch(`${API_BASE}/admin/parametres`, {
+      method: "POST",
+      body: JSON.stringify({ deux_fa: newState }),
+    });
+
+    if (!res.ok) throw new Error("Erreur API lors de la mise à jour 2FA");
+
+    // ✅ Retour visuel
+    btn.textContent = newState ? "Désactiver 2FA" : "Activer 2FA";
+    btn.dataset.active = newState ? "true" : "false";
+
+    showNotification(`✅ Double authentification ${newState ? "activée" : "désactivée"}`, "success");
+  } catch (err) {
+    console.error("Erreur bouton 2FA:", err.message);
+    showNotification("❌ Erreur lors de l’activation du 2FA", "error");
+  }
+});
 
 // Charger automatiquement à l’ouverture de la page admin
 document.addEventListener("DOMContentLoaded", loadSettings);
