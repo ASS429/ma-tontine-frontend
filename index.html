@@ -1663,9 +1663,32 @@ async function seConnecter(event) {
 
       // 🔹 Redirection si admin
       if (profilBackend.role === "admin") {
-        window.location.href = "admin.html";
-        return;
-      }
+  // ✅ Étape 2FA
+  const res2fa = await fetch(`${API_BASE}/auth/init-2fa`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: user.id })
+  });
+  const data2fa = await res2fa.json();
+
+  if (data2fa.active) {
+    const code = prompt("Entrez le code OTP reçu par email :");
+    const verif = await fetch(`${API_BASE}/auth/verify-2fa`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user.id, code })
+    });
+    const result = await verif.json();
+    if (!result.success) {
+      showNotification("❌ Code OTP invalide ou expiré.", "error");
+      return;
+    }
+  }
+
+  window.location.href = "admin.html";
+  return;
+}
+
     }
   } catch (err) {
     console.error("Erreur récupération profil backend:", err);
