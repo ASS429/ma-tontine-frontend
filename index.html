@@ -1681,15 +1681,15 @@ async function seConnecter(event) {
       console.log("🚀 Test envoi init-2fa pour", user.id);
       // 🧭 Si c’est un admin → vérifier si 2FA actif
       if (profilBackend.role === "admin") {
+        console.log("🌍 Appel à", `${API_BASE}/auth/init-2fa`);
         const res2fa = await fetch(`${API_BASE}/auth/init-2fa`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId: user.id })
         });
+        console.log("📡 Statut HTTP init-2fa:", res2fa.status);
         const data2fa = await res2fa.json();
-          console.log("🧩 Rôle récupéré :", profilBackend.role);
-          console.log("📦 Réponse brute init-2fa:", res2fa.status, data2fa);
-          console.log("🧭 data2fa.active type:", typeof data2fa.active);
+        console.log("📦 Réponse brute init-2fa:", data2fa);
         if (data2fa.active) {
           // 🔒 Afficher le champ 2FA et informer l'utilisateur
           document.getElementById("champ-2fa").style.display = "block";
@@ -1702,9 +1702,10 @@ async function seConnecter(event) {
         return;
       }
     }
-  } catch (err) {
-    console.error("Erreur récupération profil backend:", err);
-  }
+ } catch (err) {
+  console.error("❌ Erreur dans init-2fa:", err);
+  showNotification("Erreur connexion 2FA: " + (err.message || err), "error");
+}
 
   // 🔹 Cas utilisateur normal
   await chargerDepuisSupabase();  
