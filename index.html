@@ -749,6 +749,23 @@ label { font-size: 0.95rem; font-weight: 600; }
     >
   </div>
 
+  <div id="champ-2fa" style="display:none;">
+  <label class="block text-sm font-semibold text-gray-700 mb-3">Code 2FA</label>
+  <input 
+    type="text" 
+    id="code2fa" 
+    placeholder="Entrez le code reçu par email" 
+    class="form-input w-full"
+  >
+  <button 
+    type="button" 
+    onclick="valider2FA()" 
+    class="mt-4 w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded-lg font-medium transition-colors"
+  >
+    ✅ Valider le code
+  </button>
+</div>
+
   <button type="submit" class="btn-gradient btn-success w-full py-4 rounded-xl text-lg font-bold">
     ✅ Créer mon compte
   </button>
@@ -1606,6 +1623,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       // ➤ Connexion utilisateur
 async function seConnecter(event) { 
   event.preventDefault();
+
   const email = document.getElementById('emailConnexion').value.trim();
   const motPasse = document.getElementById('motPasseConnexion').value;
 
@@ -1614,6 +1632,7 @@ async function seConnecter(event) {
     return;
   }
 
+  // 🔐 Connexion Supabase
   const { data, error } = await sb.auth.signInWithPassword({ email, password: motPasse });
   if (error) {
     showNotification("❌ Connexion impossible: " + error.message, "error");
@@ -1626,7 +1645,7 @@ async function seConnecter(event) {
     return;
   }
 
-  // 🔹 Sauvegarder le vrai token JWT pour Render
+  // 💾 Sauvegarder le token JWT pour Render
   localStorage.setItem("token", session.access_token);
 
   utilisateurConnecte = {
@@ -1635,12 +1654,12 @@ async function seConnecter(event) {
     email: user.email
   };
 
-  // 🔹 Vérifier si un profil existe dans "utilisateurs"
+  // 🔍 Vérifier si le profil existe déjà
   const { data: profil, error: profilError } = await sb
     .from('utilisateurs')
     .select('*')
     .eq('id', user.id)
-    .maybeSingle(); 
+    .maybeSingle();
 
   if (!profil && !profilError) {
     await sb.from('utilisateurs').insert({
@@ -1650,50 +1669,41 @@ async function seConnecter(event) {
     });
   }
 
-  // ⚡ Récupérer les infos complètes depuis ton backend Render
+  // ⚡ Vérification via ton backend
   try {
-    const res = await apiFetch(API_BASE + "/utilisateurs/me"); 
+    const res = await apiFetch(API_BASE + "/utilisateurs/me");
     if (res.ok) {
       const profilBackend = await res.json();
-
-      // Sauvegarder rôle, plan et statut paiement
       localStorage.setItem("userRole", profilBackend.role);
       localStorage.setItem("userPlan", profilBackend.plan);
       localStorage.setItem("paymentStatus", profilBackend.payment_status);
 
-      // 🔹 Redirection si admin
+      // 🧭 Si c’est un admin → vérifier si 2FA actif
       if (profilBackend.role === "admin") {
-  // ✅ Étape 2FA
-  const res2fa = await fetch(`${API_BASE}/auth/init-2fa`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId: user.id })
-  });
-  const data2fa = await res2fa.json();
+        const res2fa = await fetch(`${API_BASE}/auth/init-2fa`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId: user.id })
+        });
+        const data2fa = await res2fa.json();
 
-  if (data2fa.active) {
-    const code = prompt("Entrez le code OTP reçu par email :");
-    const verif = await fetch(`${API_BASE}/auth/verify-2fa`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user.id, code })
-    });
-    const result = await verif.json();
-    if (!result.success) {
-      showNotification("❌ Code OTP invalide ou expiré.", "error");
-      return;
-    }
-  }
+        if (data2fa.active) {
+          // 🔒 Afficher le champ 2FA et informer l'utilisateur
+          document.getElementById("champ-2fa").style.display = "block";
+          showNotification("🔐 Un code vous a été envoyé par email. Entrez-le pour continuer.", "info");
+          return; // On attend la validation du code
+        }
 
-  window.location.href = "admin.html";
-  return;
-}
-
+        // Si 2FA désactivé → accès direct
+        window.location.href = "admin.html";
+        return;
+      }
     }
   } catch (err) {
     console.error("Erreur récupération profil backend:", err);
   }
 
+  // 🔹 Cas utilisateur normal
   await chargerDepuisSupabase();  
   initialiserApplication();
   afficherInterfaceConnectee();
