@@ -2222,6 +2222,8 @@ async function loadSettings() {
 // ============================================================
 async function saveSettings() {
   try {
+    const deuxFAActive = document.getElementById("btn-2fa").dataset.active === "true";
+
     const payload = {
       nom_app: document.getElementById("app-name").value,
       email_contact: document.getElementById("contact-email").value,
@@ -2233,7 +2235,7 @@ async function saveSettings() {
       notif_paiements_retard: document.getElementById("chk-paiements-retard").checked,
       notif_rapports_mensuels: document.getElementById("chk-rapports").checked,
       sessions_multiples: document.getElementById("chk-sessions").checked,
-      deux_fa: false // à gérer plus tard
+      deux_fa: deuxFAActive // ✅ récupérer la vraie valeur
     };
 
     console.log("📤 Sauvegarde paramètres :", payload);
