@@ -1709,6 +1709,33 @@ async function seConnecter(event) {
   afficherInterfaceConnectee();
 }
 
+async function valider2FA() {
+  const userId = utilisateurConnecte?.id;
+  const code = document.getElementById("code2fa").value.trim();
+
+  if (!code) {
+    showNotification("⚠️ Entrez votre code 2FA", "warning");
+    return;
+  }
+
+  const verif = await fetch(`${API_BASE}/auth/verify-2fa`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId, code })
+  });
+
+  const result = await verif.json();
+
+  if (!result.success) {
+    showNotification("❌ Code OTP invalide ou expiré.", "error");
+    return;
+  }
+
+  showNotification("✅ Vérification réussie !", "success");
+  window.location.href = "admin.html";
+}
+
+
 async function sInscrire(event) {
   event.preventDefault();
 
