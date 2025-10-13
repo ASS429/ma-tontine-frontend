@@ -1688,6 +1688,8 @@ async function seConnecter(event) {
         });
         const data2fa = await res2fa.json();
           console.log("🧩 Rôle récupéré :", profilBackend.role);
+          console.log("📦 Réponse brute init-2fa:", res2fa.status, data2fa);
+          console.log("🧭 data2fa.active type:", typeof data2fa.active);
         if (data2fa.active) {
           // 🔒 Afficher le champ 2FA et informer l'utilisateur
           document.getElementById("champ-2fa").style.display = "block";
