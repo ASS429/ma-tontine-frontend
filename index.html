@@ -1687,7 +1687,7 @@ async function seConnecter(event) {
           body: JSON.stringify({ userId: user.id })
         });
         const data2fa = await res2fa.json();
-
+          console.log("🧩 Rôle récupéré :", profilBackend.role);
         if (data2fa.active) {
           // 🔒 Afficher le champ 2FA et informer l'utilisateur
           document.getElementById("champ-2fa").style.display = "block";
