@@ -2370,7 +2370,14 @@ function afficherTontines() {
     liste.appendChild(div);
   });
 }
+document.addEventListener("DOMContentLoaded", () => {
 
+  afficherTontines();
+  
+  setInterval(() => {
+    afficherTontines();
+  }, 30000);
+});
 function masquerGuide() {
     localStorage.setItem('guideMasque', 'true'); // Sauvegarde le choix
     afficherTontines(); // Recharge la page d’accueil sans le guide
