@@ -1678,6 +1678,7 @@ async function seConnecter(event) {
       localStorage.setItem("userPlan", profilBackend.plan);
       localStorage.setItem("paymentStatus", profilBackend.payment_status);
 
+      console.log("🚀 Test envoi init-2fa pour", user.id);
       // 🧭 Si c’est un admin → vérifier si 2FA actif
       if (profilBackend.role === "admin") {
         const res2fa = await fetch(`${API_BASE}/auth/init-2fa`, {
