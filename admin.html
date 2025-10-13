@@ -65,6 +65,69 @@
   transform: scaleY(1);
 }
 
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease-out;
+
+  @keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.stat-card {
+  animation: fade-in 0.4s ease-in-out;
+}
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fade-in 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.6s ease-in-out both;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.5s ease-in-out both;
+  }
+
+  /* Amélioration responsive pour canvas (si tu utilises Chart.js) */
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  /* Small helper to avoid very long text overflow in KPI cards */
+  .truncate-ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    
+  /* Animation fade/scale */
+  .modal {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .modal.hidden {
+    opacity: 0;
+    transform: scale(0.95);
+    pointer-events: none;
+  }
+  .modal.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+
     </style>
 
     <script>
@@ -87,46 +150,59 @@
   });
 }
 
-
 </script>
 
 </head>
 <body class="bg-gray-50">
-    <!-- Header -->
-    <header class="bg-white shadow-sm border-b border-gray-200 fixed w-full top-0 z-50">
-        <div class="flex items-center justify-between px-6 py-4">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 bg-violet-600 rounded-lg flex items-center justify-center">
-                    <span class="text-white font-bold text-sm">A</span>
-                </div>
-                <h1 class="text-xl font-semibold text-gray-800">BOUTIQUE GESTION</h1>
-            </div>
-            <div class="flex items-center space-x-4">
-                <!-- Notification Bell -->
-                <div class="relative">
-                    <button onclick="toggleNotifications()" class="p-2 text-gray-600 hover:text-violet-600 relative">
-                        <span class="text-xl">🔔</span>
-                        <span id="alertBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center alert-badge">3</span>
-                    </button>
-                    <div id="notificationPanel" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
-  <div class="p-4 border-b border-gray-200">
-    <h3 class="font-semibold text-gray-800">Alertes de Paiement</h3>
-  </div>
-  <div class="max-h-64 overflow-y-auto" id="alertContainer">
-    <!-- Les alertes seront injectées ici dynamiquement -->
-  </div>
-</div>
+    <!-- Header amélioré -->
+<header class="bg-white/80 backdrop-blur-sm shadow-sm border-b border-gray-200 fixed w-full top-0 z-50 transition-all duration-300">
+  <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4">
+    <!-- Logo + Titre -->
+    <div class="flex items-center space-x-3">
+      <div class="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-r from-violet-600 to-purple-500 rounded-xl flex items-center justify-center shadow-md">
+        <span class="text-white font-bold text-base sm:text-lg">A</span>
+      </div>
+      <h1 class="text-lg sm:text-xl font-semibold text-gray-800 tracking-wide">Boutique Gestion</h1>
+    </div>
 
-                </div>
-                <span id="adminName" class="text-gray-600">Chargement...</span>
-                <button onclick="logout()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                    Déconnexion
-                </button>
-            </div>
+    <!-- Partie droite -->
+    <div class="flex items-center space-x-3 sm:space-x-5">
+      <!-- Notification Bell -->
+      <div class="relative">
+        <button onclick="toggleNotifications()" 
+                class="p-2 text-gray-600 hover:text-violet-600 transition-colors duration-200 relative focus:outline-none focus:ring-2 focus:ring-violet-400 rounded-full">
+          <span class="text-2xl sm:text-xl">🔔</span>
+          <span id="alertBadge" 
+                class="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[10px] sm:text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center font-semibold shadow-md">
+            3
+          </span>
+        </button>
+
+        <!-- Notifications Panel -->
+        <div id="notificationPanel" 
+             class="hidden absolute right-0 mt-3 w-72 sm:w-80 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden z-50 animate-fade-in">
+          <div class="p-4 border-b border-gray-200">
+            <h3 class="font-semibold text-gray-800 text-sm sm:text-base">Alertes de Paiement</h3>
+          </div>
+          <div class="max-h-64 overflow-y-auto" id="alertContainer">
+            <!-- Alertes dynamiques -->
+          </div>
         </div>
-    </header>
+      </div>
 
+      <!-- Nom admin -->
+      <span id="adminName" class="text-gray-700 text-sm sm:text-base font-medium truncate max-w-[100px] sm:max-w-none">
+        Chargement...
+      </span>
 
+      <!-- Bouton Déconnexion -->
+      <button onclick="logout()" 
+              class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 shadow-sm hover:shadow-md active:scale-95">
+        Déconnexion
+      </button>
+    </div>
+  </div>
+</header>
 
     <!-- Dashboard Container -->
     <div id="dashboardContainer">
@@ -188,146 +264,162 @@
 
         <!-- Main Content -->
         <main id="mainContent" class="flex-1 ml-64 p-8 transition-all duration-300">
-            <!-- Dashboard Section -->
-            <div id="dashboard" class="section active">
-                <!-- Statistics Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm font-medium">Total Abonnés</p>
-                                <p id="kpiTotalAbonnes" class="text-2xl font-bold text-gray-800 mt-1">--</p>
-                            </div>
-                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <span class="text-blue-600 text-xl">👥</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex items-center">
-                            <span class="text-green-500 text-sm font-medium">+12%</span>
-                            <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
-                        </div>
-                    </div>
+            <!-- Dashboard Section Améliorée -->
+<div id="dashboard" class="section active px-4 sm:px-6 pt-24 pb-10">
 
-                    <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-  <div class="flex items-center justify-between">
-    <div>
-      <p class="text-gray-500 text-sm font-medium">Abonnés Actifs</p>
-      <p id="kpiAbonnesActifs" class="text-2xl font-bold text-gray-800 mt-1">--</p>
+  <!-- Statistiques principales -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+
+    <!-- Total Abonnés -->
+    <div class="stat-card bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg p-6 border border-gray-100 transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-500 text-sm font-medium">Total Abonnés</p>
+          <p id="kpiTotalAbonnes" class="text-3xl font-bold text-gray-800 mt-1">--</p>
+        </div>
+        <div class="w-12 h-12 bg-gradient-to-r from-blue-100 to-blue-200 rounded-xl flex items-center justify-center shadow-inner">
+          <span class="text-blue-600 text-2xl">👥</span>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center">
+        <span class="text-green-500 text-sm font-medium">+12%</span>
+        <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
+      </div>
     </div>
-    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-      <span class="text-green-600 text-xl">✅</span>
+
+    <!-- Abonnés Actifs -->
+    <div class="stat-card bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg p-6 border border-gray-100 transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-500 text-sm font-medium">Abonnés Actifs</p>
+          <p id="kpiAbonnesActifs" class="text-3xl font-bold text-gray-800 mt-1">--</p>
+        </div>
+        <div class="w-12 h-12 bg-gradient-to-r from-green-100 to-emerald-200 rounded-xl flex items-center justify-center shadow-inner">
+          <span class="text-green-600 text-2xl">✅</span>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center">
+        <span class="text-green-500 text-sm font-medium">+8%</span>
+        <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
+      </div>
+    </div>
+
+    <!-- Revenus Mensuels -->
+    <div class="stat-card bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg p-6 border border-gray-100 transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-500 text-sm font-medium">Revenus Mensuels</p>
+          <p id="kpiRevenusMensuels" class="text-3xl font-bold text-gray-800 mt-1">--</p>
+          <span id="kpiRevenusCroissance" class="text-green-500 text-sm font-medium">--%</span>
+        </div>
+        <div class="w-12 h-12 bg-gradient-to-r from-violet-100 to-purple-200 rounded-xl flex items-center justify-center shadow-inner">
+          <span class="text-violet-600 text-2xl">💰</span>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center">
+        <span class="text-green-500 text-sm font-medium">+15%</span>
+        <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
+      </div>
+    </div>
+
+    <!-- Alertes Paiement -->
+    <div class="stat-card bg-white/90 backdrop-blur-sm rounded-2xl shadow-md hover:shadow-lg p-6 border border-gray-100 transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-gray-500 text-sm font-medium">Alertes Paiement</p>
+          <p id="kpiAlertesPaiement" class="text-3xl font-bold text-red-600 mt-1">--</p>
+        </div>
+        <div class="w-12 h-12 bg-gradient-to-r from-red-100 to-rose-200 rounded-xl flex items-center justify-center shadow-inner">
+          <span class="text-red-600 text-2xl">⚠️</span>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center">
+        <span class="text-red-500 text-sm font-medium">Retards</span>
+        <span class="text-gray-500 text-sm ml-2">à traiter</span>
+      </div>
     </div>
   </div>
-  <div class="mt-4 flex items-center">
-    <span class="text-green-500 text-sm font-medium">+8%</span>
-    <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
+
+  <!-- Graphique des revenus -->
+  <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md border border-gray-100 hover:shadow-lg transition-all duration-300">
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h2 class="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2">
+        📊 Évolution des Revenus
+      </h2>
+      <button onclick="chargerDashboard()" class="text-sm text-violet-600 hover:underline hover:text-violet-700">🔄 Actualiser</button>
+    </div>
+    <div class="p-6">
+      <canvas id="revenueChart" width="400" height="200"></canvas>
+    </div>
+  </div>
+
+  <!-- Journal du système -->
+  <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md border border-gray-100 mt-10 hover:shadow-lg transition-all duration-300">
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h2 class="text-lg sm:text-xl font-semibold text-gray-800 flex items-center gap-2">🪶 Journal du Système</h2>
+      <button onclick="chargerDashboard()" class="text-sm text-violet-600 hover:underline hover:text-violet-700">🔄 Rafraîchir</button>
+    </div>
+    <div class="p-4 max-h-96 overflow-y-auto" id="systemLogsContainer">
+      <p class="text-gray-500 text-sm text-center">Chargement des journaux...</p>
+    </div>
   </div>
 </div>
 
-
-                    <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm font-medium">Revenus Mensuels</p>
-                                <p id="kpiRevenusMensuels" class="text-2xl font-bold text-gray-800 mt-1">--</p>
-                                <span id="kpiRevenusCroissance" class="text-green-500 text-sm font-medium">--%</span>
-                            </div>
-                            <div class="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center">
-                                <span class="text-violet-600 text-xl">💰</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex items-center">
-                            <span class="text-green-500 text-sm font-medium">+15%</span>
-                            <span class="text-gray-500 text-sm ml-2">vs mois dernier</span>
-                        </div>
-                    </div>
-
-                    <div class="stat-card bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-gray-500 text-sm font-medium">Alertes Paiement</p>
-                                <p id="kpiAlertesPaiement" class="text-2xl font-bold text-red-600 mt-1">--</p>
-                            </div>
-                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                                <span class="text-red-600 text-xl">⚠️</span>
-                            </div>
-                        </div>
-                        <div class="mt-4 flex items-center">
-                            <span class="text-red-500 text-sm font-medium">Retards</span>
-                            <span class="text-gray-500 text-sm ml-2">à traiter</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Revenue Chart -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <h2 class="text-lg font-semibold text-gray-800">Évolution des Revenus</h2>
-                    </div>
-                    <div class="p-6">
-                        <canvas id="revenueChart" width="400" height="200"></canvas>
-                    </div>
-                </div>
-                <!-- Journal Système -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 mt-8">
-  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-    <h2 class="text-lg font-semibold text-gray-800">🪶 Journal du Système</h2>
-    <button onclick="chargerDashboard()" class="text-sm text-violet-600 hover:underline">
-      🔄 Rafraîchir
-    </button>
+            <!-- 🌙 Section Rapports Mensuels -->
+<div id="reports" class="section hidden px-4 sm:px-6 pt-24 pb-10 animate-fade-in">
+  <!-- Titre -->
+  <div class="mb-8">
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+      📊 Rapports Mensuels
+    </h1>
+    <p class="text-gray-500 text-sm sm:text-base">Analyse automatique des performances par mois</p>
   </div>
-  <div class="p-4 max-h-96 overflow-y-auto" id="systemLogsContainer">
-    <p class="text-gray-500 text-sm text-center">Chargement des journaux...</p>
+
+  <!-- Tableau des rapports -->
+  <div class="bg-white/90 backdrop-blur-sm rounded-2xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300">
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm sm:text-base">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-6 py-4 text-left font-semibold text-gray-600 uppercase tracking-wider">Mois</th>
+            <th class="px-6 py-4 text-left font-semibold text-gray-600 uppercase tracking-wider">Revenus (FCFA)</th>
+            <th class="px-6 py-4 text-left font-semibold text-gray-600 uppercase tracking-wider">Total Abonnés</th>
+            <th class="px-6 py-4 text-left font-semibold text-gray-600 uppercase tracking-wider">Premium</th>
+            <th class="px-6 py-4 text-left font-semibold text-gray-600 uppercase tracking-wider">Nouveaux</th>
+            <th class="px-6 py-4 text-left font-semibold text-gray-600 uppercase tracking-wider">Créé le</th>
+          </tr>
+        </thead>
+        <tbody id="tableRapports" class="divide-y divide-gray-100">
+          <tr>
+            <td colspan="6" class="text-center text-gray-500 py-8">Chargement des rapports...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-            </div>
-
-            <!-- Rapports Mensuels Section -->
-<div id="reports" class="section hidden">
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-800 mb-2">📊 Rapports Mensuels</h1>
-    <p class="text-gray-500">Analyse automatique des performances par mois</p>
-  </div>
-
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-x-auto">
-    <table class="min-w-full border-collapse">
-      <thead class="bg-gray-50 border-b">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Mois</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Revenus (FCFA)</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Total Abonnés</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Premium</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nouveaux</th>
-          <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Créé le</th>
-        </tr>
-      </thead>
-      <tbody id="tableRapports" class="divide-y divide-gray-200">
-        <tr>
-          <td colspan="6" class="text-center text-gray-500 py-6">Chargement des rapports...</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-            <!-- 🌟 Section Abonnés -->
-<div id="subscribers" class="section px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 rounded-2xl shadow-sm">
-  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+<!-- 🌟 Section Gestion des Abonnés -->
+<div id="subscribers" class="section px-4 sm:px-6 pt-24 pb-10 bg-gray-50/70 backdrop-blur-sm rounded-2xl shadow-sm animate-fade-in">
+  <!-- En-tête -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-800 mb-2">Gestion des Abonnés</h1>
+      <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">👥 Gestion des Abonnés</h1>
       <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        <!-- Recherche -->
         <input
           type="text"
           id="subscriberSearch"
           placeholder="🔍 Rechercher un abonné..."
           onkeyup="filterSubscribers()"
-          class="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent"
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-transparent text-sm sm:text-base shadow-sm"
         />
+
+        <!-- Filtres -->
         <select
           id="statusFilter"
           onchange="filterSubscribers()"
-          class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white"
+          class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white text-sm sm:text-base shadow-sm"
         >
           <option value="">Tous les statuts</option>
           <option value="Actif">Actif</option>
@@ -338,7 +430,7 @@
         <select
           id="planFilter"
           onchange="filterSubscribers()"
-          class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white"
+          class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white text-sm sm:text-base shadow-sm"
         >
           <option value="">Tous les plans</option>
           <option value="Free">Free</option>
@@ -349,56 +441,65 @@
       </div>
     </div>
 
+    <!-- Bouton Ajouter -->
     <button
       onclick="openAddSubscriberModal()"
-      class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2"
+      class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center gap-2"
     >
-      <span class="text-lg">👤</span>
+      <span class="text-lg">➕</span>
       <span>Ajouter Abonné</span>
     </button>
   </div>
 
-  <!-- 🧩 Grille des abonnés -->
-  <div id="subscribersGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-    <!-- Les cartes seront ajoutées dynamiquement -->
+  <!-- Grille des abonnés -->
+  <div
+    id="subscribersGrid"
+    class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+  >
+    <!-- Les cartes abonnés seront ajoutées dynamiquement ici -->
   </div>
 </div>
 
 <!-- 💰 Section Revenus -->
-<div id="revenue" class="section mt-10 px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 rounded-2xl shadow-sm">
+<div id="revenue" class="section mt-10 px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 rounded-2xl shadow-sm animate-fadeIn">
   <div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-800 mb-4">Gestion des Revenus</h1>
+    <h1 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+      💰 Gestion des Revenus
+    </h1>
 
     <!-- Cartes principales -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <div class="bg-gradient-to-r from-violet-500 to-purple-600 rounded-xl p-6 text-white shadow-md">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Solde Principal</h3>
-        <span class="text-2xl">💳</span>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <!-- Solde Principal -->
+      <div class="bg-gradient-to-r from-violet-500 to-purple-600 rounded-2xl p-6 text-white shadow-lg transition transform hover:scale-105 hover:shadow-xl duration-300">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Solde Principal</h3>
+          <span class="text-2xl">💳</span>
+        </div>
+        <p class="text-3xl font-bold mb-2">FCFA0.00</p>
+        <p class="text-violet-200 text-sm">Disponible immédiatement</p>
       </div>
-      <p class="text-3xl font-bold mb-2">FCFA0.00</p>
-      <p class="text-violet-200 text-sm">Disponible immédiatement</p>
+
+      <!-- Revenus du Mois -->
+      <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl p-6 text-white shadow-lg transition transform hover:scale-105 hover:shadow-xl duration-300">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Revenus ce Mois</h3>
+          <span class="text-2xl">📈</span>
+        </div>
+        <p class="text-3xl font-bold mb-2">FCFA0.00</p>
+        <p class="text-green-200 text-sm">+0% vs mois dernier</p>
+      </div>
+
+      <!-- Croissance -->
+      <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-lg transition transform hover:scale-105 hover:shadow-xl duration-300">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold">Croissance</h3>
+          <span class="text-2xl">📊</span>
+        </div>
+        <p class="text-3xl font-bold mb-2">0%</p>
+        <p class="text-orange-200 text-sm">Évolution mensuelle</p>
+      </div>
     </div>
 
-    <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl p-6 text-white shadow-md">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Revenus ce Mois</h3>
-        <span class="text-2xl">📈</span>
-      </div>
-      <p class="text-3xl font-bold mb-2">FCFA0.00</p>
-      <p class="text-green-200 text-sm">+0% vs mois dernier</p>
-    </div>
-
-    <div class="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-6 text-white shadow-md">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-semibold">Croissance</h3>
-        <span class="text-2xl">📊</span>
-      </div>
-      <p class="text-3xl font-bold mb-2">0%</p>
-      <p class="text-orange-200 text-sm">Évolution mensuelle</p>
-    </div>
-  </div>
-  
     <!-- Filtres et recherche -->
     <div class="flex flex-col md:flex-row items-center justify-between gap-4">
       <input
@@ -406,12 +507,12 @@
         id="revenueSearchInput"
         onkeyup="filterRevenue()"
         placeholder="🔍 Rechercher un revenu..."
-        class="w-full md:w-2/3 px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500"
+        class="w-full md:w-2/3 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 transition"
       />
       <select
         id="revenueMethodFilter"
         onchange="filterRevenue()"
-        class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white"
+        class="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white transition"
       >
         <option value="">Toutes les méthodes</option>
         <option value="wave">Wave</option>
@@ -421,32 +522,33 @@
     </div>
 
     <!-- Bouton PDF -->
-    <div class="flex justify-end mt-3">
+    <div class="flex justify-end mt-4">
       <button
         onclick="exportRevenuePDF()"
-        class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-5 py-2 rounded-xl text-sm font-medium shadow-lg transition-transform hover:scale-105"
+        class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium shadow-md transition-transform hover:scale-105 duration-300"
       >
         📄 Exporter en PDF
       </button>
     </div>
 
     <!-- Liste filtrée -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 mt-6 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 mt-6 overflow-x-auto">
       <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <h2 class="text-lg font-semibold text-gray-800">Revenus filtrés</h2>
       </div>
-      <div id="revenueTableBody" class="divide-y divide-gray-100">
-        <!-- Contenu généré dynamiquement -->
+      <div id="revenueTableBody" class="divide-y divide-gray-100 min-w-full">
+        <div class="text-center text-gray-500 py-6">Aucun revenu trouvé</div>
       </div>
     </div>
 
+    <!-- Période -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-6">
       <div>
-        <label class="text-sm font-medium text-gray-700">Période:</label>
+        <label class="text-sm font-medium text-gray-700">Période :</label>
         <select
           id="revenuePeriodFilter"
           onchange="filterRevenue()"
-          class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white"
+          class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white transition"
         >
           <option value="all">Tous les revenus</option>
           <option value="daily">Journalier</option>
@@ -460,47 +562,47 @@
     </div>
   </div>
 
-
   <!-- Actions rapides -->
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8 mt-8">
     <button
       onclick="generateReport()"
-      class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition transform hover:-translate-y-1"
+      class="bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-md hover:scale-105 transition duration-300 transform"
     >
       <div class="text-center">
-        <span class="text-2xl mb-2 block">📊</span>
+        <span class="text-3xl mb-2 block">📊</span>
         <p class="font-medium text-gray-800">Rapport</p>
       </div>
     </button>
     <button
       onclick="showTransactionHistory()"
-      class="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition transform hover:-translate-y-1"
+      class="bg-white border border-gray-200 rounded-2xl p-4 hover:shadow-md hover:scale-105 transition duration-300 transform"
     >
       <div class="text-center">
-        <span class="text-2xl mb-2 block">📋</span>
+        <span class="text-3xl mb-2 block">📋</span>
         <p class="font-medium text-gray-800">Historique</p>
       </div>
     </button>
   </div>
 
   <!-- Transactions récentes -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-fadeIn">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+      <span class="text-xl">💸</span>
       <h2 class="text-lg font-semibold text-gray-800">Transactions Récentes</h2>
     </div>
     <div id="transactionsList" class="divide-y divide-gray-100">
-      <!-- Contenu dynamique -->
+      <div class="text-center text-gray-500 py-6">Aucune transaction récente</div>
     </div>
   </div>
 </div>
 
-          <!-- Accounts Section -->
-<div id="accounts" class="section">
-  <div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-800 mb-2">Mes Comptes</h1>
-    <div class="flex items-center space-x-4 mt-4">
-      <label class="text-sm font-medium text-gray-700">Période:</label>
-      <select id="accountsPeriodFilter" onchange="filterAccounts()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
+<!-- 🧾 Section Comptes -->
+<div id="accounts" class="section mt-10 px-4 sm:px-6 lg:px-8 py-6 bg-gray-50 rounded-2xl shadow-sm animate-fadeIn">
+  <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <h1 class="text-2xl font-bold text-gray-800 flex items-center gap-2">🏦 Mes Comptes</h1>
+    <div class="flex items-center gap-3">
+      <label class="text-sm font-medium text-gray-700">Période :</label>
+      <select id="accountsPeriodFilter" onchange="filterAccounts()" class="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 bg-white transition">
         <option value="all">Tous les montants</option>
         <option value="daily">Journalier</option>
         <option value="weekly">Hebdomadaire</option>
@@ -512,31 +614,36 @@
     </div>
   </div>
 
-  <!-- 🔹 Comptes dynamiques -->
+  <!-- Comptes dynamiques -->
   <div id="accountsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-    <!-- Les comptes sont insérés ici via JS -->
+    <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 text-center hover:shadow-lg hover:scale-105 transition duration-300">
+      <span class="text-3xl mb-3 block">💼</span>
+      <h3 class="font-semibold text-gray-800">Compte Principal</h3>
+      <p class="text-violet-600 font-bold text-xl mt-2">FCFA 0</p>
+    </div>
   </div>
 
-  <!-- 🔹 Résumé des comptes -->
-  <div class="mt-8 bg-white rounded-xl shadow-sm border border-gray-100">
-    <div class="px-6 py-4 border-b border-gray-200">
+  <!-- Résumé des comptes -->
+  <div class="mt-8 bg-white rounded-2xl shadow-sm border border-gray-100 animate-fadeIn">
+    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-2">
+      <span class="text-xl">📘</span>
       <h2 class="text-lg font-semibold text-gray-800">Résumé des Comptes</h2>
     </div>
     <div class="p-6">
-      <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
-        <div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div class="animate-fadeIn">
           <p id="totalDisponible" class="text-2xl font-bold text-gray-800">FCFA0</p>
           <p class="text-sm text-gray-500">Total Disponible</p>
         </div>
-        <div>
+        <div class="animate-fadeIn">
           <p id="totalEntrees" class="text-2xl font-bold text-green-600">FCFA0</p>
           <p class="text-sm text-gray-500">Entrées Aujourd'hui</p>
         </div>
-        <div>
+        <div class="animate-fadeIn">
           <p id="totalSorties" class="text-2xl font-bold text-red-600">FCFA0</p>
           <p class="text-sm text-gray-500">Sorties Aujourd'hui</p>
         </div>
-        <div>
+        <div class="animate-fadeIn">
           <p id="beneficeNet" class="text-2xl font-bold text-violet-600">FCFA0</p>
           <p class="text-sm text-gray-500">Bénéfice Net</p>
         </div>
@@ -545,359 +652,333 @@
   </div>
 </div>
 
-            <!-- Analytics Section -->
-            <div id="analytics" class="section">
-                <div class="mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Analyses et Chiffres</h1>
-                </div>
-
-                <!-- KPI Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-sm font-medium text-gray-500">Chiffre d'Affaires</h3>
-      <span class="text-green-500">📈</span>
-    </div>
-    <p id="kpiChiffreAffaires" class="text-2xl font-bold text-gray-800">--</p>
-    <p id="kpiCroissance" class="text-sm text-green-600 mt-2">Chargement...</p>
+            <!-- =========================
+     Analytics Section (Améliorée)
+     ========================= -->
+<div id="analytics" class="section px-4 sm:px-6 lg:px-8 pt-8 pb-10 animate-fadeIn">
+  <div class="mb-6">
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">📊 Analyses et Chiffres</h1>
+    <p class="text-sm text-gray-500">Vue d'ensemble des KPI et graphiques clés</p>
   </div>
 
-  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-sm font-medium text-gray-500">Taux de Conversion</h3>
-    <span class="text-blue-500">🎯</span>
-  </div>
-  <p id="kpiConversionValeur" class="text-2xl font-bold text-gray-800">--%</p>
-  <p id="kpiConversionTexte" class="text-sm text-blue-600 mt-2">Premium / Total utilisateurs</p>
-</div>
-
-  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-    <div class="flex items-center justify-between mb-4">
-      <h3 class="text-sm font-medium text-gray-500">Valeur Totale Comptes</h3>
-      <span class="text-violet-500">💎</span>
-    </div>
-    <p id="kpiValeurMoyenne" class="text-2xl font-bold text-gray-800">--</p>
-    <p class="text-sm text-violet-600 mt-2">Total Wave / Orange / Espèces</p>
-  </div>
-
-  <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-  <div class="flex items-center justify-between mb-4">
-    <h3 class="text-sm font-medium text-gray-500">Taux de Rétention</h3>
-    <span class="text-orange-500">🔄</span>
-  </div>
-  <p id="kpiRetentionValeur" class="text-2xl font-bold text-gray-800">--%</p>
-  <p id="kpiRetentionTexte" class="text-sm text-orange-600 mt-2">Premium actifs avec expiration future</p>
-</div>
-</div>
-
-                <!-- Charts -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-800">Répartition des Revenus</h2>
-                        </div>
-                        <div class="p-6">
-                            <canvas id="revenueBreakdownChart" width="400" height="300"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-800">Croissance Mensuelle</h2>
-                        </div>
-                        <div class="p-6">
-                            <canvas id="growthChart" width="400" height="300"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Settings Section -->
-            <div id="settings" class="section">
-                <div class="mb-6">
-                    <h1 class="text-2xl font-bold text-gray-800 mb-2">Paramètres</h1>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <!-- General Settings -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-800">Paramètres Généraux</h2>
-                        </div>
-                        <div class="p-6 space-y-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Nom de l'application</label>
-                                <input type="text" id="app-name" value="Mon SaaS" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Email de contact</label>
-                                <input type="email" id="contact-email" value="contact@monsaas.com" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Fuseau horaire</label>
-                                <select id="timezone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                                    <option>Europe/Paris</option>
-                                    <option>Europe/London</option>
-                                    <option>America/New_York</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Payment Settings -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-800">Paramètres de Paiement</h2>
-                        </div>
-                        <div class="p-6 space-y-6">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Prix Plan Premium (FCFA)</label>
-                                <input type="number" id="premium-price" value="5000" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Délai de grâce (jours)</label>
-                                <input type="number" id="grace-delay" value="7" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-gray-700">Alertes automatiques</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="chk-alertes-auto" checked class="sr-only peer">
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Notification Settings -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-800">Notifications</h2>
-                        </div>
-                        <div class="p-6 space-y-4">
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-gray-700">Nouveaux abonnements</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="chk-nouveaux-abos" checked class="sr-only peer">
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
-                                </label>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-gray-700">Paiements en retard</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="chk-paiements-retard" checked class="sr-only peer">
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
-                                </label>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-gray-700">Rapports mensuels</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="chk-rapports" class="sr-only peer">
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Security Settings -->
-                    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-semibold text-gray-800">Sécurité</h2>
-                        </div>
-                        <div class="p-6 space-y-6">
-                            <button class="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-                                Changer le mot de passe
-                            </button>
-                            <button 
-  id="btn-2fa" 
-  class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors">
-  Activer 2FA
-</button>
-
-                            <div class="flex items-center justify-between">
-                                <span class="text-sm font-medium text-gray-700">Sessions multiples</span>
-                                <label class="relative inline-flex items-center cursor-pointer">
-                                    <input type="checkbox" id="chk-sessions" checked class="sr-only peer">
-                                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-violet-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-violet-600"></div>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Save Button -->
-                <div class="mt-8 flex justify-end">
-                    <button onclick="saveSettings()" class="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
-                        Sauvegarder les paramètres
-                    </button>
-                </div>
-            </div>
-        </main>
-    </div>
+  <!-- KPI Cards -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-md border border-gray-100 transition transform hover:-translate-y-1 hover:shadow-lg duration-300">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-medium text-gray-500">Chiffre d'Affaires</h3>
+        <span class="text-green-500 text-xl">📈</span>
+      </div>
+      <p id="kpiChiffreAffaires" class="text-2xl sm:text-3xl font-bold text-gray-800">--</p>
+      <p id="kpiCroissance" class="text-sm text-green-600 mt-2">Chargement...</p>
     </div>
 
-    <!-- Add Subscriber Modal -->
-    <div id="addSubscriberModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal">
-  <div class="flex items-center justify-center min-h-screen p-4">
-    <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-md border border-gray-100 transition transform hover:-translate-y-1 hover:shadow-lg duration-300">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-medium text-gray-500">Taux de Conversion</h3>
+        <span class="text-blue-500 text-xl">🎯</span>
+      </div>
+      <p id="kpiConversionValeur" class="text-2xl sm:text-3xl font-bold text-gray-800">--%</p>
+      <p id="kpiConversionTexte" class="text-sm text-blue-600 mt-2">Premium / Total utilisateurs</p>
+    </div>
+
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-md border border-gray-100 transition transform hover:-translate-y-1 hover:shadow-lg duration-300">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-medium text-gray-500">Valeur Totale Comptes</h3>
+        <span class="text-violet-500 text-xl">💎</span>
+      </div>
+      <p id="kpiValeurMoyenne" class="text-2xl sm:text-3xl font-bold text-gray-800">--</p>
+      <p class="text-sm text-violet-600 mt-2">Total Wave / Orange / Espèces</p>
+    </div>
+
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl p-6 shadow-md border border-gray-100 transition transform hover:-translate-y-1 hover:shadow-lg duration-300">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-sm font-medium text-gray-500">Taux de Rétention</h3>
+        <span class="text-orange-500 text-xl">🔄</span>
+      </div>
+      <p id="kpiRetentionValeur" class="text-2xl sm:text-3xl font-bold text-gray-800">--%</p>
+      <p id="kpiRetentionTexte" class="text-sm text-orange-600 mt-2">Premium actifs avec expiration future</p>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-md overflow-hidden transition hover:shadow-lg duration-300">
       <div class="px-6 py-4 border-b border-gray-200">
-        <h2 class="text-lg font-semibold text-gray-800">Ajouter un Abonné</h2>
+        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">📌 Répartition des Revenus</h2>
+      </div>
+      <div class="p-6">
+        <!-- Canvas responsive container -->
+        <div class="w-full" style="min-height:220px;">
+          <canvas id="revenueBreakdownChart" class="w-full h-[220px]"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-md overflow-hidden transition hover:shadow-lg duration-300">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-800 flex items-center gap-2">📈 Croissance Mensuelle</h2>
+      </div>
+      <div class="p-6">
+        <div class="w-full" style="min-height:220px;">
+          <canvas id="growthChart" class="w-full h-[220px]"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================
+     Settings Section (Améliorée)
+     ========================= -->
+<div id="settings" class="section px-4 sm:px-6 lg:px-8 pt-8 pb-12 animate-fadeIn">
+  <div class="mb-6">
+    <h1 class="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">⚙️ Paramètres</h1>
+    <p class="text-sm text-gray-500">Configurez votre application, paiements et notifications</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- General Settings -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-800">Paramètres Généraux</h2>
+      </div>
+      <div class="p-6 space-y-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Nom de l'application</label>
+          <input type="text" id="app-name" value="Mon SaaS" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 transition" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Email de contact</label>
+          <input type="email" id="contact-email" value="contact@monsaas.com" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 transition" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Fuseau horaire</label>
+          <select id="timezone" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 transition">
+            <option>Europe/Paris</option>
+            <option>Europe/London</option>
+            <option>America/New_York</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Settings -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-800">Paramètres de Paiement</h2>
+        <button onclick="testPaymentSettings()" class="text-sm text-violet-600 hover:underline">Tester</button>
+      </div>
+      <div class="p-6 space-y-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Prix Plan Premium (FCFA)</label>
+          <input type="number" id="premium-price" value="5000" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 transition" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Délai de grâce (jours)</label>
+          <input type="number" id="grace-delay" value="7" class="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-violet-500 transition" />
+        </div>
+
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-gray-700">Alertes automatiques</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="chk-alertes-auto" checked class="sr-only peer" />
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer-focus:ring-4 peer-focus:ring-violet-300 peer-checked:bg-violet-600 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Settings -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-800">Notifications</h2>
       </div>
       <div class="p-6 space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Nom complet ou Nom de l'Entreprise</label>
-          <input type="text" id="newSubscriberName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-gray-700">Nouveaux abonnements</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="chk-nouveaux-abos" checked class="sr-only peer" />
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer-focus:ring-4 peer-focus:ring-violet-300 peer-checked:bg-violet-600 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+          </label>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-          <input type="email" id="newSubscriberEmail" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
+
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-gray-700">Paiements en retard</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="chk-paiements-retard" checked class="sr-only peer" />
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer-focus:ring-4 peer-focus:ring-violet-300 peer-checked:bg-violet-600 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+          </label>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Téléphone</label>
-          <input type="tel" id="newSubscriberPhone" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Plan</label>
-          <select id="newSubscriberPlan" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-            <option value="Free">Free</option>
-            <option value="Premium">Premium</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Méthode de paiement</label>
-          <select id="newSubscriberPaymentMethod" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-            <option value="wave">Wave</option>
-            <option value="orange">Orange Money</option>
-            <option value="cash">Espèces</option>
-            <option value="none">Aucun</option>
-          </select>
+
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-gray-700">Rapports mensuels</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="chk-rapports" class="sr-only peer" />
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer-focus:ring-4 peer-focus:ring-violet-300 peer-checked:bg-violet-600 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+          </label>
         </div>
       </div>
-      <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-        <button onclick="closeAddSubscriberModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
-        <button onclick="addSubscriber()" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg">Ajouter</button>
+    </div>
+
+    <!-- Security Settings -->
+    <div class="bg-white/95 backdrop-blur-sm rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-semibold text-gray-800">Sécurité</h2>
       </div>
+      <div class="p-6 space-y-6">
+        <button class="w-full bg-violet-600 hover:bg-violet-700 text-white py-2 px-4 rounded-xl font-medium transition transform hover:scale-105">Changer le mot de passe</button>
+        <button id="btn-2fa" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-xl font-medium transition transform hover:scale-105">Activer 2FA</button>
+        <div class="flex items-center justify-between">
+          <span class="text-sm font-medium text-gray-700">Sessions multiples</span>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="chk-sessions" checked class="sr-only peer" />
+            <div class="w-11 h-6 bg-gray-200 rounded-full peer-focus:ring-4 peer-focus:ring-violet-300 peer-checked:bg-violet-600 relative after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:border-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Button -->
+  <div class="mt-8 flex justify-end">
+    <button onclick="saveSettings()" class="bg-violet-600 hover:bg-violet-700 text-white px-6 py-3 rounded-xl font-medium transition transform hover:scale-105">💾 Sauvegarder les paramètres</button>
+  </div>
+</div>
+
+    <!-- 🌟 Modals Stylés & Animés (HTML + Tailwind) -->
+
+<style>
+  /* Animation fade/scale */
+  .modal {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .modal.hidden {
+    opacity: 0;
+    transform: scale(0.95);
+    pointer-events: none;
+  }
+  .modal.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+</style>
+
+<!-- ✅ Modal - Ajouter un Abonné -->
+<div id="addSubscriberModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full transform transition-all duration-300 p-6 animate-fadeIn">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-2xl">🧑‍🤝‍🧑</span>
+      <h2 class="text-xl font-bold text-gray-800">Ajouter un Abonné</h2>
+    </div>
+    <div class="space-y-4">
+      <input type="text" id="newSubscriberName" placeholder="Nom complet ou Entreprise" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+      <input type="email" id="newSubscriberEmail" placeholder="Email" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+      <input type="tel" id="newSubscriberPhone" placeholder="Téléphone" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+      <select id="newSubscriberPlan" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+        <option>Free</option>
+        <option>Premium</option>
+      </select>
+      <select id="newSubscriberPaymentMethod" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+        <option value="wave">Wave</option>
+        <option value="orange">Orange Money</option>
+        <option value="cash">Espèces</option>
+      </select>
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button onclick="closeAddSubscriberModal()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Annuler</button>
+      <button onclick="addSubscriber()" class="px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg shadow hover:scale-105 transition-transform">Ajouter</button>
     </div>
   </div>
 </div>
 
-    <!-- Withdraw Modal -->
-    <div id="withdrawModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-800">Retirer des Fonds</h2>
-                </div>
-                <div class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Montant (FCFA)</label>
-                        <input type="number" id="withdrawAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500" placeholder="0.00">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Vers</label>
-                        <select id="withdrawTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                            <option value="orange">Orange Money</option>
-                            <option value="wave">Wave</option>
-                            <option value="bank">Compte Bancaire</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                    <button onclick="closeWithdrawModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
-                    <button onclick="processWithdraw()" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg">Retirer</button>
-                </div>
-            </div>
-        </div>
+<!-- 💸 Modal - Retirer des Fonds -->
+<div id="withdrawModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all duration-300">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-2xl">🏦</span>
+      <h2 class="text-xl font-bold text-gray-800">Retirer des Fonds</h2>
     </div>
-
-    <!-- Transfer Modal -->
-    <div id="transferModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white rounded-xl shadow-xl max-w-md w-full">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-lg font-semibold text-gray-800">Transférer des Fonds</h2>
-                </div>
-                <div class="p-6 space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">De</label>
-                        <select id="transferFrom" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                            <option value="main">Compte Principal</option>
-                            <option value="orange">Orange Money</option>
-                            <option value="wave">Wave</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Vers</label>
-                        <select id="transferTo" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500">
-                            <option value="orange">Orange Money</option>
-                            <option value="wave">Wave</option>
-                            <option value="cash">Espèces</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Montant (FCFA)</label>
-                        <input type="number" id="transferAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500" placeholder="0.00">
-                    </div>
-                </div>
-                <div class="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-                    <button onclick="closeTransferModal()" class="px-4 py-2 text-gray-600 hover:text-gray-800">Annuler</button>
-                    <button onclick="processTransfer()" class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg">Transférer</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal Ajout Revenu -->
-<div id="addRevenueModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
-  <div class="bg-white rounded-xl shadow-lg w-full max-w-md p-6">
-    <h2 class="text-xl font-semibold mb-4">Ajouter un Revenu</h2>
     <div class="space-y-4">
-      <input id="revSource" type="text" placeholder="Source (ex: Abonnement)" 
-             class="w-full border rounded-lg px-3 py-2" required>
-      <input id="revMontant" type="number" placeholder="Montant (FCFA)" 
-             class="w-full border rounded-lg px-3 py-2" required>
-      <select id="revMethode" class="w-full border rounded-lg px-3 py-2">
+      <input type="number" id="withdrawAmount" placeholder="Montant (FCFA)" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+      <select id="withdrawTo" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+        <option value="orange">Orange Money</option>
+        <option value="wave">Wave</option>
+        <option value="bank">Compte Bancaire</option>
+      </select>
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button onclick="closeWithdrawModal()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Annuler</button>
+      <button onclick="processWithdraw()" class="px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg shadow hover:scale-105 transition-transform">Retirer</button>
+    </div>
+  </div>
+</div>
+
+<!-- 🔁 Modal - Transférer des Fonds -->
+<div id="transferModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-2xl">💳</span>
+      <h2 class="text-xl font-bold text-gray-800">Transférer des Fonds</h2>
+    </div>
+    <div class="space-y-4">
+      <select id="transferFrom" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+        <option value="main">Compte Principal</option>
+        <option value="orange">Orange Money</option>
+        <option value="wave">Wave</option>
+      </select>
+      <select id="transferTo" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+        <option value="orange">Orange Money</option>
+        <option value="wave">Wave</option>
+        <option value="cash">Espèces</option>
+      </select>
+      <input type="number" id="transferAmount" placeholder="Montant (FCFA)" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+    </div>
+    <div class="flex justify-end gap-3 mt-6">
+      <button onclick="closeTransferModal()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Annuler</button>
+      <button onclick="processTransfer()" class="px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg shadow hover:scale-105 transition-transform">Transférer</button>
+    </div>
+  </div>
+</div>
+
+<!-- 💰 Modal - Ajouter un Revenu -->
+<div id="addRevenueModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal flex items-center justify-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+    <div class="flex items-center gap-2 mb-4">
+      <span class="text-2xl">💰</span>
+      <h2 class="text-xl font-bold text-gray-800">Ajouter un Revenu</h2>
+    </div>
+    <div class="space-y-4">
+      <input id="revSource" type="text" placeholder="Source (ex: Abonnement)" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-violet-500">
+      <input id="revMontant" type="number" placeholder="Montant (FCFA)" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-violet-500">
+      <select id="revMethode" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-violet-500">
         <option value="wave">Wave</option>
         <option value="orange_money">Orange Money</option>
         <option value="especes">Espèces</option>
-        <option value="autre">Autre</option>
       </select>
-      <select id="revStatut" class="w-full border rounded-lg px-3 py-2">
+      <select id="revStatut" class="w-full border rounded-lg px-4 py-2 focus:ring-2 focus:ring-violet-500">
         <option value="effectue">Effectué</option>
         <option value="en_attente">En attente</option>
-        <option value="annule">Annulé</option>
       </select>
-      <textarea id="revDescription" placeholder="Description (optionnelle)" 
-                class="w-full border rounded-lg px-3 py-2"></textarea>
+      <textarea id="revDescription" placeholder="Description (optionnelle)" class="w-full border rounded-lg px-4 py-2"></textarea>
     </div>
-    <div class="flex justify-end space-x-2 mt-6">
-      <button onclick="closeAddRevenueModal()" class="px-4 py-2 bg-gray-200 rounded-lg">Annuler</button>
-      <button onclick="submitRevenue()" class="px-4 py-2 bg-violet-600 text-white rounded-lg">Ajouter</button>
+    <div class="flex justify-end gap-3 mt-6">
+      <button onclick="closeAddRevenueModal()" class="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Annuler</button>
+      <button onclick="submitRevenue()" class="px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 text-white rounded-lg shadow hover:scale-105 transition-transform">Ajouter</button>
     </div>
   </div>
 </div>
 
-<!-- Modal Historique des Transactions -->
-<div id="transactionHistoryModal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-  <div class="bg-white rounded-2xl shadow-xl p-6 w-11/12 md:w-2/3 max-h-[85vh] overflow-y-auto">
+<!-- 📜 Modal - Historique des Transactions -->
+<div id="transactionHistoryModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 modal flex justify-center items-center p-4">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6 overflow-y-auto max-h-[85vh]">
     <div class="flex justify-between items-center mb-4 border-b pb-2">
-      <h2 class="text-2xl font-bold text-gray-800">Historique des Transactions</h2>
+      <h2 class="text-2xl font-bold text-gray-800">📜 Historique des Transactions</h2>
       <button onclick="closeTransactionHistory()" class="text-gray-500 hover:text-gray-700 text-xl">✖</button>
     </div>
 
-    <!-- 🔍 Barre de recherche et filtre -->
     <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
-      <input 
-        type="text" 
-        id="transactionSearchInput" 
-        onkeyup="filterTransactionHistory()" 
-        placeholder="Rechercher une transaction..." 
-        class="w-full md:w-2/3 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 focus:border-transparent"
-      >
-      <select 
-        id="transactionMethodFilter" 
-        onchange="filterTransactionHistory()" 
-        class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-violet-500 bg-white"
-      >
+      <input id="transactionSearchInput" onkeyup="filterTransactionHistory()" placeholder="🔍 Rechercher une transaction..." class="w-full md:w-2/3 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500">
+      <select id="transactionMethodFilter" onchange="filterTransactionHistory()" class="px-3 py-2 border rounded-lg focus:ring-2 focus:ring-violet-500 bg-white">
         <option value="">Toutes les méthodes</option>
         <option value="wave">Wave</option>
         <option value="orange">Orange Money</option>
@@ -905,23 +986,14 @@
       </select>
     </div>
 
-    <!-- 📄 Bouton PDF -->
     <div class="flex justify-end mb-3">
-      <button onclick="exportTransactionsPDF()" 
-        class="bg-violet-600 hover:bg-violet-700 text-white px-4 py-2 rounded-lg text-sm font-medium shadow">
-        📄 Exporter en PDF
-      </button>
+      <button onclick="exportTransactionsPDF()" class="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 text-white px-4 py-2 rounded-lg shadow text-sm font-medium">📄 Exporter PDF</button>
     </div>
 
-    <!-- Liste des transactions -->
-    <div id="transactionHistoryList" class="divide-y divide-gray-200">
-      <!-- Transactions dynamiques ici -->
-    </div>
+    <div id="transactionHistoryList" class="divide-y divide-gray-200"></div>
 
     <div class="mt-6 flex justify-end">
-      <button onclick="closeTransactionHistory()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">
-        Fermer
-      </button>
+      <button onclick="closeTransactionHistory()" class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300">Fermer</button>
     </div>
   </div>
 </div>
