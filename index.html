@@ -567,6 +567,14 @@ label { font-size: 0.95rem; font-weight: 600; }
   to { opacity: 1; transform: scale(1); }
 }
 
+#guide-accueil {
+  animation: fadeIn 0.5s ease-in-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
     </style>
 
     <script>
@@ -786,7 +794,20 @@ label { font-size: 0.95rem; font-weight: 600; }
         <div id="page-accueil" class="page">
             <!-- Navigation principale avec effets glass -->
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 md:gap-6 mb-8 md:mb-12">
-                <button onclick="handleCreateClick()" 
+              
+              <!-- 📘 Guide rapide -->
+<div id="guide-accueil" class="col-span-full bg-gradient-to-r from-green-400 to-green-500 text-white rounded-xl shadow-md p-6 mb-6 text-center relative">
+  <button onclick="masquerGuideAccueil()" class="absolute top-2 right-2 text-white font-bold text-lg">❌</button>
+  <h3 class="text-lg font-semibold mb-2">📘 Guide rapide</h3>
+  <ol class="text-left list-decimal list-inside space-y-1">
+    <li>➕ Créez une tontine</li>
+    <li>👥 Ajoutez les membres</li>
+    <li>💰 Enregistrez les cotisations</li>
+    <li>🎲 Faites le tirage quand c’est prêt</li>
+  </ol>
+</div>
+
+              <button onclick="handleCreateClick()" 
         class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
   <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce">➕</div>
   <div class="font-semibold text-xs sm:text-sm md:text-base">Créer</div>
@@ -2252,24 +2273,6 @@ function afficherTontines() {
   const liste = document.getElementById('listeTontines');
   liste.innerHTML = '';
 
-  // 👉 Vérifier si le guide est masqué dans localStorage
-  const guideMasque = localStorage.getItem('guideMasque') === 'true';
-
-  if (!guideMasque) {
-    const guide = document.createElement('div');
-    guide.className = 'col-span-full bg-gradient-to-r from-green-400 to-green-500 text-white rounded-xl shadow-md p-4 mb-6 text-center relative';
-    guide.innerHTML = `
-      <button onclick="masquerGuide()" class="absolute top-2 right-2 text-white font-bold text-lg">❌</button>
-      <h3 class="text-lg font-semibold mb-2">📘 Guide rapide</h3>
-      <ol class="text-left list-decimal list-inside space-y-1">
-        <li>➕ Créez une tontine</li>
-        <li>👥 Ajoutez les membres</li>
-        <li>💰 Enregistrez les cotisations</li>
-        <li>🎲 Faites le tirage quand c’est prêt</li>
-      </ol>
-    `;
-    liste.appendChild(guide);
-  }
 
   if (!tontines || tontines.length === 0) {
     liste.innerHTML += `
@@ -2391,6 +2394,19 @@ function masquerGuide() {
     localStorage.setItem('guideMasque', 'true'); // Sauvegarde le choix
     afficherTontines(); // Recharge la page d’accueil sans le guide
 }
+
+function masquerGuideAccueil() {
+  document.getElementById("guide-accueil").style.display = "none";
+  localStorage.setItem("guideAccueilMasque", "true");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const guideMasque = localStorage.getItem("guideAccueilMasque") === "true";
+  if (guideMasque) {
+    const guide = document.getElementById("guide-accueil");
+    if (guide) guide.style.display = "none";
+  }
+});
 
         // Gestion des tontines
         function gererTontine(id) {
