@@ -677,14 +677,14 @@ label { font-size: 0.95rem; font-weight: 600; }
 </header>
 
 <!-- ================= OVERLAY + PANNEAU LATÉRAL ================= -->
-<div id="sidebarOverlay" 
-     class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-40 transition-opacity duration-300"
-     onclick="toggleSidebar()"></div>
 
 <!-- Sidebar latérale (desktop) / panneau bas (mobile) -->
 <aside id="sidebarInfos" 
-       class="fixed bg-white/95 shadow-2xl border-t sm:border-l border-gray-200 transition-transform duration-300 ease-out z-50 p-6 flex flex-col justify-between 
-              bottom-0 left-0 right-0 translate-y-full sm:top-0 sm:right-0 sm:left-auto sm:w-80 sm:h-full sm:translate-x-full sm:translate-y-0 rounded-t-2xl sm:rounded-l-2xl">
+       class="fixed bg-white/95 shadow-2xl border-t sm:border-l border-gray-200 transition-transform duration-300 ease-out 
+              z-50 p-6 flex flex-col justify-between 
+              bottom-0 left-0 right-0 translate-y-full 
+              sm:top-0 sm:right-0 sm:left-auto sm:w-80 sm:h-full sm:translate-x-full sm:translate-y-0 
+              rounded-t-2xl sm:rounded-l-2xl">
 
   <div>
     <div class="flex justify-between items-center mb-6">
@@ -721,6 +721,11 @@ label { font-size: 0.95rem; font-weight: 600; }
     </button>
   </div>
 </aside>
+
+<!-- 👇 déplace ce bloc APRÈS le <aside> -->
+<div id="sidebarOverlay" 
+     class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-40 transition-opacity duration-300"
+     onclick="toggleSidebar()"></div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <!-- PAGE CONNEXION -->
@@ -1921,6 +1926,10 @@ async function seDeconnecter(silencieux = false) {
   tontineActive = null;
   pageActuelle = 'connexion';
   afficherPageConnexion();
+
+  // ✅ Ferme le sidebar automatiquement
+  toggleSidebar(false);
+
   if (!silencieux) {
     showNotification("✅ Déconnexion réussie !", "success");
   }
@@ -5001,46 +5010,46 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 30000);
 });
 
-// ======================= SIDEBAR MOBILE-FIRST AVEC ANIMATIONS =======================
-function toggleSidebar() {
+// ======================= SIDEBAR MOBILE & DESKTOP =======================
+function toggleSidebar(force = null) {
   const sidebar = document.getElementById("sidebarInfos");
   const overlay = document.getElementById("sidebarOverlay");
   const isMobile = window.innerWidth < 640;
 
-  const isHiddenMobile = sidebar.classList.contains("translate-y-full");
-  const isHiddenDesktop = sidebar.classList.contains("translate-x-full");
+  const isHidden = isMobile
+    ? sidebar.classList.contains("translate-y-full")
+    : sidebar.classList.contains("translate-x-full");
 
-  // 🔹 OUVERTURE
-  if ((isMobile && isHiddenMobile) || (!isMobile && isHiddenDesktop)) {
+  if ((force === true) || (force === null && isHidden)) {
     overlay.classList.remove("hidden");
     overlay.style.opacity = "0";
     requestAnimationFrame(() => overlay.style.opacity = "1");
 
-    // 🔒 Empêche un double clic instantané
     overlay.style.pointerEvents = "none";
-    setTimeout(() => (overlay.style.pointerEvents = "auto"), 150);
+    setTimeout(() => (overlay.style.pointerEvents = "auto"), 200);
 
     if (isMobile) {
       sidebar.classList.remove("translate-y-full");
-      sidebar.style.animation = "slideUpRebond 0.5s cubic-bezier(0.25, 1, 0.3, 1.2)";
+      sidebar.style.animation = "slideUpRebond 0.45s ease-out";
     } else {
       sidebar.classList.remove("translate-x-full");
-      sidebar.style.animation = "slideLeftRebond 0.5s cubic-bezier(0.25, 1, 0.3, 1.2)";
+      sidebar.style.animation = "slideLeftRebond 0.45s ease-out";
     }
-  }
-
-  // 🔹 FERMETURE
-  else {
+  } else if ((force === false) || (force === null && !isHidden)) {
     overlay.style.opacity = "0";
-    setTimeout(() => overlay.classList.add("hidden"), 300);
+    setTimeout(() => overlay.classList.add("hidden"), 350);
+
     if (isMobile) sidebar.classList.add("translate-y-full");
     else sidebar.classList.add("translate-x-full");
+
     sidebar.style.animation = "none";
   }
 }
 
-// ✅ Empêche la fermeture immédiate sur desktop
 document.getElementById("sidebarInfos").addEventListener("click", e => e.stopPropagation());
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") toggleSidebar(false);
+});
 
 // ==================== HEADER MANAGEMENT ====================
 function updateHeader() {
