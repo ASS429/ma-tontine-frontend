@@ -640,6 +640,22 @@ label { font-size: 0.95rem; font-weight: 600; }
   box-shadow: 0 6px 25px rgba(0,0,0,0.08);
 }
 
+/* ✅ État fermé par défaut */
+.hidden-sidebar {
+  transform: translateY(100%);
+}
+@media (min-width: 640px) {
+  .hidden-sidebar {
+    transform: translateX(100%);
+  }
+}
+
+/* ✅ État ouvert */
+#sidebarInfos.open {
+  transform: translateX(0) !important;
+  transform: translateY(0) !important;
+}
+
     </style>
 
     <script>
@@ -682,12 +698,12 @@ label { font-size: 0.95rem; font-weight: 600; }
      onclick="toggleSidebar(false)"></div>
 
 <!-- ✅ Sidebar ensuite -->
-<aside id="sidebarInfos" 
+<aside id="sidebarInfos"
        class="fixed bg-white/95 shadow-2xl border-t sm:border-l border-gray-200 transition-transform duration-300 ease-out 
               z-[99] p-6 flex flex-col justify-between 
-              bottom-0 left-0 right-0 translate-y-full 
-              sm:top-0 sm:right-0 sm:left-auto sm:w-80 sm:h-full sm:translate-x-full sm:translate-y-0 
-              rounded-t-2xl sm:rounded-l-2xl">
+              bottom-0 left-0 right-0 sm:top-0 sm:right-0 sm:left-auto sm:w-80 sm:h-full
+              rounded-t-2xl sm:rounded-l-2xl
+              hidden-sidebar">
 
   <div>
     <div class="flex justify-between items-center mb-6">
@@ -5016,39 +5032,24 @@ document.addEventListener("DOMContentLoaded", () => {
 function toggleSidebar(force = null) {
   const sidebar = document.getElementById("sidebarInfos");
   const overlay = document.getElementById("sidebarOverlay");
+  const isOpen = sidebar.classList.contains("open");
   const isMobile = window.innerWidth < 640;
 
-  const isHidden = isMobile
-    ? sidebar.classList.contains("translate-y-full")
-    : sidebar.classList.contains("translate-x-full");
+  if ((force === true) || (force === null && !isOpen)) {
+    sidebar.classList.add("open");
+    sidebar.classList.remove("hidden-sidebar");
+    overlay.classList.remove("hidden");
+    overlay.style.opacity = "0";
+    requestAnimationFrame(() => (overlay.style.opacity = "1"));
 
-  // 🔹 OUVERTURE
-  if ((force === true) || (force === null && isHidden)) {
-  overlay.classList.remove("hidden");
-  overlay.style.opacity = "0";
-  requestAnimationFrame(() => overlay.style.opacity = "1");
-
-  // ✅ Délai pour activer le clic sur overlay après ouverture
-  overlay.style.pointerEvents = "none";
-  setTimeout(() => (overlay.style.pointerEvents = "auto"), 400);
-
-  if (isMobile) {
-    sidebar.classList.remove("translate-y-full");
-    sidebar.style.animation = "slideUpRebond 0.45s ease-out";
-  } else {
-    sidebar.classList.remove("translate-x-full");
-    sidebar.style.animation = "slideLeftRebond 0.45s ease-out";
-  }
-}
-
-  // 🔹 FERMETURE
-  else if ((force === false) || (force === null && !isHidden)) {
+    if (isMobile) sidebar.style.animation = "slideUpRebond 0.45s ease-out";
+    else sidebar.style.animation = "slideLeftRebond 0.45s ease-out";
+  } 
+  else if ((force === false) || (force === null && isOpen)) {
+    sidebar.classList.remove("open");
+    sidebar.classList.add("hidden-sidebar");
     overlay.style.opacity = "0";
     setTimeout(() => overlay.classList.add("hidden"), 350);
-
-    if (isMobile) sidebar.classList.add("translate-y-full");
-    else sidebar.classList.add("translate-x-full");
-
     sidebar.style.animation = "none";
   }
 }
