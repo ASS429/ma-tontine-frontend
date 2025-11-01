@@ -5051,37 +5051,40 @@ async function majSidebarInfos() {
 
     // 1️⃣ Données locales rapides
     const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-    if (userData.nom || userData.username) {
-      nomElt.textContent = userData.nom || userData.username;
-    }
-    if (userData.nombreTontines) {
-      nbElt.textContent = userData.nombreTontines;
-    }
+    if (userData.nom) nomElt.textContent = userData.nom;
+    if (userData.nombreTontines != null) nbElt.textContent = userData.nombreTontines;
 
-    // 2️⃣ Si connecté, actualiser avec données serveur
+    // 2️⃣ Si pas connecté → stop
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    // Récupération API
-    const [stats, user] = await Promise.all([
-      getStatsOverview().catch(() => null),
-      getUserProfile().catch(() => null)
+    // 3️⃣ Charger en parallèle
+    const [stats, user] = await Promise.allSettled([
+      getStatsOverview(),
+      getUserProfile()
     ]);
 
-    if (user) {
-      nomElt.textContent = user.nom_complet || user.nom || user.username || "Utilisateur";
+    // 4️⃣ Fusionner sans écraser les données valides
+    const newData = { ...userData };
+
+    if (user.status === "fulfilled" && user.value) {
+      const nom = user.value.nom_complet || user.value.nom || user.value.username;
+      if (nom) {
+        nomElt.textContent = nom;
+        newData.nom = nom;
+      }
     }
 
-    if (stats) {
-      nbElt.textContent = stats.tontines_actives || 0;
+    if (stats.status === "fulfilled" && stats.value) {
+      const tontines = stats.value.tontines_actives;
+      if (typeof tontines === "number") {
+        nbElt.textContent = tontines;
+        newData.nombreTontines = tontines;
+      }
     }
 
-    // Sauvegarde locale
-    localStorage.setItem("userData", JSON.stringify({
-      ...userData,
-      nom: user?.nom_complet || user?.nom || userData.nom,
-      nombreTontines: stats?.tontines_actives || userData.nombreTontines || 0
-    }));
+    // 5️⃣ Sauvegarde locale finale
+    localStorage.setItem("userData", JSON.stringify(newData));
 
   } catch (err) {
     console.error("❌ Erreur majSidebarInfos:", err);
@@ -5091,6 +5094,7 @@ async function majSidebarInfos() {
 document.addEventListener("DOMContentLoaded", () => {
   majSidebarInfos();
 });
+
 
 // ✅ Cacher le bouton retour sur PC quand on est sur la page d’accueil
 function synchroniserBoutonRetour() {
