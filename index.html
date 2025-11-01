@@ -575,6 +575,56 @@ label { font-size: 0.95rem; font-weight: 600; }
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* =================== TRANSITIONS MODERNES =================== */
+#sidebarInfos {
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.3, 1.2), opacity 0.3s ease;
+  will-change: transform;
+}
+
+#sidebarOverlay {
+  transition: opacity 0.35s ease;
+}
+
+/* ===== Animation d’apparition mobile ===== */
+@keyframes slideUpRebond {
+  0% {
+    transform: translateY(100%);
+  }
+  60% {
+    transform: translateY(-4%);
+  }
+  80% {
+    transform: translateY(2%);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+/* ===== Animation d’apparition desktop ===== */
+@keyframes slideLeftRebond {
+  0% {
+    transform: translateX(100%);
+  }
+  60% {
+    transform: translateX(-3%);
+  }
+  80% {
+    transform: translateX(2%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* États fermés */
+#sidebarInfos.translate-y-full {
+  transform: translateY(100%);
+}
+#sidebarInfos.translate-x-full {
+  transform: translateX(100%);
+}
+
     </style>
 
     <script>
@@ -585,56 +635,80 @@ label { font-size: 0.95rem; font-weight: 600; }
 
 <body>
 
-    <!-- En-tête avec effet glass -->
-<header class="header-glass sticky top-0 z-50 mb-3 sm:mb-6">
-  <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-5">
-    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-6">
+   <!-- ================= HEADER MODERNE ================= -->
+<header class="header-glass sticky top-0 z-50 backdrop-blur-md bg-white/70 shadow-sm border-b border-gray-200">
+  <div class="max-w-7xl mx-auto flex justify-between items-center px-4 py-3">
 
-      <!-- Logo + titre -->
-      <div class="flex items-center space-x-2 sm:space-x-4">
-        <div class="w-10 h-10 sm:w-14 sm:h-14 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center floating-animation">
-          <span class="text-white font-bold text-base sm:text-xl">🎯</span>
-        </div>
-        <div class="text-center sm:text-left">
-          <h1 class="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-            SAMAY TONTINES
-          </h1>
-          <p class="text-gray-600 font-medium text-xs sm:text-sm">Gestionnaire Premium</p>
-        </div>
+    <!-- Logo + Nom -->
+    <div class="flex items-center space-x-3">
+      <div class="w-10 h-10 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-lg flex items-center justify-center">
+        <span class="text-white text-lg font-bold">🎯</span>
       </div>
+      <h1 class="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+        SAMAY TONTINES
+      </h1>
+    </div>
 
-      <!-- Zone droite -->
-      <div class="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-4 md:gap-6">
+    <!-- Boutons -->
+    <div class="flex items-center gap-3">
+      <button id="btnRetour" onclick="retourAccueil()" 
+              class="hidden sm:inline-flex items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow hover:opacity-90 transition">
+        ← Retour
+      </button>
 
-        <!-- Bannière réseau -->
-        <div id="banniereReseau" class="hidden fixed top-0 left-0 right-0 bg-orange-500 text-white text-center py-2 text-xs sm:text-sm font-medium z-50">
-          📡 Mode hors ligne - Données locales utilisées
-        </div>
-
-        <!-- Infos utilisateur -->
-        <div id="infoUtilisateur" class="hidden sm:block text-center sm:text-right">
-          <p class="text-xs sm:text-sm text-gray-600 font-medium">Connecté en tant que</p>
-          <p class="text-sm sm:text-base font-bold text-gray-800" id="nomUtilisateur">-</p>
-        </div>
-
-        <!-- Nombre tontines -->
-        <div class="hidden sm:block text-center sm:text-right">
-          <p class="text-xs sm:text-sm text-gray-600 font-medium">Tontines Actives</p>
-          <p class="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent" id="nombreTontines">0</p>
-        </div>
-
-        <!-- Boutons -->
-        <button id="btnDeconnexion" onclick="seDeconnecter()" class="btn-gradient btn-danger text-xs sm:text-base px-2 sm:px-4 py-1.5 sm:py-2 hidden">
-          🚪 Déconnexion
-        </button>
-        <button id="installBtn" class="hidden bg-green-600 px-3 py-1 rounded text-white text-sm"> 📲 Installer</button>
-        <button id="btnRetour" onclick="retourAccueil()" class="btn-gradient text-xs sm:text-base px-2 sm:px-4 py-1.5 sm:py-2 hidden">
-          ← Retour
-        </button>
-      </div>
+      <button id="btnInfos" onclick="toggleSidebar()" 
+              class="p-2 rounded-lg bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow hover:opacity-90 transition">
+        ⚙️
+      </button>
     </div>
   </div>
 </header>
+
+<!-- ================= OVERLAY + PANNEAU LATÉRAL ================= -->
+<div id="sidebarOverlay" 
+     class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-40 transition-opacity duration-300"
+     onclick="toggleSidebar()"></div>
+
+<!-- Sidebar latérale (desktop) / panneau bas (mobile) -->
+<aside id="sidebarInfos" 
+       class="fixed bg-white/95 shadow-2xl border-t sm:border-l border-gray-200 transition-transform duration-300 ease-out z-50 p-6 flex flex-col justify-between 
+              bottom-0 left-0 right-0 translate-y-full sm:top-0 sm:right-0 sm:left-auto sm:w-80 sm:h-full sm:translate-x-full sm:translate-y-0 rounded-t-2xl sm:rounded-none">
+
+  <div>
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-lg font-semibold text-gray-800">🔐 Espace Utilisateur</h2>
+      <button onclick="toggleSidebar()" class="text-gray-500 hover:text-red-500 text-xl font-bold">×</button>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <p class="text-gray-600 text-sm">Connecté en tant que :</p>
+        <p id="nomUtilisateur" class="font-bold text-gray-900">Utilisateur</p>
+      </div>
+
+      <div>
+        <p class="text-gray-600 text-sm">Tontines actives :</p>
+        <p id="nombreTontines" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">0</p>
+      </div>
+
+      <div id="banniereReseau" class="hidden bg-orange-500 text-white text-center py-2 rounded-md text-sm font-medium">
+        📡 Mode hors ligne - Données locales utilisées
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <button id="btnDeconnexion" onclick="seDeconnecter()" 
+            class="w-full py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-lg shadow hover:opacity-90 transition">
+      🚪 Déconnexion
+    </button>
+
+    <button id="installBtn" 
+            class="w-full mt-3 py-2 bg-green-600 text-white rounded-lg font-medium hidden hover:bg-green-700 transition">
+      📲 Installer
+    </button>
+  </div>
+</aside>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <!-- PAGE CONNEXION -->
@@ -1687,6 +1761,10 @@ async function seConnecter(event) {
     nom: user.user_metadata?.nom_complet || (user.email || '').split('@')[0],
     email: user.email
   };
+  
+  // 💾 Sauvegarde utilisateur localement pour le header
+  localStorage.setItem("userData", JSON.stringify(utilisateurConnecte));
+  updateHeader(); // 🔄 met à jour le panneau latéral
 
   // 🔍 Vérifier si le profil existe déjà
   const { data: profil, error: profilError } = await sb
@@ -4901,6 +4979,72 @@ document.addEventListener("DOMContentLoaded", () => {
 
   }, 30000);
 });
+
+// ======================= SIDEBAR MOBILE-FIRST AVEC ANIMATIONS =======================
+function toggleSidebar() {
+  const sidebar = document.getElementById("sidebarInfos");
+  const overlay = document.getElementById("sidebarOverlay");
+  const isMobile = window.innerWidth < 640;
+
+  const isHiddenMobile = sidebar.classList.contains("translate-y-full");
+  const isHiddenDesktop = sidebar.classList.contains("translate-x-full");
+
+  // OUVERTURE
+  if ((isMobile && isHiddenMobile) || (!isMobile && isHiddenDesktop)) {
+    overlay.classList.remove("hidden");
+    overlay.style.opacity = "0";
+    requestAnimationFrame(() => {
+      overlay.style.opacity = "1";
+    });
+
+    if (isMobile) {
+      sidebar.classList.remove("translate-y-full");
+      sidebar.style.animation = "slideUpRebond 0.5s cubic-bezier(0.25, 1, 0.3, 1.2)";
+    } else {
+      sidebar.classList.remove("translate-x-full");
+      sidebar.style.animation = "slideLeftRebond 0.5s cubic-bezier(0.25, 1, 0.3, 1.2)";
+    }
+  }
+  // FERMETURE
+  else {
+    overlay.style.opacity = "0";
+    setTimeout(() => overlay.classList.add("hidden"), 300);
+
+    if (isMobile) {
+      sidebar.classList.add("translate-y-full");
+    } else {
+      sidebar.classList.add("translate-x-full");
+    }
+    sidebar.style.animation = "none";
+  }
+}
+
+// ==================== ✅ PATCH POUR NOUVEAU HEADER ====================
+function updateHeader() {
+  try {
+    const token = localStorage.getItem("token");
+    const nomElt = document.getElementById("nomUtilisateur");
+    const nbElt = document.getElementById("nombreTontines");
+    const decoBtn = document.getElementById("btnDeconnexion");
+
+    if (!token) {
+      if (nomElt) nomElt.textContent = "Invité";
+      if (nbElt) nbElt.textContent = "0";
+      if (decoBtn) decoBtn.classList.add("hidden");
+      return;
+    }
+
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    if (nomElt) nomElt.textContent = userData.nom || userData.username || "Utilisateur";
+    if (nbElt) nbElt.textContent = userData.nombreTontines || "0";
+    if (decoBtn) decoBtn.classList.remove("hidden");
+  } catch (err) {
+    console.warn("⚠️ updateHeader: erreur silencieuse:", err);
+  }
+}
+
+// Appeler updateHeader() après chaque connexion réussie
+document.addEventListener("DOMContentLoaded", updateHeader);
 
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
