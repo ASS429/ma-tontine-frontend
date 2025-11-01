@@ -1933,15 +1933,24 @@ async function seDeconnecter(silencieux = false) {
         }
 
         function afficherInterfaceConnectee() {
-            // Afficher l'en-tête et les éléments connectés
-            document.querySelector('header').style.display = 'block';
-            document.getElementById('infoUtilisateur').classList.remove('hidden');
-            document.getElementById('btnDeconnexion').classList.remove('hidden');
-            document.getElementById('nomUtilisateur').textContent = utilisateurConnecte.nom;
-            
-            // Aller à l'accueil
-            ouvrirPage('accueil');
-        }
+  // ✅ Affiche le header
+  document.querySelector('header').style.display = 'block';
+
+  // ✅ Met à jour le panneau latéral et les infos utilisateur
+  updateHeader();
+
+  // ✅ Affiche le bouton déconnexion si présent
+  const btnDeconnexion = document.getElementById('btnDeconnexion');
+  if (btnDeconnexion) btnDeconnexion.classList.remove('hidden');
+
+  // ✅ Affiche le bouton retour si disponible (utile hors accueil)
+  const btnRetour = document.getElementById('btnRetour');
+  if (btnRetour) btnRetour.classList.add('hidden');
+
+  // ✅ Redirige vers la page d’accueil
+  ouvrirPage('accueil');
+}
+
 
 // -------- DATA LAYER --------
 async function chargerDepuisSupabase() {
