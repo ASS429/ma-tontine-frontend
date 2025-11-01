@@ -1745,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       await chargerDepuisSupabase();
       initialiserApplication();
       afficherInterfaceConnectee();
-      majEntete();
+      majSidebarInfos();
     } catch (err) {
       console.warn("⚠️ Token invalide:", err.message);
       await seDeconnecter(true);
@@ -1795,7 +1795,7 @@ async function seConnecter(event) {
   
   // 💾 Sauvegarde utilisateur localement pour le header
   localStorage.setItem("userData", JSON.stringify(utilisateurConnecte));
-  updateHeader(); // 🔄 met à jour le panneau latéral
+  majSidebarInfos(); // 🔄 met à jour le panneau latéral
 
   // 🔍 Vérifier si le profil existe déjà
   const { data: profil, error: profilError } = await sb
@@ -1976,7 +1976,7 @@ async function seDeconnecter(silencieux = false) {
   document.querySelector('header').style.display = 'block';
 
   // ✅ Met à jour le panneau latéral et les infos utilisateur
-  updateHeader();
+  majSidebarInfos();
 
   // ✅ Affiche le bouton déconnexion si présent
   const btnDeconnexion = document.getElementById('btnDeconnexion');
@@ -2311,25 +2311,6 @@ async function getUserProfile() {
   } catch (err) {
     console.error("❌ Erreur profil:", err);
     return { nom_complet: "Utilisateur" };
-  }
-}
-
-
-async function majEntete() {
-  try {
-    // 🔹 Charger stats
-    const stats = await getStatsOverview();
-
-    // 🔹 Charger profil utilisateur
-    const user = await getUserProfile();
-
-    // Mettre à jour DOM
-    document.getElementById("nomUtilisateur").textContent =
-      user.nom_complet || "Utilisateur";
-    document.getElementById("nombreTontines").textContent =
-      stats.tontines_actives || 0;
-  } catch (err) {
-    console.error("❌ Erreur mise à jour entête:", err);
   }
 }
 
@@ -5063,32 +5044,52 @@ document.addEventListener("keydown", e => {
 });
 
 // ==================== HEADER MANAGEMENT ====================
-function updateHeader() {
+async function majSidebarInfos() {
   try {
-    const token = localStorage.getItem("token");
-    const header = document.getElementById("appHeader");
     const nomElt = document.getElementById("nomUtilisateur");
     const nbElt = document.getElementById("nombreTontines");
 
-    if (!token) {
-      if (header) header.classList.add("hidden");
-      return;
+    // 1️⃣ Données locales rapides
+    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+    if (userData.nom || userData.username) {
+      nomElt.textContent = userData.nom || userData.username;
+    }
+    if (userData.nombreTontines) {
+      nbElt.textContent = userData.nombreTontines;
     }
 
-    if (header) header.classList.remove("hidden");
+    // 2️⃣ Si connecté, actualiser avec données serveur
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
-    const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-    if (nomElt) nomElt.textContent = userData.nom || userData.username || "Utilisateur";
-    if (nbElt) nbElt.textContent = userData.nombreTontines || "0";
+    // Récupération API
+    const [stats, user] = await Promise.all([
+      getStatsOverview().catch(() => null),
+      getUserProfile().catch(() => null)
+    ]);
+
+    if (user) {
+      nomElt.textContent = user.nom_complet || user.nom || user.username || "Utilisateur";
+    }
+
+    if (stats) {
+      nbElt.textContent = stats.tontines_actives || 0;
+    }
+
+    // Sauvegarde locale
+    localStorage.setItem("userData", JSON.stringify({
+      ...userData,
+      nom: user?.nom_complet || user?.nom || userData.nom,
+      nombreTontines: stats?.tontines_actives || userData.nombreTontines || 0
+    }));
+
   } catch (err) {
-    console.warn("⚠️ updateHeader: erreur silencieuse:", err);
+    console.error("❌ Erreur majSidebarInfos:", err);
   }
 }
 
-// ✅ Appelé après chaque connexion
 document.addEventListener("DOMContentLoaded", () => {
-  const token = localStorage.getItem("token");
-  if (token) updateHeader();
+  majSidebarInfos();
 });
 
 // ✅ Cacher le bouton retour sur PC quand on est sur la page d’accueil
