@@ -5016,6 +5016,10 @@ function toggleSidebar() {
     overlay.style.opacity = "0";
     requestAnimationFrame(() => overlay.style.opacity = "1");
 
+    // 🔒 Empêche un double clic instantané
+    overlay.style.pointerEvents = "none";
+    setTimeout(() => (overlay.style.pointerEvents = "auto"), 150);
+
     if (isMobile) {
       sidebar.classList.remove("translate-y-full");
       sidebar.style.animation = "slideUpRebond 0.5s cubic-bezier(0.25, 1, 0.3, 1.2)";
@@ -5024,6 +5028,7 @@ function toggleSidebar() {
       sidebar.style.animation = "slideLeftRebond 0.5s cubic-bezier(0.25, 1, 0.3, 1.2)";
     }
   }
+
   // 🔹 FERMETURE
   else {
     overlay.style.opacity = "0";
