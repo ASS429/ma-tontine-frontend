@@ -1930,6 +1930,10 @@ async function seDeconnecter(silencieux = false) {
   // ✅ Ferme le sidebar automatiquement
   toggleSidebar(false);
 
+  // ✅ Masquer le header
+  const header = document.getElementById("appHeader");
+  if (header) header.classList.add("hidden");
+
   if (!silencieux) {
     showNotification("✅ Déconnexion réussie !", "success");
   }
@@ -5020,6 +5024,7 @@ function toggleSidebar(force = null) {
     ? sidebar.classList.contains("translate-y-full")
     : sidebar.classList.contains("translate-x-full");
 
+  // OUVERTURE
   if ((force === true) || (force === null && isHidden)) {
     overlay.classList.remove("hidden");
     overlay.style.opacity = "0";
@@ -5035,7 +5040,12 @@ function toggleSidebar(force = null) {
       sidebar.classList.remove("translate-x-full");
       sidebar.style.animation = "slideLeftRebond 0.45s ease-out";
     }
-  } else if ((force === false) || (force === null && !isHidden)) {
+
+    // ✅ Empêche fermeture automatique sur desktop
+    overlay.onclick = () => toggleSidebar(false);
+  }
+  // FERMETURE
+  else if ((force === false) || (force === null && !isHidden)) {
     overlay.style.opacity = "0";
     setTimeout(() => overlay.classList.add("hidden"), 350);
 
@@ -5046,7 +5056,10 @@ function toggleSidebar(force = null) {
   }
 }
 
+// Empêche le clic à l’intérieur de fermer la sidebar
 document.getElementById("sidebarInfos").addEventListener("click", e => e.stopPropagation());
+
+// Ferme avec Échap
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") toggleSidebar(false);
 });
