@@ -580,10 +580,12 @@ label { font-size: 0.95rem; font-weight: 600; }
   transition: transform 0.4s cubic-bezier(0.25, 1, 0.3, 1.2);
   will-change: transform;
   backface-visibility: hidden;
+  z-index: 99 !important;
 }
 
 #sidebarOverlay {
   transition: opacity 0.35s ease;
+  z-index: 98 !important;
 }
 
 /* ===== Animation d’apparition mobile ===== */
@@ -648,7 +650,7 @@ label { font-size: 0.95rem; font-weight: 600; }
 
 <body>
 
- <!-- ================= HEADER ================= -->
+<!-- ================= HEADER ================= -->
 <header id="appHeader" class="hidden header-glass sticky top-0 z-50 backdrop-blur-md bg-white/80 shadow-md border border-gray-200 rounded-b-3xl transition-all duration-300">
   <div class="max-w-7xl mx-auto flex justify-between items-center px-5 py-3 sm:py-4">
     <div class="flex items-center space-x-3">
@@ -665,23 +667,24 @@ label { font-size: 0.95rem; font-weight: 600; }
               class="hidden items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow hover:opacity-90 transition">
         ← Retour
       </button>
-      <button id="btnInfos" onclick="toggleSidebar()" 
-              class="p-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow hover:opacity-90 transition">
-        ⚙️
-      </button>
+      <button id="btnInfos" 
+        onclick="event.stopPropagation(); toggleSidebar()" 
+        class="p-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow hover:opacity-90 transition">
+  ⚙️
+</button>
     </div>
   </div>
 </header>
 
-<!-- ✅ Overlay d’abord -->
+<!-- ✅ Overlay d'abord -->
 <div id="sidebarOverlay" 
-     class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-40 transition-opacity duration-300"
+     class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-[98] transition-opacity duration-300"
      onclick="toggleSidebar(false)"></div>
 
 <!-- ✅ Sidebar ensuite -->
 <aside id="sidebarInfos" 
        class="fixed bg-white/95 shadow-2xl border-t sm:border-l border-gray-200 transition-transform duration-300 ease-out 
-              z-50 p-6 flex flex-col justify-between 
+              z-[99] p-6 flex flex-col justify-between 
               bottom-0 left-0 right-0 translate-y-full 
               sm:top-0 sm:right-0 sm:left-auto sm:w-80 sm:h-full sm:translate-x-full sm:translate-y-0 
               rounded-t-2xl sm:rounded-l-2xl">
@@ -5021,18 +5024,22 @@ function toggleSidebar(force = null) {
 
   // 🔹 OUVERTURE
   if ((force === true) || (force === null && isHidden)) {
-    overlay.classList.remove("hidden");
-    overlay.style.opacity = "0";
-    requestAnimationFrame(() => overlay.style.opacity = "1");
+  overlay.classList.remove("hidden");
+  overlay.style.opacity = "0";
+  requestAnimationFrame(() => overlay.style.opacity = "1");
 
-    if (isMobile) {
-      sidebar.classList.remove("translate-y-full");
-      sidebar.style.animation = "slideUpRebond 0.45s ease-out";
-    } else {
-      sidebar.classList.remove("translate-x-full");
-      sidebar.style.animation = "slideLeftRebond 0.45s ease-out";
-    }
+  // ✅ Délai pour activer le clic sur overlay après ouverture
+  overlay.style.pointerEvents = "none";
+  setTimeout(() => (overlay.style.pointerEvents = "auto"), 400);
+
+  if (isMobile) {
+    sidebar.classList.remove("translate-y-full");
+    sidebar.style.animation = "slideUpRebond 0.45s ease-out";
+  } else {
+    sidebar.classList.remove("translate-x-full");
+    sidebar.style.animation = "slideLeftRebond 0.45s ease-out";
   }
+}
 
   // 🔹 FERMETURE
   else if ((force === false) || (force === null && !isHidden)) {
