@@ -1196,40 +1196,47 @@ label { font-size: 0.95rem; font-weight: 600; }
                     </h2>
                     
                     <!-- Métriques principales -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4 mb-8">
-                        <div class="stat-card p-4 text-center">
-                            <div class="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent" id="statTotalTontines">0</div>
-                            <div class="text-xs text-gray-600 font-medium mt-1">Tontines Actives</div>
-                        </div>
-                        <div class="stat-card p-4 text-center">
-                            <div class="text-3xl font-bold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent" id="statTotalMembres">0</div>
-                            <div class="text-xs text-gray-600 font-medium mt-1">Total Membres</div>
-                        </div>
-                        <div class="stat-card p-4 text-center">
-                            <div class="text-3xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent" id="statTotalCotisations">0</div>
-                            <div class="text-xs text-gray-600 font-medium mt-1">FCFA Collectés</div>
-                        </div>
-                        <div class="stat-card p-4 text-center">
-                            <div class="text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent" id="statTotalTirages">0</div>
-                            <div class="text-xs text-gray-600 font-medium mt-1">Tirages Effectués</div>
-                        </div>
-                        <div class="stat-card p-4 text-center">
-                            <div class="text-3xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent" id="statRetards">0</div>
-                            <div class="text-xs text-gray-600 font-medium mt-1">⚠️ Retards</div>
-                        </div>
-                        <div class="stat-card p-4 text-center">
-                            <div class="text-3xl font-bold bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent" id="statCyclesRetard">0</div>
-                            <div class="text-xs text-gray-600 font-medium mt-1">⏳ Cycles Retard</div>
-                        </div>
-                        <div class="stat-card p-4 text-center">
-                            <div class="text-3xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent" id="statPaiementsAttente">0</div>
-                            <div class="text-xs text-gray-600 font-medium mt-1">💳 Paiements</div>
-                        </div>
-                        <div class="stat-card p-4 text-center">
-                            <div class="text-3xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent" id="statTiragesDisponibles">0</div>
-                            <div class="text-xs text-gray-600 font-medium mt-1">🎲 Tirages Dispo</div>
-                        </div>
-                    </div>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+  <div class="stat-card flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="statTotalTontines" class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 bg-clip-text text-transparent break-words text-center">0</div>
+    <div class="text-xs sm:text-sm text-gray-600 font-medium mt-1 text-center">Tontines Actives</div>
+  </div>
+
+  <div class="stat-card flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="statTotalMembres" class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-green-500 to-green-600 bg-clip-text text-transparent break-words text-center">0</div>
+    <div class="text-xs sm:text-sm text-gray-600 font-medium mt-1 text-center">Total Membres</div>
+  </div>
+
+  <div class="stat-card flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="statTotalCotisations" class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-500 to-purple-600 bg-clip-text text-transparent break-words text-center">0</div>
+    <div class="text-xs sm:text-sm text-gray-600 font-medium mt-1 text-center">FCFA Collectés</div>
+  </div>
+
+  <div class="stat-card flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="statTotalTirages" class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent break-words text-center">0</div>
+    <div class="text-xs sm:text-sm text-gray-600 font-medium mt-1 text-center">Tirages Effectués</div>
+  </div>
+
+  <div class="stat-card flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="statRetards" class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-red-500 to-red-600 bg-clip-text text-transparent break-words text-center">0</div>
+    <div class="text-xs sm:text-sm text-gray-600 font-medium mt-1 text-center">⚠️ Retards</div>
+  </div>
+
+  <div class="stat-card flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="statCyclesRetard" class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-yellow-500 to-yellow-600 bg-clip-text text-transparent break-words text-center">0</div>
+    <div class="text-xs sm:text-sm text-gray-600 font-medium mt-1 text-center">⏳ Cycles Retard</div>
+  </div>
+
+  <div class="stat-card flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="statPaiementsAttente" class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-indigo-500 to-indigo-600 bg-clip-text text-transparent break-words text-center">0</div>
+    <div class="text-xs sm:text-sm text-gray-600 font-medium mt-1 text-center">💳 Paiements</div>
+  </div>
+
+  <div class="stat-card flex flex-col items-center justify-center p-4 bg-white rounded-xl shadow-sm border border-gray-100">
+    <div id="statTiragesDisponibles" class="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-emerald-500 to-emerald-600 bg-clip-text text-transparent break-words text-center">0</div>
+    <div class="text-xs sm:text-sm text-gray-600 font-medium mt-1 text-center">🎲 Tirages Dispo</div>
+  </div>
+</div>
                 </div>
 
                 <!-- Graphiques -->
