@@ -3909,7 +3909,7 @@ function verifierAlertes() {
 
     // Affichage
     alertesActuelles.forEach((alerte, index) => {
-  let couleur, icone, details = "";
+  let couleur, icone, details = "", couleurPastille = "bg-gray-400";
 
   if (alerte.type === "retard") {
     couleur = alerte.urgence === "haute" ? "from-red-600 to-red-700" : "from-orange-500 to-red-500";
@@ -3932,38 +3932,44 @@ function verifierAlertes() {
     icone = "ℹ️";
   }
 
+  // 🎨 Pastille couleur selon urgence
+  if (alerte.urgence === "haute") couleurPastille = "bg-red-500";
+  else if (alerte.urgence === "moyenne") couleurPastille = "bg-orange-400";
+  else if (alerte.urgence === "basse") couleurPastille = "bg-green-500";
+
   const div = document.createElement("div");
-  div.className = `bg-gradient-to-r ${couleur} p-6 rounded-2xl text-white fade-in-up mb-6 shadow-lg`;
-  div.style.animationDelay = `${index * 0.1}s`;
-  div.setAttribute("data-alerte-id", alerte.id); // pour suppression
+  div.className = `bg-gradient-to-r ${couleur} p-[1px] rounded-2xl fade-in-up mb-5 shadow-md`;
+  div.style.animationDelay = `${index * 0.08}s`;
 
   div.innerHTML = `
-  <div class="alerte-card-inner flex flex-col sm:flex-row gap-3 sm:gap-4">
-    
-    <!-- Icône et contenu -->
-    <div class="flex items-start gap-3 flex-1">
-      <div class="text-3xl sm:text-4xl floating-animation">${icone}</div>
-      <div class="flex flex-col text-sm sm:text-base flex-1">
-        <div class="font-semibold text-gray-900 leading-tight">${alerte.message}</div>
-        <div class="text-gray-700 opacity-80 mt-1">📋 <span class="font-medium">Tontine:</span> ${alerte.tontineId}</div>
-        ${details}
-        <div class="text-xs sm:text-sm text-gray-600 mt-2">
-          🕒 ${new Date(alerte.dateCreation).toLocaleDateString("fr-FR")} • 
-          ${new Date(alerte.dateCreation).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+    <div class="alerte-card-inner flex flex-col sm:flex-row gap-3 sm:gap-4">
+      
+      <!-- Icône + contenu -->
+      <div class="flex items-start gap-3 flex-1">
+        <div class="relative">
+          <div class="text-3xl sm:text-4xl floating-animation">${icone}</div>
+          <span class="absolute -top-1 -right-1 w-3 h-3 ${couleurPastille} rounded-full border-2 border-white"></span>
+        </div>
+        <div class="flex flex-col text-sm sm:text-base flex-1">
+          <div class="font-semibold text-gray-900 leading-tight">${alerte.message}</div>
+          ${details}
+          <div class="text-xs sm:text-sm text-gray-600 mt-2">
+            🕒 ${new Date(alerte.dateCreation).toLocaleDateString("fr-FR")} • 
+            ${new Date(alerte.dateCreation).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+          </div>
         </div>
       </div>
-    </div>
 
-    <!-- Boutons d’action -->
-    <div class="alerte-actions flex gap-2 mt-3 sm:mt-0">
-      <button onclick="supprimerAlerte('${alerte.id}')"
-        class="alerte-btn alerte-btn-red">❌ Ignorer</button>
-      <button onclick="resoudreAlerte('${alerte.id}')"
-        class="alerte-btn alerte-btn-green">✅ Résolue</button>
-    </div>
+      <!-- Boutons -->
+      <div class="alerte-actions flex gap-2 mt-3 sm:mt-0">
+        <button onclick="supprimerAlerte('${alerte.id}')"
+          class="alerte-btn alerte-btn-red">❌ Ignorer</button>
+        <button onclick="resoudreAlerte('${alerte.id}')"
+          class="alerte-btn alerte-btn-green">✅ Résolue</button>
+      </div>
 
-  </div>
-`;
+    </div>
+  `;
 
   liste.appendChild(div);
 });
