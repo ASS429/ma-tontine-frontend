@@ -2351,13 +2351,17 @@ function validerEtape(num) {
 
     case 3:
   const freq = document.getElementById('frequenceCotisation').value;
-  
-  if (freq !== "quotidien") {
-    // Si ce n'est pas quotidien → le jour doit être obligatoire
-    if (!document.getElementById('jourCotisation').value) {
-      afficherErreur("Veuillez choisir un jour de cotisation");
-      return false;
-    }
+  const jourCot = document.getElementById('jourCotisation').value;
+
+  // Si quotidien → pas besoin de jour
+  if (freq === "quotidien") {
+    return true;
+  }
+
+  // Sinon → jour obligatoire
+  if (!jourCot) {
+    afficherErreur("Veuillez choisir un jour de cotisation");
+    return false;
   }
 
   return true;
@@ -5251,6 +5255,17 @@ document.getElementById("frequenceCotisation").addEventListener("change", functi
     zoneJour.classList.add("hidden");
   } else {
     zoneJour.classList.remove("hidden");
+  }
+});
+
+document.getElementById('frequenceCotisation').addEventListener("change", e => {
+  const value = e.target.value;
+  const blocJour = document.getElementById("jourCotisation").parentElement;
+
+  if (value === "quotidien") {
+    blocJour.style.display = "none";
+  } else {
+    blocJour.style.display = "block";
   }
 });
 
