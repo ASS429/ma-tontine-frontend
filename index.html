@@ -1084,28 +1084,31 @@ label { font-size: 0.95rem; font-weight: 600; }
     </div>
 
     <div id="etape-3" class="etape hidden space-y-6">
-      <div>
-        <label class="block font-semibold mb-2">Jour de Cotisation</label>
-        <select id="jourCotisation" class="form-input w-full">
-          <option value="lundi">Lundi</option>
-          <option value="mardi">Mardi</option>
-          <option value="mercredi">Mercredi</option>
-          <option value="jeudi">Jeudi</option>
-          <option value="vendredi">Vendredi</option>
-          <option value="samedi">Samedi</option>
-          <option value="dimanche">Dimanche</option>
-          <option value="1">1er du mois</option>
-          <option value="10">10 du mois</option>
-          <option value="20">20 du mois</option>
-        </select>
-      </div>
+      <div id="zoneJourCotisation">
+  <label class="block font-semibold mb-2">Jour de Cotisation</label>
+  <select id="jourCotisation" class="form-input w-full">
+    <option value="lundi">Lundi</option>
+    <option value="mardi">Mardi</option>
+    <option value="mercredi">Mercredi</option>
+    <option value="jeudi">Jeudi</option>
+    <option value="vendredi">Vendredi</option>
+    <option value="samedi">Samedi</option>
+    <option value="dimanche">Dimanche</option>
+    <option value="1">1er du mois</option>
+    <option value="10">10 du mois</option>
+    <option value="20">20 du mois</option>
+  </select>
+</div>
       <div>
         <label class="block font-semibold mb-2">Fréquence des Tirages</label>
         <select id="frequenceTirage" class="form-input w-full">
-          <option value="hebdomadaire">📆 Hebdomadaire (Chaque semaine)</option>
-          <option value="mensuel">🗓️ Mensuel (Chaque mois)</option>
-          <option value="trimestriel">📊 Trimestriel (Chaque 3 mois)</option>
-        </select>
+  <option value="quotidien">📅 Quotidien (Chaque jour)</option>
+  <option value="hebdomadaire">📆 Hebdomadaire (Chaque semaine)</option>
+  <option value="mensuel">🗓️ Mensuel (Chaque mois)</option>
+  <option value="trimestriel">📊 Trimestriel (Chaque 3 mois)</option>
+  <option value="annuel">📅 Annuel (Une fois par an)</option>
+</select>
+
       </div>
     </div>
 
@@ -2347,11 +2350,17 @@ function validerEtape(num) {
       return true;
 
     case 3:
-      if (!document.getElementById('jourCotisation').value) {
-        afficherErreur("Veuillez choisir un jour de cotisation");
-        return false;
-      }
-      return true;
+  const freq = document.getElementById('frequenceCotisation').value;
+  
+  if (freq !== "quotidien") {
+    // Si ce n'est pas quotidien → le jour doit être obligatoire
+    if (!document.getElementById('jourCotisation').value) {
+      afficherErreur("Veuillez choisir un jour de cotisation");
+      return false;
+    }
+  }
+
+  return true;
 
     case 4:
       const nbMembres = parseInt(document.getElementById('nombreMembres').value);
@@ -2398,7 +2407,10 @@ async function creerTontine() {
   const type = document.getElementById('typeTontine').value;
   const montant = parseFloat(document.getElementById('montantCotisation').value);
   const frequenceCot = document.getElementById('frequenceCotisation').value;
-  const jourCot = document.getElementById('jourCotisation').value;
+  const freq = document.getElementById('frequenceCotisation').value;
+const jourCot = (freq === "quotidien") 
+  ? null 
+  : document.getElementById('jourCotisation').value;
   const frequenceTir = document.getElementById('frequenceTirage').value;
   const nbMembres = parseInt(document.getElementById('nombreMembres').value, 10);
   const description = document.getElementById('descriptionTontine').value.trim();
@@ -4093,59 +4105,79 @@ async function resoudreAlerte(alerteId) {
         }
 
         function verifierDateTiragePossible(tontine) {
-            if (!verifierCotisationsCompletes(tontine)) return false;
-            
-            const eligibles = tontine.membres.filter(m => !m.aGagne);
-            if (eligibles.length === 0) return false;
-            
-            // Premier tirage : disponible dès que toutes les cotisations sont complètes
-            if (tontine.tirages.length === 0) return true;
-            
-            // Tirages suivants : vérifier l'intervalle de temps
-            const dernierTirage = tontine.tirages[tontine.tirages.length - 1];
-            const dateDernierTirage = new Date(dernierTirage.date);
-            const maintenant = new Date();
-            const diffJours = (maintenant - dateDernierTirage) / (1000 * 60 * 60 * 24);
-            
-            // Intervalles selon la fréquence
-            const intervalles = {
-                'hebdomadaire': 7,
-                'mensuel': 30,
-                'trimestriel': 90
-            };
-            
-            const intervalleRequis = intervalles[tontine.frequenceTirage] || 30;
-            return diffJours >= intervalleRequis;
-        }
+    if (!verifierCotisationsCompletes(tontine)) return false;
+
+    const eligibles = tontine.membres.filter(m => !m.aGagne);
+    if (eligibles.length === 0) return false;
+
+    // Premier tirage : disponible dès que les cotisations sont complètes
+    if (!tontine.tirages || tontine.tirages.length === 0) {
+        return true;
+    }
+
+    // Tirages suivants
+    const maintenant = new Date();
+    const prochaine = obtenirProchaineDateTirage(tontine);
+
+    // tirage possible seulement si la date requise est passée
+    return maintenant >= prochaine;
+}
 
         function obtenirProchaineDateTirage(tontine) {
-            if (tontine.tirages.length === 0) {
-                return new Date();
-            }
-            
-            const dernierTirage = new Date(tontine.tirages[tontine.tirages.length - 1].date);
-            const intervalles = {
-                'hebdomadaire': 7,
-                'mensuel': 30,
-                'trimestriel': 90
-            };
-            
-            const intervalle = intervalles[tontine.frequenceTirage] || 30;
-            const prochaineTirage = new Date(dernierTirage);
-            prochaineTirage.setDate(dernierTirage.getDate() + intervalle);
-            
-            return prochaineTirage;
-        }
+    const tirages = tontine.tirages || [];
+
+    // 🔹 1) Si aucun tirage → prochain = aujourd'hui
+    if (tirages.length === 0) {
+        return new Date();
+    }
+
+    // 🔹 2) On récupère le dernier tirage
+    const dernierTirage = new Date(tirages[tirages.length - 1].date);
+    let prochaine = new Date(dernierTirage);
+
+    // 🔹 3) Selon la fréquence, calcul précis
+    switch (tontine.frequenceTirage) {
+
+        case "quotidien":  
+            prochaine.setDate(dernierTirage.getDate() + 1); 
+            break;
+
+        case "hebdomadaire":
+            prochaine.setDate(dernierTirage.getDate() + 7);
+            break;
+
+        case "mensuel":
+            prochaine.setMonth(dernierTirage.getMonth() + 1);
+            break;
+
+        case "trimestriel":
+            prochaine.setMonth(dernierTirage.getMonth() + 3);
+            break;
+
+        case "annuel":
+            prochaine.setFullYear(dernierTirage.getFullYear() + 1);
+            break;
+
+        default:
+            // Sécurité
+            prochaine.setMonth(dernierTirage.getMonth() + 1);
+            break;
+    }
+
+    return prochaine;
+}
 
         function obtenirJoursRestantsAvantTirage(tontine) {
-            if (tontine.tirages.length === 0) return 0;
-            
-            const prochaineTirage = obtenirProchaineDateTirage(tontine);
-            const maintenant = new Date();
-            const diffJours = Math.ceil((prochaineTirage - maintenant) / (1000 * 60 * 60 * 24));
-            
-            return Math.max(0, diffJours);
-        }
+    if (!tontine.tirages || tontine.tirages.length === 0) return 0;
+
+    const prochaineTirage = obtenirProchaineDateTirage(tontine);
+    const maintenant = new Date();
+
+    const diffMs = prochaineTirage - maintenant;
+    const diffJours = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    return Math.max(0, diffJours);
+}
 
         function estEnRetard(derniereCotisation, frequence) {
             const aujourd_hui = new Date();
@@ -5209,6 +5241,18 @@ function synchroniserBoutonRetour() {
   if (pageActuelle === "accueil") btnRetour.classList.add("hidden");
   else btnRetour.classList.remove("hidden");
 }
+
+// Masquer ou afficher le jour de cotisation selon la fréquence
+document.getElementById("frequenceCotisation").addEventListener("change", function () {
+  const freq = this.value;
+  const zoneJour = document.getElementById("zoneJourCotisation");
+
+  if (freq === "quotidien") {
+    zoneJour.classList.add("hidden");
+  } else {
+    zoneJour.classList.remove("hidden");
+  }
+});
 
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'972a962a719755aa',t:'MTc1NTc4NDA5MS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
