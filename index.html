@@ -3877,26 +3877,30 @@ function verifierAlertes() {
   return mettreAJourAlertes();
 }
 
-     async function afficherAlertes() {
+    // =======================
+// 🎯 AFFICHAGE DES ALERTES 
+// ===========================
+async function afficherAlertes() {
   try {
-    const alertesActuelles = await mettreAJourAlertes(); // maintenant génère + récupère
+    const alertesActuelles = await mettreAJourAlertes(); // Génère + récupère
 
     const liste = document.getElementById("listeAlertes");
     liste.innerHTML = "";
 
+    // 💤 Cas aucune alerte
     if (!alertesActuelles || alertesActuelles.length === 0) {
       liste.innerHTML = `
         <div class="text-center py-16">
-            <div class="text-8xl mb-6 floating-animation">✅</div>
-            <h3 class="text-3xl font-bold text-gray-700 mb-4">Aucune alerte active</h3>
-            <p class="text-gray-600 text-lg mb-4">Toutes les tontines sont bien gérées !</p>
+          <div class="text-8xl mb-6 floating-animation">✅</div>
+          <h3 class="text-3xl font-bold text-gray-700 mb-4">Aucune alerte active</h3>
+          <p class="text-gray-600 text-lg mb-4">Toutes les tontines sont bien gérées !</p>
         </div>
       `;
       document.getElementById("badgeAlertes").classList.add("hidden");
       return;
     }
 
-    // Trier par urgence puis type
+    // 🔢 Trier par urgence puis type
     const urgenceOrder = { haute: 4, moyenne: 3, basse: 2 };
     const typeOrder = { tirage: 4, retard: 3, cycle_retard: 2, paiement_attente: 1 };
 
@@ -3907,75 +3911,90 @@ function verifierAlertes() {
       return (typeOrder[b.type] || 0) - (typeOrder[a.type] || 0);
     });
 
-    // Affichage
+    // 🧱 Construction visuelle
     alertesActuelles.forEach((alerte, index) => {
-  let couleur, icone, details = "", couleurPastille = "bg-gray-400";
+      let couleur, icone, details = "", couleurPastille = "bg-gray-400";
 
-  if (alerte.type === "retard") {
-    couleur = alerte.urgence === "haute" ? "from-red-600 to-red-700" : "from-orange-500 to-red-500";
-    icone = alerte.urgence === "haute" ? "🚨" : "⚠️";
-    details = `<div class="text-sm opacity-90 mt-2">⏰ Urgence: ${alerte.urgence}</div>`;
-  } else if (alerte.type === "tirage") {
-    couleur = "from-blue-500 to-green-500";
-    icone = "🎲";
-    details = `<div class="text-sm opacity-90 mt-2">🎉 Tirage disponible</div>`;
-  } else if (alerte.type === "cycle_retard") {
-    couleur = "from-yellow-500 to-orange-500";
-    icone = "⏳";
-    details = `<div class="text-sm opacity-90 mt-2">📊 Cycle en retard</div>`;
-  } else if (alerte.type === "resultat_tirage") {
-    couleur = "from-green-600 to-yellow-500";
-    icone = "🏆";
-    details = `<div class="text-sm opacity-90 mt-2">Résultat de tirage enregistré</div>`;
-  } else {
-    couleur = "from-gray-500 to-gray-600";
-    icone = "ℹ️";
-  }
+      if (alerte.type === "retard") {
+        couleur = alerte.urgence === "haute" ? "from-red-600 to-red-700" : "from-orange-500 to-red-500";
+        icone = alerte.urgence === "haute" ? "🚨" : "⚠️";
+        details = `<div class="text-sm opacity-90 mt-2">⏰ Urgence: ${alerte.urgence}</div>`;
+      } else if (alerte.type === "tirage") {
+        couleur = "from-blue-500 to-green-500";
+        icone = "🎲";
+        details = `<div class="text-sm opacity-90 mt-2">🎉 Tirage disponible</div>`;
+      } else if (alerte.type === "cycle_retard") {
+        couleur = "from-yellow-500 to-orange-500";
+        icone = "⏳";
+        details = `<div class="text-sm opacity-90 mt-2">📊 Cycle en retard</div>`;
+      } else if (alerte.type === "resultat_tirage") {
+        couleur = "from-green-600 to-yellow-500";
+        icone = "🏆";
+        details = `<div class="text-sm opacity-90 mt-2">Résultat de tirage enregistré</div>`;
+      } else {
+        couleur = "from-gray-500 to-gray-600";
+        icone = "ℹ️";
+      }
 
-  // 🎨 Pastille couleur selon urgence
-  if (alerte.urgence === "haute") couleurPastille = "bg-red-500";
-  else if (alerte.urgence === "moyenne") couleurPastille = "bg-orange-400";
-  else if (alerte.urgence === "basse") couleurPastille = "bg-green-500";
+      // 🎨 Pastille couleur selon urgence
+      if (alerte.urgence === "haute") couleurPastille = "bg-red-500";
+      else if (alerte.urgence === "moyenne") couleurPastille = "bg-orange-400";
+      else if (alerte.urgence === "basse") couleurPastille = "bg-green-500";
 
-  const div = document.createElement("div");
-  div.className = `bg-gradient-to-r ${couleur} p-[1px] rounded-2xl fade-in-up mb-5 shadow-md`;
-  div.style.animationDelay = `${index * 0.08}s`;
+      // 🕒 Correction date + badge temps
+      const dateStr = (alerte.dateCreation || "").replace(" ", "T");
+      const d = new Date(dateStr);
+      const dateLocale = !isNaN(d)
+        ? `${d.toLocaleDateString("fr-FR")} • ${d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
+        : "Date inconnue";
 
-  div.innerHTML = `
-    <div class="alerte-card-inner flex flex-col sm:flex-row gap-3 sm:gap-4">
-      
-      <!-- Icône + contenu -->
-      <div class="flex items-start gap-3 flex-1">
-        <div class="relative">
-          <div class="text-3xl sm:text-4xl floating-animation">${icone}</div>
-          <span class="absolute -top-1 -right-1 w-3 h-3 ${couleurPastille} rounded-full border-2 border-white"></span>
-        </div>
-        <div class="flex flex-col text-sm sm:text-base flex-1">
-          <div class="font-semibold text-gray-900 leading-tight">${alerte.message}</div>
-          ${details}
-          <div class="text-xs sm:text-sm text-gray-600 mt-2">
-            🕒 ${new Date(alerte.dateCreation).toLocaleDateString("fr-FR")} • 
-            ${new Date(alerte.dateCreation).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+      const diff = !isNaN(d) ? Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24)) : 0;
+      let badgeTemps = "🟢 Aujourd’hui";
+      if (diff === 1) badgeTemps = "🟡 Hier";
+      else if (diff > 1) badgeTemps = `🔴 Il y a ${diff} jours`;
+
+      // 📦 Carte alerte
+      const div = document.createElement("div");
+      div.className = `bg-gradient-to-r ${couleur} p-[1px] rounded-2xl fade-in-up mb-5 shadow-md`;
+      div.style.animationDelay = `${index * 0.08}s`;
+
+      div.innerHTML = `
+        <div class="alerte-card-inner flex flex-col sm:flex-row gap-3 sm:gap-4">
+          
+          <!-- Icône + contenu -->
+          <div class="flex items-start gap-3 flex-1">
+            <div class="relative">
+              <div class="text-3xl sm:text-4xl floating-animation">${icone}</div>
+              <span class="absolute -top-1 -right-1 w-3 h-3 ${couleurPastille} rounded-full border-2 border-white"></span>
+            </div>
+            <div class="flex flex-col text-sm sm:text-base flex-1">
+              <div class="font-semibold text-gray-900 leading-tight">${alerte.message}</div>
+              ${details}
+              <div class="text-xs sm:text-sm text-gray-600 mt-2">
+                🕒 ${dateLocale} • ${badgeTemps}
+              </div>
+            </div>
           </div>
+
+          <!-- Boutons -->
+          <div class="alerte-actions flex gap-2 mt-3 sm:mt-0">
+            <button onclick="supprimerAlerte('${alerte.id}')" class="alerte-btn alerte-btn-red">
+              ❌ Ignorer
+            </button>
+            <button onclick="resoudreAlerte('${alerte.id}')" class="alerte-btn alerte-btn-green">
+              ✅ Résolue
+            </button>
+          </div>
+
         </div>
-      </div>
+      `;
 
-      <!-- Boutons -->
-      <div class="alerte-actions flex gap-2 mt-3 sm:mt-0">
-        <button onclick="supprimerAlerte('${alerte.id}')"
-          class="alerte-btn alerte-btn-red">❌ Ignorer</button>
-        <button onclick="resoudreAlerte('${alerte.id}')"
-          class="alerte-btn alerte-btn-green">✅ Résolue</button>
-      </div>
+      liste.appendChild(div);
+    });
 
-    </div>
-  `;
-
-  liste.appendChild(div);
-});
-
-    // ✅ Badge
+    // ✅ Met à jour le badge du menu
     mettreAJourBadgeAlertes(alertesActuelles);
+
   } catch (err) {
     console.error("❌ Erreur afficherAlertes:", err);
   }
