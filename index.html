@@ -5246,26 +5246,14 @@ function synchroniserBoutonRetour() {
   else btnRetour.classList.remove("hidden");
 }
 
-// Masquer ou afficher le jour de cotisation selon la fréquence
 document.getElementById("frequenceCotisation").addEventListener("change", function () {
   const freq = this.value;
   const zoneJour = document.getElementById("zoneJourCotisation");
 
   if (freq === "quotidien") {
-    zoneJour.classList.add("hidden");
+    zoneJour.style.display = "none";
   } else {
-    zoneJour.classList.remove("hidden");
-  }
-});
-
-document.getElementById('frequenceCotisation').addEventListener("change", e => {
-  const value = e.target.value;
-  const blocJour = document.getElementById("jourCotisation").parentElement;
-
-  if (value === "quotidien") {
-    blocJour.style.display = "none";
-  } else {
-    blocJour.style.display = "block";
+    zoneJour.style.display = "block";
   }
 });
 
