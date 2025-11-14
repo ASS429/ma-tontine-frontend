@@ -2520,6 +2520,45 @@ function afficherTontines() {
     // 🔹 Sécurisation du statut
     const statut = tontine.statut ?? "active";
 
+    if (statut === "terminee") {
+  div.innerHTML = `
+    <div class="flex justify-between items-start mb-4">
+      <div class="flex items-center gap-3">
+        <div class="text-4xl sm:text-5xl floating-animation">${typeIcon[tontine.type] || '🎁'}</div>
+        <div>
+          <h3 class="font-bold text-lg sm:text-xl text-gray-800 leading-tight">${tontine.nom}</h3>
+          <p class="text-gray-600 text-sm sm:text-base font-medium">
+            ${frequenceText[tontine.frequenceCotisation] || tontine.frequenceCotisation} • 
+            ${tontine.montant.toLocaleString()} FCFA
+          </p>
+        </div>
+      </div>
+      <span class="px-4 py-2 bg-gradient-to-r from-gray-500 to-gray-700 text-white rounded-full text-xs sm:text-sm font-semibold">
+        🏁 Terminée
+      </span>
+    </div>
+
+    <div class="bg-gradient-to-r from-gray-400 to-gray-500 text-center px-4 py-3 mb-4 text-white text-sm font-semibold rounded-lg">
+      Tous les membres ont gagné — aucun nouveau cycle.
+    </div>
+
+    <div class="text-center text-gray-700 text-sm italic mb-4">
+      Cette tontine est maintenant en lecture seule.
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 sm:gap-3">
+      <button onclick="gererTontine('${tontine.id}')" class="btn-gradient text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium">
+        📄 Voir détails
+      </button>
+      <button onclick="demanderSuppressionTontine('${tontine.id}')" class="btn-gradient btn-danger text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium">
+        🗑️ Supprimer
+      </button>
+    </div>
+  `;
+  liste.appendChild(div);
+  return;
+}
+
     const div = document.createElement('div');
     div.className = 'tontine-card p-8 fade-in-up';
     div.style.animationDelay = `${index * 0.1}s`;
@@ -2656,12 +2695,27 @@ async function chargerTontineGestion() {
     const res = await apiFetch(`${API_BASE}/tontines/${id}`);
     tontineActive = await res.json();
 
-    document.getElementById('panneauGestion').classList.remove('hidden');
+    const panneau = document.getElementById('panneauGestion');
+    panneau.classList.remove('hidden');
 
+    // 🛑 MODE LECTURE SEULE SI STATUT TERMINÉE
+    if (tontineActive.statut === "terminee") {
+      panneau.innerHTML = `
+        <div class="p-6 bg-gradient-to-r from-gray-500 to-gray-700 text-white text-center rounded-xl">
+          <h3 class="text-2xl font-bold mb-3">🏁 Tontine terminée</h3>
+          <p class="text-sm opacity-90 mb-4">Tous les membres ont gagné.</p>
+          <p class="text-xs opacity-70">Aucune action n'est autorisée.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // 🔥 Mode normal si la tontine n'est pas terminée
     afficherInfosTontine?.();
     afficherMembresTontineGestion?.();
     afficherHistoriqueCotisations?.();
     mettreAJourAlertes?.();
+
   } catch (err) {
     console.error("❌ Erreur chargement gestion tontine:", err);
     showNotification("❌ Impossible de charger la tontine sélectionnée", "error");
@@ -2866,10 +2920,15 @@ async function afficherMembresTontine() {
 
         // Gestion des membres
 
-// ➤ Ajouter un membre à la tontine active (backend Express)
+// ➤ Ajouter un membre à la tontine active
 async function ajouterMembreTontine() {
   if (!tontineActive) {
     return showNotification("⚠️ Aucune tontine active !", "warning");
+  }
+
+  // 🛑 BLOQUER SI TONTINE TERMINÉE
+  if (tontineActive.statut === "terminee") {
+    return showNotification("🏁 Cette tontine est terminée. L'ajout de membres n'est plus possible.", "error");
   }
 
   const nom = document.getElementById("nomMembre").value.trim();
@@ -2915,17 +2974,13 @@ async function ajouterMembreTontine() {
     document.getElementById("telephoneMembre").value = "";
     document.getElementById("adresseMembre").value = "";
 
-    if (typeof afficherMembresTontine === "function") {
-      afficherMembresTontine();
-    }
-    if (typeof afficherMembresTontineGestion === "function") {
-      afficherMembresTontineGestion();
-    }
+    afficherMembresTontineGestion?.();
 
     showNotification(`✅ Membre "${nom}" ajouté avec succès !`, "success");
+
   } catch (err) {
     console.error("❌ Erreur ajout membre:", err);
-    showNotification("❌ Ajout impossible: " + err.message, "error");
+    showNotification("❌ Ajout impossible : " + err.message, "error");
   }
 }
 
@@ -3170,7 +3225,13 @@ function mettreAJourSelectMembres() {
        
 // ➤ Enregistrer une cotisation
 async function enregistrerCotisationTontine() {
-  if (!tontineActive) return showNotification("⚠️ Aucune tontine active !", "warning");
+  if (!tontineActive)
+    return showNotification("⚠️ Aucune tontine active !", "warning");
+
+  // 🛑 BLOQUER SI TONTINE TERMINÉE
+  if (tontineActive.statut === "terminee") {
+    return showNotification("🏁 Cette tontine est terminée. Aucune cotisation supplémentaire n'est autorisée.", "error");
+  }
 
   const membreId = document.getElementById('selectMembreCotisation').value;
   if (!membreId) return showNotification("⚠️ Sélectionne un membre !", "warning");
@@ -3210,6 +3271,7 @@ async function enregistrerCotisationTontine() {
     mettreAJourAlertes?.();
 
     showNotification('✅ Cotisation enregistrée avec succès.', "success");
+
   } catch (err) {
     console.error("Erreur API cotisation:", err);
     showNotification("❌ Impossible d’enregistrer la cotisation : " + err.message, "error");
@@ -3511,7 +3573,6 @@ async function afficherInfosTirage() {
     // Appel au backend en mode "preview"
     const res = await apiFetch(`${API_BASE}/tirages/run/${tontineActive.id}`, { method: "POST" });
     const data = await res.json();
-    console.log("Preview tirage DATA:", data);
 
     if (!data.possible) {
       // Tirage impossible → afficher la raison
