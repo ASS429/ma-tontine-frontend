@@ -2490,6 +2490,11 @@ function afficherTontines() {
   }
 
   tontines.forEach((tontine, index) => {
+
+    const div = document.createElement('div');
+div.className = 'tontine-card p-8 fade-in-up';
+div.style.animationDelay = `${index * 0.1}s`;
+
     // ✅ Sécurité : toujours des tableaux
     const membres = tontine.membres || [];
     const cotisations = tontine.cotisations || [];
@@ -2520,7 +2525,8 @@ function afficherTontines() {
     // 🔹 Sécurisation du statut
     const statut = tontine.statut ?? "active";
 
-    if (statut === "terminee") {
+    // 🔒 Gestion des tontines terminées
+if (statut === "terminee") {
   div.innerHTML = `
     <div class="flex justify-between items-start mb-4">
       <div class="flex items-center gap-3">
@@ -2547,21 +2553,21 @@ function afficherTontines() {
     </div>
 
     <div class="grid grid-cols-2 gap-2 sm:gap-3">
-      <button onclick="gererTontine('${tontine.id}')" class="btn-gradient text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium">
+      <button onclick="gererTontine('${tontine.id}')" 
+              class="btn-gradient text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium">
         📄 Voir détails
       </button>
-      <button onclick="demanderSuppressionTontine('${tontine.id}')" class="btn-gradient btn-danger text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium">
+
+      <button onclick="demanderSuppressionTontine('${tontine.id}')" 
+              class="btn-gradient btn-danger text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium">
         🗑️ Supprimer
       </button>
     </div>
   `;
+
   liste.appendChild(div);
   return;
 }
-
-    const div = document.createElement('div');
-    div.className = 'tontine-card p-8 fade-in-up';
-    div.style.animationDelay = `${index * 0.1}s`;
 
     div.innerHTML = `
   <div class="flex justify-between items-start mb-4">
@@ -2621,7 +2627,25 @@ function afficherTontines() {
   </div>
 
   <div class="grid grid-cols-2 gap-2 sm:gap-3">
-    <button onclick="editerTontineAccueil('${tontine.id}')" class="btn-gradient text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-1" style="background: var(--warning-gradient)">✏️ Éditer</button>
+    ${
+  statut === "terminee"
+    ? `
+      <button disabled 
+        class="bg-gray-400 text-white text-xs sm:text-sm py-2 sm:py-3 rounded-lg 
+               font-medium opacity-70 cursor-not-allowed">
+        ✏️ Éditer
+      </button>
+    `
+    : `
+      <button onclick="editerTontineAccueil('${tontine.id}')"
+        class="btn-gradient text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium 
+               flex items-center justify-center gap-1"
+        style="background: var(--warning-gradient)">
+        ✏️ Éditer
+      </button>
+    `
+}
+
     <button onclick="demanderSuppressionTontine('${tontine.id}')" class="btn-gradient btn-danger text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-1">🗑️ Supprimer</button>
   </div>
 `;
