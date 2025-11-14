@@ -3554,7 +3554,7 @@ async function afficherInfosTirage() {
     }
 
     // ✅ Tirage possible
-    const montantTotal = tontineActive.montant_cotisation * tontineActive.membres.length;
+    const montantTotal = Number(data.montant_gagne || 0);
 
     infoDiv.innerHTML = `
       <div class="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white">
