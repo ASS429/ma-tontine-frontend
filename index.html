@@ -3511,6 +3511,7 @@ async function afficherInfosTirage() {
     // Appel au backend en mode "preview"
     const res = await apiFetch(`${API_BASE}/tirages/run/${tontineActive.id}`, { method: "POST" });
     const data = await res.json();
+    console.log("Preview tirage DATA:", data);
 
     if (!data.possible) {
       // Tirage impossible → afficher la raison
