@@ -2621,11 +2621,29 @@ function afficherTontines() {
   </div>
 
   <div class="grid grid-cols-2 gap-2 sm:gap-3">
-    <button onclick="editerTontineAccueil('${tontine.id}')" class="btn-gradient text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-1" style="background: var(--warning-gradient)">✏️ Éditer</button>
-    <button onclick="demanderSuppressionTontine('${tontine.id}')" class="btn-gradient btn-danger text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-1">🗑️ Supprimer</button>
-  </div>
-`;
+  ${
+    tontine.statut === "terminee"
+      ? `
+        <button disabled 
+          class="bg-gray-400 text-white text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium opacity-70 cursor-not-allowed">
+          ✏️ Éditer
+        </button>
+      `
+      : `
+        <button onclick="editerTontineAccueil('${tontine.id}')"
+          class="btn-gradient text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-1"
+          style="background: var(--warning-gradient)">
+          ✏️ Éditer
+        </button>
+      `
+  }
 
+  <button onclick="demanderSuppressionTontine('${tontine.id}')" 
+    class="btn-gradient btn-danger text-xs sm:text-sm py-2 sm:py-3 rounded-lg font-medium flex items-center justify-center gap-1">
+    🗑️ Supprimer
+  </button>
+</div>
+`;
     liste.appendChild(div);
   });
 }
