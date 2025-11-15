@@ -2523,9 +2523,17 @@ div.style.animationDelay = `${index * 0.1}s`;
 
     // 🔹 Sécurisation du statut
     const statut = (tontine.statut || tontine.statut_calcule || "active").toLowerCase();
-    const estTerminee = statut === "terminee";
 
-    console.log("Statut calculé pour", tontine.nom, statut);
+// Détection automatique si tous les membres ont gagné
+const tousOntGagne = membres.length > 0 && membres.every(m => m.aGagne);
+
+// On considère la tontine terminée si :
+// - statut reçu est "terminee"
+// - OU tous les membres ont gagné
+const estTerminee = statut === "terminee" || tousOntGagne;
+
+console.log("Statut final pour", tontine.nom, "→", estTerminee ? "terminée" : "active");
+
 
 
     // 🔒 Gestion des tontines terminées
