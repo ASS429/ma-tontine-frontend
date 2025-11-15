@@ -2520,7 +2520,7 @@ div.style.animationDelay = `${index * 0.1}s`;
     const cotisationsCompletes = verifierCotisationsCompletes({ ...tontine, membres, cotisations });
     const tiragePossible = verifierDateTiragePossible({ ...tontine, membres, cotisations, tirages });
     const prochaineTirage = obtenirProchaineDateTirage(tontine);
-    const estTerminee = tontine.statut === "terminee";
+    const estTerminee = tontine.statut === "terminée";
 
     // 🔹 Sécurisation du statut
     const statut = tontine.statut ?? "active";
