@@ -2525,7 +2525,7 @@ div.style.animationDelay = `${index * 0.1}s`;
     const statut = (tontine.statut || tontine.statut_calcule || "active").toLowerCase();
     const estTerminee = statut === "terminee";
 
-    console.log("Statut reçu pour", tontine.nom, tontine.statut);
+    console.log("Statut calculé pour", tontine.nom, statut);
 
 
     // 🔒 Gestion des tontines terminées
