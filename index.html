@@ -2525,6 +2525,9 @@ div.style.animationDelay = `${index * 0.1}s`;
     // 🔹 Sécurisation du statut
     const statut = tontine.statut ?? "active";
 
+    console.log("Statut reçu pour", tontine.nom, tontine.statut);
+
+
     // 🔒 Gestion des tontines terminées
 if (statut === "terminee") {
   div.innerHTML = `
