@@ -15,20 +15,646 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="mobile-web-app-capable" content="yes">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&display=swap');
         
         :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary: #5B4FE8;
+            --primary-dark: #4338CA;
+            --primary-light: #EEF2FF;
+            --accent: #F59E0B;
+            --success: #10B981;
+            --danger: #EF4444;
+            --warning: #F59E0B;
+            --surface: #FFFFFF;
+            --surface-2: #F8FAFC;
+            --border: #E2E8F0;
+            --text-1: #0F172A;
+            --text-2: #475569;
+            --text-3: #94A3B8;
+            --nav-width: 240px;
+            --nav-width-collapsed: 72px;
+            --nav-bg: #0F172A;
+            --primary-gradient: linear-gradient(135deg, #5B4FE8 0%, #7C3AED 100%);
             --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            --success-gradient: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            --warning-gradient: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            --danger-gradient: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
         }
         
+        * { box-sizing: border-box; }
+
         body { 
-            font-family: 'Inter', sans-serif; 
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'DM Sans', sans-serif; 
+            background: var(--surface-2);
             min-height: 100vh;
+            color: var(--text-1);
+        }
+
+        /* ═══════════════════════════════════════════
+           NAVBAR LATÉRALE — DESKTOP
+        ═══════════════════════════════════════════ */
+        #app-sidebar {
+            position: fixed;
+            top: 0; left: 0; bottom: 0;
+            width: var(--nav-width);
+            background: var(--nav-bg);
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            transition: width 0.3s cubic-bezier(.4,0,.2,1);
+            overflow: hidden;
+        }
+        #app-sidebar.collapsed { width: var(--nav-width-collapsed); }
+        #app-sidebar .nav-logo {
+            display: flex; align-items: center; gap: 12px;
+            padding: 20px 16px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        #app-sidebar .nav-logo .logo-icon {
+            width: 40px; height: 40px; min-width: 40px;
+            background: linear-gradient(135deg, #5B4FE8, #7C3AED);
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 800;
+            color: white;
+            box-shadow: 0 4px 12px rgba(91,79,232,0.4);
+        }
+        #app-sidebar .nav-logo .logo-text {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800; font-size: 16px;
+            color: white; letter-spacing: -0.3px;
+            white-space: nowrap; overflow: hidden;
+            transition: opacity 0.2s, width 0.3s;
+        }
+        #app-sidebar.collapsed .logo-text { opacity: 0; width: 0; }
+        #app-sidebar .nav-user {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 14px;
+            margin: 8px;
+            border-radius: 12px;
+            background: rgba(255,255,255,0.05);
+            overflow: hidden;
+        }
+        #app-sidebar .nav-user .avatar {
+            width: 36px; height: 36px; min-width: 36px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #5B4FE8, #F59E0B);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: white; font-size: 14px;
+        }
+        #app-sidebar .nav-user .user-info { overflow: hidden; }
+        #app-sidebar .nav-user .user-name {
+            font-weight: 600; font-size: 13px; color: white;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        #app-sidebar .nav-user .user-plan {
+            font-size: 11px; color: var(--text-3);
+            display: flex; align-items: center; gap: 4px;
+        }
+        #app-sidebar.collapsed .user-info { display: none; }
+        
+        .nav-section-title {
+            font-size: 10px; font-weight: 700;
+            color: rgba(255,255,255,0.3);
+            text-transform: uppercase; letter-spacing: 1px;
+            padding: 16px 18px 6px;
+            white-space: nowrap; overflow: hidden;
+            transition: opacity 0.2s;
+        }
+        #app-sidebar.collapsed .nav-section-title { opacity: 0; }
+        
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px;
+            margin: 2px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            text-decoration: none;
+            border: none; background: none;
+            width: calc(100% - 16px);
+            text-align: left;
+        }
+        .nav-item .nav-icon {
+            width: 36px; height: 36px; min-width: 36px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            background: rgba(255,255,255,0.06);
+            transition: all 0.2s;
+        }
+        .nav-item .nav-label {
+            font-size: 13.5px; font-weight: 500;
+            color: rgba(255,255,255,0.6);
+            white-space: nowrap; overflow: hidden;
+            transition: color 0.2s, opacity 0.2s;
+        }
+        .nav-item .nav-badge {
+            margin-left: auto;
+            background: #EF4444;
+            color: white;
+            font-size: 10px; font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 20px;
+            min-width: 20px; text-align: center;
+            animation: pulseBadge 2s infinite;
+        }
+        @keyframes pulseBadge {
+            0%,100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.07); }
+        .nav-item:hover .nav-icon { background: rgba(91,79,232,0.3); }
+        .nav-item:hover .nav-label { color: white; }
+        .nav-item.active { background: rgba(91,79,232,0.2); }
+        .nav-item.active .nav-icon {
+            background: var(--primary);
+            box-shadow: 0 4px 12px rgba(91,79,232,0.4);
+        }
+        .nav-item.active .nav-label { color: white; font-weight: 600; }
+        .nav-item.active::before {
+            content: '';
+            position: absolute; left: 0; top: 20%; bottom: 20%;
+            width: 3px; border-radius: 0 3px 3px 0;
+            background: var(--primary);
+        }
+        #app-sidebar.collapsed .nav-label { opacity: 0; width: 0; }
+        #app-sidebar.collapsed .nav-badge { display: none; }
+        
+        .nav-bottom {
+            margin-top: auto;
+            padding: 8px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .nav-collapse-btn {
+            width: 100%; padding: 10px 14px;
+            display: flex; align-items: center; gap: 12px;
+            border-radius: 10px;
+            background: none; border: none;
+            color: rgba(255,255,255,0.4); cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+        .nav-collapse-btn:hover { color: white; background: rgba(255,255,255,0.06); }
+        .nav-collapse-btn .collapse-icon {
+            width: 36px; height: 36px; min-width: 36px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px;
+            transition: transform 0.3s;
+        }
+        #app-sidebar.collapsed .collapse-icon { transform: rotate(180deg); }
+        #app-sidebar.collapsed .collapse-label { display: none; }
+        
+        /* ═══════════════════════════════════════════
+           CONTENU PRINCIPAL
+        ═══════════════════════════════════════════ */
+        #app-content {
+            margin-left: var(--nav-width);
+            transition: margin-left 0.3s cubic-bezier(.4,0,.2,1);
+            min-height: 100vh;
+        }
+        #app-content.sidebar-collapsed { margin-left: var(--nav-width-collapsed); }
+        
+        #app-topbar {
+            position: sticky; top: 0; z-index: 50;
+            background: rgba(248,250,252,0.9);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 24px;
+            height: 64px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .topbar-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px; font-weight: 700;
+            color: var(--text-1);
+        }
+        .topbar-actions { display: flex; align-items: center; gap: 12px; }
+        .topbar-btn {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 16px;
+            position: relative;
+        }
+        .topbar-btn:hover { background: var(--primary-light); border-color: var(--primary); }
+
+        /* ═══════════════════════════════════════════
+           BOTTOM NAV — MOBILE
+        ═══════════════════════════════════════════ */
+        #mobile-bottom-nav {
+            display: none;
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--nav-bg);
+            z-index: 100;
+            padding: 8px 8px 12px;
+            border-top: 1px solid rgba(255,255,255,0.08);
+        }
+        .mobile-nav-inner {
+            display: flex; justify-content: space-around; align-items: center;
+        }
+        .mobile-nav-item {
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none; background: none;
+            position: relative;
+            flex: 1; max-width: 70px;
+        }
+        .mobile-nav-item .m-icon {
+            font-size: 20px;
+            transition: transform 0.2s;
+        }
+        .mobile-nav-item .m-label {
+            font-size: 10px; font-weight: 500;
+            color: rgba(255,255,255,0.45);
+            transition: color 0.2s;
+        }
+        .mobile-nav-item.active .m-label { color: white; }
+        .mobile-nav-item.active .m-icon { transform: scale(1.15); }
+        .mobile-nav-item.active::before {
+            content: '';
+            position: absolute; top: 0; left: 20%; right: 20%;
+            height: 2px; border-radius: 0 0 3px 3px;
+            background: var(--primary);
+        }
+        .mobile-nav-badge {
+            position: absolute; top: 2px; right: 8px;
+            background: #EF4444; color: white;
+            font-size: 9px; font-weight: 700;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* ═══════════════════════════════════════════
+           PAGES AUTH — CONNEXION & INSCRIPTION
+        ═══════════════════════════════════════════ */
+        .auth-wrapper {
+            min-height: 100vh;
+            display: flex;
+            background: #0F172A;
+        }
+        .auth-panel-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 60px;
+            background: linear-gradient(145deg, #1E1B4B 0%, #0F172A 50%, #1a0533 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        .auth-panel-left::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%235B4FE8' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .auth-panel-left .brand {
+            display: flex; align-items: center; gap: 14px;
+            margin-bottom: 60px;
+        }
+        .auth-panel-left .brand-icon {
+            width: 48px; height: 48px;
+            background: linear-gradient(135deg, #5B4FE8, #7C3AED);
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px;
+            box-shadow: 0 8px 24px rgba(91,79,232,0.4);
+        }
+        .auth-panel-left .brand-name {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800; font-size: 22px; color: white;
+        }
+        .auth-illustration {
+            position: relative;
+            margin-bottom: 40px;
+        }
+        .auth-float-card {
+            background: rgba(255,255,255,0.07);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 16px 20px;
+            display: flex; align-items: center; gap: 14px;
+            margin-bottom: 12px;
+            animation: floatCard 4s ease-in-out infinite;
+        }
+        .auth-float-card:nth-child(2) { animation-delay: 1.3s; margin-left: 20px; }
+        .auth-float-card:nth-child(3) { animation-delay: 2.6s; margin-left: 40px; }
+        @keyframes floatCard {
+            0%,100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+        .auth-float-card .card-icon {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+        }
+        .auth-float-card .card-text .title {
+            font-size: 13px; font-weight: 600; color: white;
+        }
+        .auth-float-card .card-text .sub {
+            font-size: 11px; color: rgba(255,255,255,0.5);
+        }
+        .auth-tagline {
+            font-family: 'Outfit', sans-serif;
+            font-size: 32px; font-weight: 800;
+            color: white; line-height: 1.2;
+            margin-bottom: 12px;
+        }
+        .auth-tagline span {
+            background: linear-gradient(90deg, #5B4FE8, #F59E0B);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .auth-subtitle {
+            font-size: 15px; color: rgba(255,255,255,0.5);
+            line-height: 1.6;
+        }
+        .auth-panel-right {
+            width: 480px; min-width: 480px;
+            background: white;
+            display: flex; flex-direction: column;
+            justify-content: center;
+            padding: 60px 48px;
+            position: relative;
+            overflow-y: auto;
+        }
+        .auth-tab-switcher {
+            display: flex;
+            background: #F1F5F9;
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 32px;
+        }
+        .auth-tab-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 9px;
+            border: none;
+            background: none;
+            font-size: 14px; font-weight: 600;
+            color: var(--text-3);
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .auth-tab-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .auth-form-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px; font-weight: 800;
+            color: var(--text-1);
+            margin-bottom: 4px;
+        }
+        .auth-form-subtitle {
+            font-size: 14px; color: var(--text-3);
+            margin-bottom: 28px;
+        }
+        .auth-field { margin-bottom: 18px; }
+        .auth-field label {
+            display: block;
+            font-size: 13px; font-weight: 600;
+            color: var(--text-2);
+            margin-bottom: 6px;
+        }
+        .auth-input-wrap { position: relative; }
+        .auth-input-wrap .field-icon {
+            position: absolute; left: 14px; top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px; pointer-events: none;
+        }
+        .auth-input {
+            width: 100%;
+            padding: 13px 14px 13px 42px;
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            font-size: 14px; font-family: 'DM Sans', sans-serif;
+            color: var(--text-1);
+            background: var(--surface-2);
+            transition: all 0.2s;
+            outline: none;
+        }
+        .auth-input:focus {
+            border-color: var(--primary);
+            background: white;
+            box-shadow: 0 0 0 3px rgba(91,79,232,0.12);
+        }
+        .auth-input.error { border-color: var(--danger); }
+        .auth-input.valid { border-color: var(--success); }
+        .pw-toggle {
+            position: absolute; right: 14px; top: 50%;
+            transform: translateY(-50%);
+            background: none; border: none;
+            cursor: pointer; font-size: 16px;
+            color: var(--text-3);
+        }
+        .pw-strength {
+            display: flex; gap: 4px; margin-top: 6px;
+        }
+        .pw-strength-bar {
+            flex: 1; height: 3px; border-radius: 3px;
+            background: var(--border);
+            transition: background 0.3s;
+        }
+        .pw-strength-bar.weak { background: var(--danger); }
+        .pw-strength-bar.medium { background: var(--warning); }
+        .pw-strength-bar.strong { background: var(--success); }
+        .pw-strength-label { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+        .auth-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #5B4FE8, #7C3AED);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px; font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.25s;
+            margin-top: 8px;
+            position: relative; overflow: hidden;
+        }
+        .auth-submit-btn::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .auth-submit-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(91,79,232,0.4); }
+        .auth-submit-btn:hover::before { opacity: 1; }
+        .auth-submit-btn:active { transform: translateY(0); }
+        .auth-submit-btn.loading { opacity: 0.7; cursor: not-allowed; }
+        .auth-divider {
+            display: flex; align-items: center; gap: 12px;
+            margin: 20px 0;
+            color: var(--text-3); font-size: 12px;
+        }
+        .auth-divider::before, .auth-divider::after {
+            content: ''; flex: 1; height: 1px; background: var(--border);
+        }
+        .auth-2fa-box {
+            background: linear-gradient(135deg, #EEF2FF, #F0F9FF);
+            border: 1px solid #C7D2FE;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .auth-2fa-box .otp-inputs {
+            display: flex; gap: 8px; justify-content: center; margin: 12px 0;
+        }
+        .otp-input {
+            width: 44px; height: 52px;
+            text-align: center;
+            font-size: 20px; font-weight: 700;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            background: white;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .otp-input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(91,79,232,0.12); }
+
+        /* ═══════════════════════════════════════════
+           GUIDE D'ONBOARDING
+        ═══════════════════════════════════════════ */
+        #onboarding-overlay {
+            position: fixed; inset: 0;
+            background: rgba(15,23,42,0.7);
+            backdrop-filter: blur(4px);
+            z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px;
+        }
+        #onboarding-modal {
+            background: white;
+            border-radius: 24px;
+            width: 100%; max-width: 560px;
+            overflow: hidden;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.25);
+            animation: modalPop 0.4s cubic-bezier(.17,.67,.41,1.33);
+        }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.88) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .onb-header {
+            padding: 32px 32px 0;
+        }
+        .onb-steps {
+            display: flex; gap: 6px; margin-bottom: 28px;
+        }
+        .onb-step-dot {
+            flex: 1; height: 4px; border-radius: 4px;
+            background: var(--border);
+            transition: background 0.4s;
+        }
+        .onb-step-dot.done { background: var(--primary); }
+        .onb-step-dot.active { background: var(--primary); animation: dotPulse 1.5s infinite; }
+        @keyframes dotPulse {
+            0%,100% { opacity: 1; } 50% { opacity: 0.5; }
+        }
+        .onb-illustration {
+            width: 100%;
+            height: 200px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 80px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #F0F9FF 100%);
+            position: relative; overflow: hidden;
+        }
+        .onb-illustration::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(circle at 30% 50%, rgba(91,79,232,0.08) 0%, transparent 60%),
+                        radial-gradient(circle at 70% 50%, rgba(245,158,11,0.08) 0%, transparent 60%);
+        }
+        .onb-emoji { position: relative; z-index: 1; animation: onbFloat 3s ease-in-out infinite; }
+        @keyframes onbFloat {
+            0%,100% { transform: translateY(0) rotate(-3deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+        .onb-body { padding: 28px 32px 32px; }
+        .onb-step-num {
+            font-size: 11px; font-weight: 700;
+            color: var(--primary); text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+        .onb-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px; font-weight: 800;
+            color: var(--text-1); margin-bottom: 10px; line-height: 1.2;
+        }
+        .onb-desc {
+            font-size: 14px; color: var(--text-2);
+            line-height: 1.7; margin-bottom: 24px;
+        }
+        .onb-tip {
+            background: linear-gradient(135deg, #FEF3C7, #FFF7ED);
+            border-left: 3px solid var(--accent);
+            border-radius: 10px;
+            padding: 12px 14px;
+            font-size: 13px; color: #92400E;
+            margin-bottom: 24px;
+        }
+        .onb-actions {
+            display: flex; gap: 10px; align-items: center;
+        }
+        .onb-btn-skip {
+            background: none; border: none;
+            color: var(--text-3); font-size: 13px;
+            cursor: pointer; padding: 10px;
+            transition: color 0.2s;
+        }
+        .onb-btn-skip:hover { color: var(--text-2); }
+        .onb-btn-prev {
+            padding: 12px 20px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            background: none; font-size: 14px; font-weight: 600;
+            color: var(--text-2); cursor: pointer;
+            transition: all 0.2s;
+        }
+        .onb-btn-prev:hover { background: var(--surface-2); }
+        .onb-btn-next {
+            flex: 1;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #5B4FE8, #7C3AED);
+            color: white; border: none;
+            border-radius: 10px;
+            font-size: 14px; font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(91,79,232,0.3);
+        }
+        .onb-btn-next:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(91,79,232,0.4); }
+
+        /* ═══════════════════════════════════════════
+           RESPONSIVE — MOBILE
+        ═══════════════════════════════════════════ */
+        @media (max-width: 900px) {
+            #app-sidebar { display: none; }
+            #app-content { margin-left: 0 !important; padding-bottom: 80px; }
+            #mobile-bottom-nav { display: block; }
+            #app-topbar { padding: 0 16px; }
+            .auth-panel-left { display: none; }
+            .auth-panel-right { 
+                width: 100%; min-width: unset;
+                padding: 40px 24px;
+            }
         }
         
         .glass-effect {
@@ -155,12 +781,24 @@
         }
         
         .page {
-            display: none;
+            display: none !important;
         }
-        
         .page.active {
-            display: block;
-            animation: pageTransition 0.5s ease-out;
+            display: block !important;
+            animation: pageTransition 0.4s ease-out;
+        }
+        #page-connexion.active, #page-inscription.active {
+            display: block !important;
+            padding: 0 !important;
+        }
+        #page-connexion .auth-wrapper {
+            min-height: 100vh;
+        }
+        /* Inner pages padding */
+        #page-tontines, #page-creer, #page-gestion, #page-membres,
+        #page-tirages, #page-statistiques, #page-alertes, #page-paiements,
+        #page-premium, #page-revenus, #page-compte {
+            padding: 24px;
         }
         
         @keyframes pageTransition {
@@ -729,296 +1367,333 @@ label { font-size: 0.95rem; font-weight: 600; }
 
 <body>
 
-<!-- ================= HEADER ================= -->
-<header id="appHeader" class="hidden header-glass sticky top-0 z-50 backdrop-blur-md bg-white/80 shadow-md border border-gray-200 rounded-b-3xl transition-all duration-300">
-  <div class="max-w-7xl mx-auto flex justify-between items-center px-5 py-3 sm:py-4">
-    <div class="flex items-center space-x-3">
-      <div class="w-11 h-11 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-xl flex items-center justify-center shadow-md">
-        <span class="text-white text-lg font-bold">🎯</span>
-      </div>
-      <h1 class="text-lg sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent tracking-tight">
-        Samay Tontines
-      </h1>
+<!-- ═══════════════════════════════════════════════════════
+     GUIDE D'ONBOARDING — première connexion
+═══════════════════════════════════════════════════════ -->
+<div id="onboarding-overlay" style="display:none;">
+  <div id="onboarding-modal">
+    <div class="onb-header">
+      <div class="onb-steps" id="onb-steps"></div>
     </div>
-
-    <div class="flex items-center gap-3">
-      <button id="btnRetour" onclick="retourAccueil()" 
-              class="hidden items-center gap-1 px-3 py-1.5 text-sm rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium shadow hover:opacity-90 transition">
-        ← Retour
-      </button>
-<button id="btnInfos" 
-        onclick="event.stopPropagation(); toggleSidebar()" 
-        class="p-2 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow hover:opacity-90 transition">
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="w-6 h-6">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-  </svg>
-</button>
-
+    <div class="onb-illustration">
+      <span class="onb-emoji" id="onb-emoji">🎯</span>
+    </div>
+    <div class="onb-body">
+      <div class="onb-step-num" id="onb-step-num">Étape 1 sur 6</div>
+      <div class="onb-title" id="onb-title">Bienvenue sur Samay Tontines !</div>
+      <div class="onb-desc" id="onb-desc">Votre plateforme de gestion de tontines, moderne, rapide et sécurisée. En quelques clics, gérez toutes vos tontines comme un pro.</div>
+      <div class="onb-tip" id="onb-tip">💡 Ce guide vous prendra moins de 2 minutes</div>
+      <div class="onb-actions">
+        <button class="onb-btn-skip" onclick="fermerOnboarding()">Passer le guide</button>
+        <button class="onb-btn-prev" id="onb-prev" onclick="onbPrev()" style="display:none">← Retour</button>
+        <button class="onb-btn-next" id="onb-next" onclick="onbNext()">Commencer →</button>
+      </div>
     </div>
   </div>
-</header>
+</div>
 
-<!-- ✅ Overlay d'abord -->
-<div id="sidebarOverlay" 
-     class="fixed inset-0 bg-black/30 backdrop-blur-sm hidden z-[98] transition-opacity duration-300"
-     onclick="toggleSidebar(false)"></div>
+<!-- ═══════════════════════════════════════════════════════
+     SIDEBAR NAVIGATION — DESKTOP
+═══════════════════════════════════════════════════════ -->
+<nav id="app-sidebar" class="hidden">
+  <!-- Logo -->
+  <div class="nav-logo">
+    <div class="logo-icon">ST</div>
+    <div class="logo-text">Samay Tontines</div>
+  </div>
 
-<!-- ✅ Sidebar ensuite -->
-<aside id="sidebarInfos"
-       class="fixed bg-white/95 shadow-2xl border-t sm:border-l border-gray-200 transition-transform duration-300 ease-out 
-              z-[99] p-6 flex flex-col justify-between 
-              bottom-0 left-0 right-0 sm:top-0 sm:right-0 sm:left-auto sm:w-80 sm:h-full
-              rounded-t-2xl sm:rounded-l-2xl
-              hidden-sidebar">
-
-  <div>
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-lg font-semibold text-gray-800">🔐 Espace Utilisateur</h2>
-      <button onclick="toggleSidebar(false)" class="text-gray-500 hover:text-red-500 text-xl font-bold">×</button>
-    </div>
-
-    <div class="space-y-4">
-      <div>
-        <p class="text-gray-600 text-sm">Connecté en tant que :</p>
-        <p id="nomUtilisateur" class="font-bold text-gray-900">Utilisateur</p>
-      </div>
-
-      <div>
-        <p class="text-gray-600 text-sm">Tontines actives :</p>
-        <p id="nombreTontines" class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">0</p>
-      </div>
-
-      <div id="banniereReseau" class="hidden bg-orange-500 text-white text-center py-2 rounded-md text-sm font-medium">
-        📡 Mode hors ligne - Données locales utilisées
+  <!-- Utilisateur -->
+  <div class="nav-user" style="margin-top:8px;">
+    <div class="avatar" id="nav-avatar">?</div>
+    <div class="user-info">
+      <div class="user-name" id="nav-user-name">Utilisateur</div>
+      <div class="user-plan" id="nav-user-plan">
+        <span id="nav-plan-badge">🆓 Free</span>
       </div>
     </div>
   </div>
 
-  <div>
-    <button id="btnDeconnexion" onclick="seDeconnecter()" 
-            class="w-full py-2 bg-gradient-to-r from-red-500 to-red-600 text-white font-medium rounded-lg shadow hover:opacity-90 transition">
-      🚪 Déconnexion
+  <!-- Navigation principale -->
+  <div class="nav-section-title">Navigation</div>
+
+  <button class="nav-item active" id="nav-accueil" onclick="ouvrirPage('accueil')">
+    <div class="nav-icon">🏠</div>
+    <span class="nav-label">Accueil</span>
+  </button>
+  <button class="nav-item" id="nav-tontines" onclick="ouvrirPage('tontines')">
+    <div class="nav-icon">📋</div>
+    <span class="nav-label">Mes Tontines</span>
+  </button>
+  <button class="nav-item" id="nav-creer" onclick="handleCreateClick()">
+    <div class="nav-icon">➕</div>
+    <span class="nav-label">Créer une Tontine</span>
+  </button>
+  <button class="nav-item" id="nav-gestion" onclick="ouvrirPage('gestion')">
+    <div class="nav-icon">⚙️</div>
+    <span class="nav-label">Gestion</span>
+  </button>
+  <button class="nav-item" id="nav-membres" onclick="ouvrirPage('membres')">
+    <div class="nav-icon">👥</div>
+    <span class="nav-label">Membres</span>
+  </button>
+  <button class="nav-item" id="nav-tirages" onclick="ouvrirPage('tirages')">
+    <div class="nav-icon">🎲</div>
+    <span class="nav-label">Tirages</span>
+  </button>
+
+  <div class="nav-section-title">Analyse</div>
+  <button class="nav-item" id="nav-statistiques" onclick="ouvrirPage('statistiques')">
+    <div class="nav-icon">📊</div>
+    <span class="nav-label">Statistiques</span>
+  </button>
+  <button class="nav-item" id="nav-paiements" onclick="ouvrirPage('paiements')">
+    <div class="nav-icon">💳</div>
+    <span class="nav-label">Paiements</span>
+  </button>
+  <button class="nav-item" id="nav-alertes" onclick="ouvrirPage('alertes')">
+    <div class="nav-icon">🔔</div>
+    <span class="nav-label">Alertes</span>
+    <span class="nav-badge" id="badgeAlertes" style="display:none">0</span>
+  </button>
+
+  <!-- Bas de sidebar -->
+  <div class="nav-bottom">
+    <div id="banniereReseau" class="hidden" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#D97706;text-align:center;"></div>
+    <button class="nav-item" onclick="seDeconnecter()" style="color:rgba(239,68,68,0.7)">
+      <div class="nav-icon" style="background:rgba(239,68,68,0.1)">🚪</div>
+      <span class="nav-label" style="color:rgba(239,68,68,0.8)">Déconnexion</span>
     </button>
-
-    <button id="installBtn" 
-            class="w-full mt-3 py-2 bg-green-600 text-white rounded-lg font-medium hidden hover:bg-green-700 transition">
-      📲 Installer
+    <button class="nav-collapse-btn" onclick="toggleSidebarCollapse()" id="nav-collapse-btn">
+      <div class="collapse-icon">◀</div>
+      <span class="collapse-label">Réduire</span>
     </button>
   </div>
-</aside>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     CONTENU PRINCIPAL
+═══════════════════════════════════════════════════════ -->
+<div id="app-content">
+
+  <!-- Topbar desktop -->
+  <div id="app-topbar" class="hidden">
+    <div class="topbar-title" id="topbar-page-title">Accueil</div>
+    <div class="topbar-actions">
+      <button class="topbar-btn" id="btnRetour" onclick="retourAccueil()" title="Retour à l'accueil" style="display:none">🏠</button>
+      <div class="topbar-btn" id="topbar-alert-btn" onclick="ouvrirPage('alertes')" title="Alertes" style="position:relative">
+        🔔
+        <span id="topbarBadgeAlertes" style="position:absolute;top:-4px;right:-4px;background:#EF4444;color:white;font-size:9px;font-weight:700;width:16px;height:16px;border-radius:50%;display:none;align-items:center;justify-content:center;">0</span>
+      </div>
+      <div id="topbar-user-avatar" class="topbar-btn" style="font-weight:700;font-size:13px;background:linear-gradient(135deg,#5B4FE8,#7C3AED);color:white;border:none">?</div>
+    </div>
+  </div>
+
+<!-- ═══════════════════════════════════════════════════════
+     BOTTOM NAV — MOBILE
+═══════════════════════════════════════════════════════ -->
+<nav id="mobile-bottom-nav" style="display:none;">
+  <div class="mobile-nav-inner">
+    <button class="mobile-nav-item active" id="mob-accueil" onclick="ouvrirPage('accueil')">
+      <span class="m-icon">🏠</span>
+      <span class="m-label">Accueil</span>
+    </button>
+    <button class="mobile-nav-item" id="mob-tontines" onclick="ouvrirPage('tontines')">
+      <span class="m-icon">📋</span>
+      <span class="m-label">Tontines</span>
+    </button>
+    <button class="mobile-nav-item" id="mob-creer" onclick="handleCreateClick()">
+      <span class="m-icon" style="font-size:26px;background:linear-gradient(135deg,#5B4FE8,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">➕</span>
+      <span class="m-label">Créer</span>
+    </button>
+    <button class="mobile-nav-item" id="mob-alertes" onclick="ouvrirPage('alertes')" style="position:relative">
+      <span class="m-icon">🔔</span>
+      <span class="m-label">Alertes</span>
+      <span id="mobBadgeAlertes" class="mobile-nav-badge" style="display:none">0</span>
+    </button>
+    <button class="mobile-nav-item" id="mob-menu" onclick="toggleMobileMenu()">
+      <span class="m-icon">☰</span>
+      <span class="m-label">Menu</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile menu drawer -->
+<div id="mobile-menu-overlay" onclick="toggleMobileMenu()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;"></div>
+<div id="mobile-menu-drawer" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#0F172A;border-radius:20px 20px 0 0;z-index:201;padding:20px 16px 32px;">
+  <div style="width:40px;height:4px;background:rgba(255,255,255,0.2);border-radius:4px;margin:0 auto 20px;"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+    <button onclick="ouvrirPage('gestion');toggleMobileMenu()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(255,255,255,0.07);border:none;border-radius:12px;cursor:pointer;">
+      <span style="font-size:22px;">⚙️</span><span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:500;">Gestion</span>
+    </button>
+    <button onclick="ouvrirPage('membres');toggleMobileMenu()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(255,255,255,0.07);border:none;border-radius:12px;cursor:pointer;">
+      <span style="font-size:22px;">👥</span><span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:500;">Membres</span>
+    </button>
+    <button onclick="ouvrirPage('tirages');toggleMobileMenu()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(255,255,255,0.07);border:none;border-radius:12px;cursor:pointer;">
+      <span style="font-size:22px;">🎲</span><span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:500;">Tirages</span>
+    </button>
+    <button onclick="ouvrirPage('statistiques');toggleMobileMenu()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(255,255,255,0.07);border:none;border-radius:12px;cursor:pointer;">
+      <span style="font-size:22px;">📊</span><span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:500;">Statistiques</span>
+    </button>
+    <button onclick="ouvrirPage('paiements');toggleMobileMenu()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(255,255,255,0.07);border:none;border-radius:12px;cursor:pointer;">
+      <span style="font-size:22px;">💳</span><span style="font-size:11px;color:rgba(255,255,255,0.7);font-weight:500;">Paiements</span>
+    </button>
+    <button onclick="seDeconnecter();toggleMobileMenu()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(239,68,68,0.1);border:none;border-radius:12px;cursor:pointer;">
+      <span style="font-size:22px;">🚪</span><span style="font-size:11px;color:rgba(239,68,68,0.7);font-weight:500;">Déconnexion</span>
+    </button>
+  </div>
+</div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6">
         <!-- PAGE CONNEXION -->
-        <div id="page-connexion" class="page active">
-            <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-                <div class="max-w-md w-full space-y-8">
-                    <div class="card-premium p-8 fade-in-up">
-                        <div class="text-center mb-8">
-                            <div class="w-20 h-20 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 floating-animation">
-                                <span class="text-white font-bold text-3xl">🎯</span>
-                            </div>
-                            <h2 class="text-3xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
-                                Connexion
-                            </h2>
-                            <p class="text-gray-600 font-medium mt-2">Accédez à vos tontines</p>
-                        </div>
-                        
-                        <form onsubmit="seConnecter(event)" class="space-y-6">
-  <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Email</label>
-    <input 
-      type="email" 
-      id="emailConnexion" 
-      required 
-      placeholder="votre@email.com" 
-      class="form-input w-full"
-    >
-  </div>
-
-  <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Mot de passe</label>
-    <input 
-      type="password" 
-      id="motPasseConnexion" 
-      required 
-      placeholder="••••••••" 
-      class="form-input w-full"
-    >
-  </div>
-
-  <button type="submit" class="btn-gradient w-full py-4 rounded-xl text-lg font-bold">
-    🔐 Se connecter
-  </button>
-
-</form>
-
-                        
-                        <div class="mt-6 text-center">
-                            <p class="text-gray-600">Pas encore de compte ?</p>
-                            <button onclick="ouvrirPageInscription()" class="text-blue-600 hover:text-blue-800 font-semibold mt-2">
-                                Créer un compte
-                            </button>
-                        </div>
-                    </div>
+        <div id="page-connexion" class="page active" style="display:block">
+          <div class="auth-wrapper">
+            <!-- Panneau gauche — branding -->
+            <div class="auth-panel-left">
+              <div class="brand">
+                <div class="brand-icon">ST</div>
+                <div class="brand-name">Samay Tontines</div>
+              </div>
+              <div class="auth-illustration">
+                <div class="auth-float-card">
+                  <div class="card-icon" style="background:rgba(91,79,232,0.15)">💰</div>
+                  <div class="card-text">
+                    <div class="title">Tontine Famille Ndiaye</div>
+                    <div class="sub">8 membres · 50 000 FCFA/mois</div>
+                  </div>
                 </div>
+                <div class="auth-float-card">
+                  <div class="card-icon" style="background:rgba(16,185,129,0.15)">🎲</div>
+                  <div class="card-text">
+                    <div class="title">Tirage effectué !</div>
+                    <div class="sub">Aminata Diallo gagne 400 000 FCFA</div>
+                  </div>
+                </div>
+                <div class="auth-float-card">
+                  <div class="card-icon" style="background:rgba(245,158,11,0.15)">📊</div>
+                  <div class="card-text">
+                    <div class="title">Cotisations du mois</div>
+                    <div class="sub">Collecté : 1 200 000 FCFA</div>
+                  </div>
+                </div>
+              </div>
+              <div class="auth-tagline">Gérez vos tontines<br>avec <span>intelligence</span></div>
+              <div class="auth-subtitle">Une plateforme moderne pour organiser, suivre et gérer toutes vos tontines en toute confiance.</div>
             </div>
+            <!-- Panneau droit — formulaire -->
+            <div class="auth-panel-right">
+              <div class="auth-tab-switcher">
+                <button class="auth-tab-btn active" id="tab-connexion" onclick="switchAuthTab('connexion')">Se connecter</button>
+                <button class="auth-tab-btn" id="tab-inscription" onclick="switchAuthTab('inscription')">Créer un compte</button>
+              </div>
+
+              <!-- Formulaire Connexion -->
+              <div id="auth-form-connexion">
+                <div class="auth-form-title">Bon retour ! 👋</div>
+                <div class="auth-form-subtitle">Connectez-vous à votre espace</div>
+                <form onsubmit="seConnecter(event)">
+                  <div class="auth-field">
+                    <label>Adresse email</label>
+                    <div class="auth-input-wrap">
+                      <span class="field-icon">✉️</span>
+                      <input type="email" id="emailConnexion" required placeholder="votre@email.com" class="auth-input">
+                    </div>
+                  </div>
+                  <div class="auth-field">
+                    <label>Mot de passe</label>
+                    <div class="auth-input-wrap">
+                      <span class="field-icon">🔒</span>
+                      <input type="password" id="motPasseConnexion" required placeholder="••••••••" class="auth-input" id="motPasseConnexion">
+                      <button type="button" class="pw-toggle" onclick="togglePwVisibility('motPasseConnexion',this)">👁</button>
+                    </div>
+                  </div>
+                  <!-- Zone 2FA masquée par défaut -->
+                  <div id="champ-2fa" style="display:none;" class="auth-2fa-box">
+                    <div style="font-size:13px;font-weight:600;color:#1E1B4B;margin-bottom:4px;">🔐 Vérification en 2 étapes</div>
+                    <div style="font-size:12px;color:#64748B;margin-bottom:12px;">Un code a été envoyé à votre adresse email</div>
+                    <div class="otp-inputs">
+                      <input type="text" maxlength="1" class="otp-input" oninput="moveOtp(this,1)" id="otp0">
+                      <input type="text" maxlength="1" class="otp-input" oninput="moveOtp(this,2)" id="otp1">
+                      <input type="text" maxlength="1" class="otp-input" oninput="moveOtp(this,3)" id="otp2">
+                      <input type="text" maxlength="1" class="otp-input" oninput="moveOtp(this,4)" id="otp3">
+                      <input type="text" maxlength="1" class="otp-input" oninput="moveOtp(this,5)" id="otp4">
+                      <input type="text" maxlength="1" class="otp-input" oninput="moveOtp(this,6)" id="otp5">
+                    </div>
+                    <input type="hidden" id="code2fa">
+                    <button type="button" onclick="collectOtpAndValidate()" style="background:linear-gradient(135deg,#5B4FE8,#7C3AED);color:white;border:none;padding:10px 24px;border-radius:10px;font-weight:600;cursor:pointer;width:100%;">Valider le code</button>
+                  </div>
+                  <button type="submit" class="auth-submit-btn" id="btn-connexion">Se connecter</button>
+                </form>
+              </div>
+
+              <!-- Formulaire Inscription -->
+              <div id="auth-form-inscription" style="display:none;">
+                <div class="auth-form-title">Créer un compte 🚀</div>
+                <div class="auth-form-subtitle">Rejoignez des milliers d'utilisateurs</div>
+                <form onsubmit="sInscrire(event)">
+                  <div class="auth-field">
+                    <label>Nom complet</label>
+                    <div class="auth-input-wrap">
+                      <span class="field-icon">👤</span>
+                      <input type="text" id="nomInscription" required placeholder="Modou Ndiaye" class="auth-input">
+                    </div>
+                  </div>
+                  <div class="auth-field">
+                    <label>Adresse email</label>
+                    <div class="auth-input-wrap">
+                      <span class="field-icon">✉️</span>
+                      <input type="email" id="emailInscription" required placeholder="votre@email.com" class="auth-input">
+                    </div>
+                  </div>
+                  <div class="auth-field">
+                    <label>Mot de passe</label>
+                    <div class="auth-input-wrap">
+                      <span class="field-icon">🔒</span>
+                      <input type="password" id="motPasseInscription" required placeholder="Min. 6 caractères" class="auth-input" minlength="6" oninput="checkPwStrength(this)">
+                      <button type="button" class="pw-toggle" onclick="togglePwVisibility('motPasseInscription',this)">👁</button>
+                    </div>
+                    <div class="pw-strength">
+                      <div class="pw-strength-bar" id="pw-bar-1"></div>
+                      <div class="pw-strength-bar" id="pw-bar-2"></div>
+                      <div class="pw-strength-bar" id="pw-bar-3"></div>
+                    </div>
+                    <div class="pw-strength-label" id="pw-label"></div>
+                  </div>
+                  <div class="auth-field">
+                    <label>Confirmer le mot de passe</label>
+                    <div class="auth-input-wrap">
+                      <span class="field-icon">🔒</span>
+                      <input type="password" id="confirmMotPasse" required placeholder="••••••••" class="auth-input" minlength="6">
+                      <button type="button" class="pw-toggle" onclick="togglePwVisibility('confirmMotPasse',this)">👁</button>
+                    </div>
+                  </div>
+                  <button type="submit" class="auth-submit-btn">Créer mon compte</button>
+                </form>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- PAGE INSCRIPTION -->
-        <div id="page-inscription" class="page">
-            <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-                <div class="max-w-md w-full space-y-8">
-                    <div class="card-premium p-8 fade-in-up">
-                        <div class="text-center mb-8">
-                            <div class="w-20 h-20 bg-gradient-to-r from-green-400 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4 floating-animation">
-                                <span class="text-white font-bold text-3xl">👤</span>
-                            </div>
-                            <h2 class="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
-                                Inscription
-                            </h2>
-                            <p class="text-gray-600 font-medium mt-2">Créez votre compte</p>
-                        </div>
-                        
-                        <form onsubmit="sInscrire(event)" class="space-y-6">
-  <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Nom complet</label>
-    <input 
-      type="text" 
-      id="nomInscription" 
-      required 
-      placeholder="Modou Ndiaye" 
-      class="form-input w-full"
-    >
-  </div>
-
-  <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Email</label>
-    <input 
-      type="email" 
-      id="emailInscription" 
-      required 
-      placeholder="votre@email.com" 
-      class="form-input w-full"
-    >
-  </div>
-
-  <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Mot de passe</label>
-    <input 
-      type="password" 
-      id="motPasseInscription" 
-      required 
-      placeholder="••••••••" 
-      class="form-input w-full" 
-      minlength="6"
-    >
-    <p class="text-xs text-gray-500 mt-1">Minimum 6 caractères</p>
-  </div>
-
-  <div>
-    <label class="block text-sm font-semibold text-gray-700 mb-3">Confirmer le mot de passe</label>
-    <input 
-      type="password" 
-      id="confirmMotPasse" 
-      required 
-      placeholder="••••••••" 
-      class="form-input w-full" 
-      minlength="6"
-    >
-  </div>
-
-  <div id="champ-2fa" style="display:none;">
-  <label class="block text-sm font-semibold text-gray-700 mb-3">Code 2FA</label>
-  <input 
-    type="text" 
-    id="code2fa" 
-    placeholder="Entrez le code reçu par email" 
-    class="form-input w-full"
-  >
-  <button 
-    type="button" 
-    onclick="valider2FA()" 
-    class="mt-4 w-full bg-violet-600 hover:bg-violet-700 text-white py-2 rounded-lg font-medium transition-colors"
-  >
-    ✅ Valider le code
-  </button>
-</div>
-
-  <button type="submit" class="btn-gradient btn-success w-full py-4 rounded-xl text-lg font-bold">
-    ✅ Créer mon compte
-  </button>
-</form>
+        <!-- PAGE INSCRIPTION (garder pour compat avec ouvrirPageInscription()) -->
+        <div id="page-inscription" class="page" style="display:none">
 
                         
-                        <div class="mt-6 text-center">
-                            <p class="text-gray-600">Déjà un compte ?</p>
-                            <button onclick="ouvrirPageConnexion()" class="text-blue-600 hover:text-blue-800 font-semibold mt-2">
-                                Se connecter
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
 
         <!-- PAGE ACCUEIL -->
-        <div id="page-accueil" class="page">
-            <!-- Navigation principale avec effets glass -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4 md:gap-6 mb-8 md:mb-12">
-              <p>
-
-              </p>
-             <!-- 📘 Guide rapide -->
-<div id="guide-accueil" class="col-span-full bg-gradient-to-r from-green-400 to-green-500 text-white rounded-xl shadow-md p-6 mb-6 text-center relative">
-  <button onclick="masquerGuideAccueil()" class="absolute top-2 right-2 text-white font-bold text-lg">❌</button>
-  <h3 class="text-lg font-semibold mb-2">📘 Guide rapide</h3>
-  <ol class="text-left list-decimal list-inside space-y-1">
-    <li>➕ Créez une tontine</li>
-    <li>⚙️ Gérez votre tontine, ajouter des membres enregistrer les côtisations</li>
-    <li>👥 Suivez les membres de vos différentes tontines</li>
-    <li>🎲 Faites le tirage quand c’est prêt</li>
-    <li>📊 Suivez vos chiffres</li>
-    <li>🔔 Consultez les alertes</li>
-    <li>💳 Enregistrez vos paiements et gérez vos vos comptes</li>
-  </ol>
+        <div id="page-accueil" class="page" style="display:none;padding:24px">
+<div id="guide-accueil" class="mb-6 hidden">
+  <div style="background:linear-gradient(135deg,#5B4FE8,#7C3AED);border-radius:16px;padding:20px 24px;color:white;position:relative;overflow:hidden;">
+    <button onclick="masquerGuideAccueil()" style="position:absolute;top:12px;right:12px;background:rgba(255,255,255,0.2);border:none;color:white;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:14px;">x</button>
+    <h3 style="font-family:Outfit,sans-serif;font-size:16px;font-weight:700;margin-bottom:12px;">Guide rapide</h3>
+    <ol style="list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+      <li style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:13px;">Creez une tontine</li>
+      <li style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:13px;">Gerez et ajoutez des membres</li>
+      <li style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:13px;">Faites le tirage au sort</li>
+      <li style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:13px;">Suivez vos statistiques</li>
+      <li style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;font-size:13px;">Gerez vos paiements</li>
+    </ol>
+  </div>
 </div>
-
-              <button onclick="handleCreateClick()" 
-        class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
-  <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce">➕</div>
-  <div class="font-semibold text-xs sm:text-sm md:text-base">Créer</div>
-</button>
-                <button onclick="ouvrirPage('gestion')" class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
-                    <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce" style="animation-delay: 0.2s">⚙️</div>
-                    <div class="font-semibold text-xs sm:text-sm md:text-base">Gérer</div>
-                </button>
-                <button onclick="ouvrirPage('membres')" class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
-                    <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce" style="animation-delay: 0.4s">👥</div>
-                    <div class="font-semibold text-xs sm:text-sm md:text-base">Membres</div>
-                </button>
-                <button onclick="ouvrirPage('tirages')" class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
-                    <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce" style="animation-delay: 0.6s">🎲</div>
-                    <div class="font-semibold text-xs sm:text-sm md:text-base">Tirages</div>
-                </button>
-                <button onclick="ouvrirPage('statistiques')" class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
-                    <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce" style="animation-delay: 0.8s">📊</div>
-                    <div class="font-semibold text-xs sm:text-sm md:text-base">Stats</div>
-                </button>
-                <button onclick="ouvrirPage('alertes')" class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
-                    <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce" style="animation-delay: 1s">🔔</div>
-                    <div class="font-semibold text-xs sm:text-sm md:text-base">Alertes</div>
-                    <div id="badgeAlertes" class="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 bg-red-500 text-white text-xs rounded-full w-6 h-6 sm:w-8 sm:h-8 flex items-center justify-center font-bold hidden pulse-glow">0</div>
-                </button>
-                <button onclick="ouvrirPage('paiements')" class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
-                    <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce" style="animation-delay: 1.2s">💳</div>
-                     <div class="font-semibold text-xs sm:text-sm md:text-base">Paiements</div>
-                </button>
-                <button onclick="ouvrirPage('tontines')" 
-        class="nav-button text-white p-4 sm:p-5 md:p-6 rounded-xl md:rounded-2xl text-center relative z-10">
-  <div class="text-2xl sm:text-3xl md:text-4xl mb-1 md:mb-2 icon-bounce" style="animation-delay: 0.1s">📋</div>
-  <div class="font-semibold text-xs sm:text-sm md:text-base">Mes Tontines</div>
-</button>
-            </div>
         </div>
 
         <!-- PAGE MES TONTINES -->
@@ -2022,12 +2697,7 @@ async function seDeconnecter(silencieux = false) {
   pageActuelle = 'connexion';
   afficherPageConnexion();
 
-  // ✅ Ferme le sidebar automatiquement
-  toggleSidebar(false);
-
-  // ✅ Masquer le header
-  const header = document.getElementById("appHeader");
-  if (header) header.classList.add("hidden");
+  masquerNavigation();
 
   if (!silencieux) {
     showNotification("✅ Déconnexion réussie !", "success");
@@ -2035,42 +2705,34 @@ async function seDeconnecter(silencieux = false) {
 }
 
         function ouvrirPageConnexion() {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page-connexion').classList.add('active');
+            switchAuthTab('connexion');
+            document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
+            const pc = document.getElementById('page-connexion');
+            pc.classList.add('active'); pc.style.display='block';
             pageActuelle = 'connexion';
+            masquerNavigation();
         }
 
         function ouvrirPageInscription() {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('page-inscription').classList.add('active');
+            switchAuthTab('inscription');
+            document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
+            const pc = document.getElementById('page-connexion');
+            pc.classList.add('active'); pc.style.display='block';
             pageActuelle = 'inscription';
+            masquerNavigation();
         }
 
         function afficherPageConnexion() {
-            // Masquer l'en-tête et afficher la page de connexion
-            document.querySelector('header').style.display = 'none';
             ouvrirPageConnexion();
         }
 
         function afficherInterfaceConnectee() {
-  // ✅ Affiche le header
-  document.querySelector('header').style.display = 'block';
-
-  // ✅ Met à jour le panneau latéral et les infos utilisateur
+  afficherNavigation();
   majSidebarInfos();
-
-  // ✅ Affiche le bouton déconnexion si présent
-  const btnDeconnexion = document.getElementById('btnDeconnexion');
-  if (btnDeconnexion) btnDeconnexion.classList.remove('hidden');
-
-  // ✅ Affiche le bouton retour si disponible (utile hors accueil)
-  const btnRetour = document.getElementById('btnRetour');
-  if (btnRetour) btnRetour.classList.add('hidden');
-
-  // ✅ Redirige vers la page d’accueil
-  ouvrirPage('accueil');
+  ouvrirPage('tontines');
+  const dejaVu = localStorage.getItem('onboardingFait');
+  if (!dejaVu) setTimeout(lancerOnboarding, 800);
 }
-
 
 // -------- DATA LAYER --------
 async function chargerDepuisSupabase() {
@@ -2253,52 +2915,45 @@ const gagnants = tirages.map(tr => {
 
         // Navigation entre pages
         function ouvrirPage(page) {
-            // Masquer toutes les pages
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            
-            // Afficher la page demandée
+            document.querySelectorAll('.page').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
             const pageElement = document.getElementById('page-' + page);
+            if (!pageElement) return;
             pageElement.classList.add('active');
-            
-            // Afficher/masquer le bouton retour
-            const btnRetour = document.getElementById('btnRetour');
-            if (page === 'accueil') {
-                btnRetour.classList.add('hidden');
-            } else {
-                btnRetour.classList.remove('hidden');
-            }
-            
+            pageElement.style.display = 'block';
+
             pageActuelle = page;
-            
-            // Charger le contenu spécifique à la page
+
+            // Mettre à jour la nav active — sidebar desktop
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const navEl = document.getElementById('nav-' + page);
+            if (navEl) navEl.classList.add('active');
+
+            // Mettre à jour la nav active — mobile
+            document.querySelectorAll('.mobile-nav-item').forEach(el => el.classList.remove('active'));
+            const mobEl = document.getElementById('mob-' + page);
+            if (mobEl) mobEl.classList.add('active');
+
+            // Titre topbar
+            const titres = {
+              accueil:'Accueil', tontines:'Mes Tontines', creer:'Créer une Tontine',
+              gestion:'Gestion', membres:'Membres', tirages:'Tirages',
+              statistiques:'Statistiques', paiements:'Paiements', alertes:'Alertes'
+            };
+            const tb = document.getElementById('topbar-page-title');
+            if (tb) tb.textContent = titres[page] || page;
+
+            // Bouton retour
+            const btnRetour = document.getElementById('btnRetour');
+            if (btnRetour) btnRetour.style.display = (page === 'tontines') ? 'none' : 'flex';
+
+            // Charger données
             switch(page) {
-                case 'accueil':
-                    afficherTontines();
-                    break;
-                case 'tontines':
-                   afficherTontines();
-                    break;
-                case 'gestion':
-                    chargerSelectsTontines();
-                    break;
-                case 'membres':
-                    chargerSelectsTontines();
-                    break;
-                case 'tirages':
-                    chargerSelectsTontines();
-                    break;
-                case 'statistiques':
-                    afficherStatistiques();
-                    break;
-                case 'alertes':
-                    afficherAlertes();
-                    break;
-                case 'paiements':
-                    chargerComptes();
-                    chargerSelectsTontines(); 
-                    break;
+                case 'accueil': case 'tontines': afficherTontines(); break;
+                case 'gestion': case 'membres': case 'tirages': chargerSelectsTontines(); break;
+                case 'statistiques': afficherStatistiques(); break;
+                case 'alertes': afficherAlertes(); break;
+                case 'paiements': chargerComptes(); chargerSelectsTontines(); break;
             }
-            synchroniserBoutonRetour(); 
         }
 
 
@@ -2597,15 +3252,20 @@ function masquerGuide() {
 }
 
 function masquerGuideAccueil() {
-  document.getElementById("guide-accueil").style.display = "none";
+  const g = document.getElementById("guide-accueil");
+  if (g) { g.style.display = "none"; g.classList.add("hidden"); }
   localStorage.setItem("guideAccueilMasque", "true");
 }
 
 document.addEventListener("DOMContentLoaded", () => {
   const guideMasque = localStorage.getItem("guideAccueilMasque") === "true";
-  if (guideMasque) {
-    const guide = document.getElementById("guide-accueil");
-    if (guide) guide.style.display = "none";
+  const guide = document.getElementById("guide-accueil");
+  if (guide) {
+    if (guideMasque) {
+      guide.style.display = "none"; guide.classList.add("hidden");
+    } else {
+      guide.classList.remove("hidden");
+    }
   }
 });
 
@@ -4306,7 +4966,6 @@ async function supprimerTontine(id) {
 }
 
         function mettreAJourAffichage() {
-            document.getElementById('nombreTontines').textContent = tontines.filter(t => t.statut === 'active').length;
             verifierAlertes();
         }
 
@@ -5152,83 +5811,100 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 30000);
 });
 
-// ======================= SIDEBAR MOBILE & DESKTOP =======================
-function toggleSidebar(force = null) {
-  const sidebar = document.getElementById("sidebarInfos");
-  const overlay = document.getElementById("sidebarOverlay");
-  const isOpen = sidebar.classList.contains("open");
-  const isMobile = window.innerWidth < 640;
+// ======================= NAVIGATION FUNCTIONS =======================
+function toggleSidebar(force = null) { /* compat - no-op */ }
 
-  if ((force === true) || (force === null && !isOpen)) {
-    sidebar.classList.add("open");
-    sidebar.classList.remove("hidden-sidebar");
-    overlay.classList.remove("hidden");
-    overlay.style.opacity = "0";
-    requestAnimationFrame(() => (overlay.style.opacity = "1"));
-
-    if (isMobile) sidebar.style.animation = "slideUpRebond 0.45s ease-out";
-    else sidebar.style.animation = "slideLeftRebond 0.45s ease-out";
-  } 
-  else if ((force === false) || (force === null && isOpen)) {
-    sidebar.classList.remove("open");
-    sidebar.classList.add("hidden-sidebar");
-    overlay.style.opacity = "0";
-    setTimeout(() => overlay.classList.add("hidden"), 350);
-    sidebar.style.animation = "none";
+function afficherNavigation() {
+  const isMobile = window.innerWidth <= 900;
+  if (!isMobile) {
+    const s = document.getElementById('app-sidebar');
+    if (s) s.classList.remove('hidden');
+  }
+  const tb = document.getElementById('app-topbar');
+  if (tb) tb.classList.remove('hidden');
+  const mn = document.getElementById('mobile-bottom-nav');
+  if (mn) mn.style.display = isMobile ? 'block' : 'none';
+  const ac = document.getElementById('app-content');
+  if (ac) {
+    ac.style.marginLeft = isMobile ? '0' : 'var(--nav-width)';
   }
 }
 
-// Empêche la fermeture si on clique à l’intérieur
-document.getElementById("sidebarInfos").addEventListener("click", e => e.stopPropagation());
+function masquerNavigation() {
+  const s = document.getElementById('app-sidebar');
+  if (s) s.classList.add('hidden');
+  const tb = document.getElementById('app-topbar');
+  if (tb) tb.classList.add('hidden');
+  const mn = document.getElementById('mobile-bottom-nav');
+  if (mn) mn.style.display = 'none';
+  const ac = document.getElementById('app-content');
+  if (ac) ac.style.marginLeft = '0';
+}
 
-// Ferme avec la touche Échap
-document.addEventListener("keydown", e => {
-  if (e.key === "Escape") toggleSidebar(false);
-});
+function toggleSidebarCollapse() {
+  const s = document.getElementById('app-sidebar');
+  const ac = document.getElementById('app-content');
+  s.classList.toggle('collapsed');
+  if (s.classList.contains('collapsed')) {
+    ac.style.marginLeft = 'var(--nav-width-collapsed)';
+  } else {
+    ac.style.marginLeft = 'var(--nav-width)';
+  }
+}
 
-// ==================== HEADER MANAGEMENT ====================
+function toggleMobileMenu() {
+  const overlay = document.getElementById('mobile-menu-overlay');
+  const drawer = document.getElementById('mobile-menu-drawer');
+  const isOpen = overlay.style.display === 'block';
+  overlay.style.display = isOpen ? 'none' : 'block';
+  drawer.style.display = isOpen ? 'none' : 'block';
+}
+
+// ==================== SIDEBAR INFO ====================
 async function majSidebarInfos() {
   try {
-    const nomElt = document.getElementById("nomUtilisateur");
-    const nbElt = document.getElementById("nombreTontines");
-
-    // 1️⃣ Données locales rapides
     const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-    if (userData.nom) nomElt.textContent = userData.nom;
-    if (userData.nombreTontines != null) nbElt.textContent = userData.nombreTontines;
-
-    // 2️⃣ Si pas connecté → stop
     const token = localStorage.getItem("token");
+
+    // Mise à jour immédiate depuis cache
+    if (userData.nom) {
+      const n = document.getElementById("nav-user-name");
+      const a = document.getElementById("nav-avatar");
+      const ta = document.getElementById("topbar-user-avatar");
+      if (n) n.textContent = userData.nom;
+      const initiale = (userData.nom || 'U')[0].toUpperCase();
+      if (a) a.textContent = initiale;
+      if (ta) ta.textContent = initiale;
+    }
+    const plan = localStorage.getItem("userPlan") || "Free";
+    const planBadge = document.getElementById("nav-plan-badge");
+    if (planBadge) planBadge.textContent = plan === "Premium" ? "⭐ Premium" : "🆓 Free";
+
     if (!token) return;
 
-    // 3️⃣ Charger en parallèle
     const [stats, user] = await Promise.allSettled([
       getStatsOverview(),
       getUserProfile()
     ]);
-
-    // 4️⃣ Fusionner sans écraser les données valides
     const newData = { ...userData };
 
     if (user.status === "fulfilled" && user.value) {
       const nom = user.value.nom_complet || user.value.nom || user.value.username;
       if (nom) {
-        nomElt.textContent = nom;
         newData.nom = nom;
+        const n = document.getElementById("nav-user-name");
+        const a = document.getElementById("nav-avatar");
+        const ta = document.getElementById("topbar-user-avatar");
+        if (n) n.textContent = nom;
+        const initiale = nom[0].toUpperCase();
+        if (a) a.textContent = initiale;
+        if (ta) ta.textContent = initiale;
       }
     }
-
     if (stats.status === "fulfilled" && stats.value) {
-      const tontines = stats.value.tontines_actives;
-      if (typeof tontines === "number") {
-        nbElt.textContent = tontines;
-        newData.nombreTontines = tontines;
-      }
+      newData.nombreTontines = stats.value.tontines_actives;
     }
-
-    // 5️⃣ Sauvegarde locale finale
     localStorage.setItem("userData", JSON.stringify(newData));
-
   } catch (err) {
     console.error("❌ Erreur majSidebarInfos:", err);
   }
@@ -5238,13 +5914,190 @@ document.addEventListener("DOMContentLoaded", () => {
   majSidebarInfos();
 });
 
+function synchroniserBoutonRetour() { /* géré dans ouvrirPage */ }
 
-// ✅ Cacher le bouton retour sur PC quand on est sur la page d’accueil
-function synchroniserBoutonRetour() {
-  const btnRetour = document.getElementById("btnRetour");
-  if (!btnRetour) return;
-  if (pageActuelle === "accueil") btnRetour.classList.add("hidden");
-  else btnRetour.classList.remove("hidden");
+// ======================= ONBOARDING =======================
+const onbSteps = [
+  {
+    emoji: '👋',
+    titre: 'Bienvenue sur Samay Tontines !',
+    desc: 'Votre plateforme moderne pour créer, gérer et suivre toutes vos tontines. Simple, rapide et sécurisé.',
+    tip: '💡 Ce guide vous prendra moins de 2 minutes',
+    btn: 'Commencer →'
+  },
+  {
+    emoji: '➕',
+    titre: 'Créez votre première tontine',
+    desc: 'Cliquez sur "Créer une Tontine" dans la barre latérale. Choisissez le type, le montant des cotisations, la fréquence et le nombre de membres.',
+    tip: '💡 Plan Free : jusqu'à 2 tontines. Plan Premium : illimité.',
+    btn: 'Suivant →'
+  },
+  {
+    emoji: '👥',
+    titre: 'Ajoutez vos membres',
+    desc: 'Depuis la section "Gestion", sélectionnez votre tontine et ajoutez les membres un par un. Enregistrez ensuite leurs cotisations régulièrement.',
+    tip: '💡 Vous pouvez modifier les infos d'un membre à tout moment.',
+    btn: 'Suivant →'
+  },
+  {
+    emoji: '🎲',
+    titre: 'Effectuez les tirages',
+    desc: 'Quand tous les membres ont cotisé pour le cycle en cours, le bouton de tirage devient actif. Un gagnant est désigné automatiquement !',
+    tip: '💡 Le système vérifie les retards avant d'autoriser le tirage.',
+    btn: 'Suivant →'
+  },
+  {
+    emoji: '📊',
+    titre: 'Suivez vos statistiques',
+    desc: 'La section Statistiques vous donne une vue d'ensemble : cotisations collectées, tirages effectués, membres en retard et bien plus.',
+    tip: '💡 Les graphiques se mettent à jour en temps réel.',
+    btn: 'Suivant →'
+  },
+  {
+    emoji: '🚀',
+    titre: 'Vous êtes prêt !',
+    desc: 'Naviguez librement avec la barre latérale (desktop) ou le menu en bas (mobile). Les alertes vous notifient des retards et tirages disponibles.',
+    tip: '💡 Retrouvez ce guide dans les paramètres si besoin.',
+    btn: '✅ C'est parti !'
+  }
+];
+let onbCurrentStep = 0;
+
+function lancerOnboarding() {
+  onbCurrentStep = 0;
+  afficherEtapeOnboarding(0);
+  document.getElementById('onboarding-overlay').style.display = 'flex';
+}
+
+function afficherEtapeOnboarding(i) {
+  const s = onbSteps[i];
+  document.getElementById('onb-emoji').textContent = s.emoji;
+  document.getElementById('onb-title').textContent = s.titre;
+  document.getElementById('onb-desc').textContent = s.desc;
+  document.getElementById('onb-tip').textContent = s.tip;
+  document.getElementById('onb-next').textContent = s.btn;
+  document.getElementById('onb-step-num').textContent = `Étape ${i+1} sur ${onbSteps.length}`;
+  document.getElementById('onb-prev').style.display = i > 0 ? 'block' : 'none';
+  // Dots
+  const dotsEl = document.getElementById('onb-steps');
+  dotsEl.innerHTML = onbSteps.map((_, idx) =>
+    `<div class="onb-step-dot ${idx < i ? 'done' : idx === i ? 'active' : ''}"></div>`
+  ).join('');
+}
+
+function onbNext() {
+  if (onbCurrentStep < onbSteps.length - 1) {
+    onbCurrentStep++;
+    afficherEtapeOnboarding(onbCurrentStep);
+  } else {
+    fermerOnboarding();
+  }
+}
+
+function onbPrev() {
+  if (onbCurrentStep > 0) {
+    onbCurrentStep--;
+    afficherEtapeOnboarding(onbCurrentStep);
+  }
+}
+
+function fermerOnboarding() {
+  document.getElementById('onboarding-overlay').style.display = 'none';
+  localStorage.setItem('onboardingFait', '1');
+}
+
+// ======================= AUTH UI HELPERS =======================
+function switchAuthTab(tab) {
+  const formConn = document.getElementById('auth-form-connexion');
+  const formInsc = document.getElementById('auth-form-inscription');
+  const tabConn = document.getElementById('tab-connexion');
+  const tabInsc = document.getElementById('tab-inscription');
+  if (!formConn || !formInsc) return;
+  if (tab === 'connexion') {
+    formConn.style.display = 'block';
+    formInsc.style.display = 'none';
+    tabConn.classList.add('active');
+    tabInsc.classList.remove('active');
+  } else {
+    formConn.style.display = 'none';
+    formInsc.style.display = 'block';
+    tabInsc.classList.add('active');
+    tabConn.classList.remove('active');
+  }
+}
+
+function togglePwVisibility(fieldId, btn) {
+  const input = document.getElementById(fieldId);
+  if (!input) return;
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁';
+  }
+}
+
+function checkPwStrength(input) {
+  const val = input.value;
+  const b1 = document.getElementById('pw-bar-1');
+  const b2 = document.getElementById('pw-bar-2');
+  const b3 = document.getElementById('pw-bar-3');
+  const lbl = document.getElementById('pw-label');
+  if (!b1) return;
+  const hasLen = val.length >= 8;
+  const hasNum = /\d/.test(val);
+  const hasSpe = /[^a-zA-Z0-9]/.test(val);
+  const score = [val.length >= 6, hasLen && hasNum, hasLen && hasNum && hasSpe].filter(Boolean).length;
+  [b1,b2,b3].forEach(b => { b.className = 'pw-strength-bar'; });
+  if (score === 1) { b1.classList.add('weak'); if(lbl) lbl.textContent = 'Faible'; }
+  else if (score === 2) { b1.classList.add('medium'); b2.classList.add('medium'); if(lbl) lbl.textContent = 'Moyen'; }
+  else if (score === 3) { b1.classList.add('strong'); b2.classList.add('strong'); b3.classList.add('strong'); if(lbl) lbl.textContent = 'Fort 💪'; }
+}
+
+function moveOtp(el, next) {
+  if (el.value.length === 1 && next <= 6) {
+    const nextEl = document.getElementById('otp' + (next-1));
+    if (nextEl) nextEl.focus();
+  }
+  // Reconstituer code2fa
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    const oi = document.getElementById('otp' + i);
+    code += oi ? (oi.value || '') : '';
+  }
+  const cf = document.getElementById('code2fa');
+  if (cf) cf.value = code;
+}
+
+function collectOtpAndValidate() {
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    const oi = document.getElementById('otp' + i);
+    code += oi ? (oi.value || '') : '';
+  }
+  const cf = document.getElementById('code2fa');
+  if (cf) cf.value = code;
+  valider2FA();
+}
+
+// Surcharge mettreAJourBadgeAlertes pour multi-badges
+const _origMajBadge = typeof mettreAJourBadgeAlertes !== 'undefined' ? mettreAJourBadgeAlertes : null;
+function mettreAJourBadgeAlertes(alertesActuelles = []) {
+  const count = Array.isArray(alertesActuelles) ? alertesActuelles.length : 0;
+  // Sidebar badge
+  const b1 = document.getElementById("badgeAlertes");
+  if (b1) { b1.textContent = count; b1.style.display = count > 0 ? 'inline-flex' : 'none'; }
+  // Mobile badge
+  const b2 = document.getElementById("mobBadgeAlertes");
+  if (b2) { b2.textContent = count; b2.style.display = count > 0 ? 'flex' : 'none'; }
+  // Topbar badge
+  const b3 = document.getElementById("topbarBadgeAlertes");
+  if (b3) { b3.textContent = count; b3.style.display = count > 0 ? 'flex' : 'none'; }
+  // Flash haute urgence
+  if (Array.isArray(alertesActuelles) && alertesActuelles.some(a => a.urgence === "haute")) {
+    flashVisuel();
+  }
 }
 
 document.getElementById("frequenceCotisation").addEventListener("change", function () {
