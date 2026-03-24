@@ -1,5 +1,21 @@
 /* =========================================================
    config.js — Configuration de l'API et constantes
+   =========================================================
+   ⚠️ SÉCURITÉ — Clé Supabase ANON :
+   La SUPABASE_ANON_KEY est la clé "anonyme" de Supabase.
+   Elle est CONÇUE pour être publique côté frontend.
+   La protection des données passe par les politiques RLS
+   (Row Level Security) dans Supabase, pas par le secret de
+   cette clé.
+
+   ✅ Ce qui est déjà sécurisé :
+   - La SERVICE_ROLE key reste uniquement dans le backend (Render).
+   - Les routes backend utilisent requireAuth (JWT Supabase).
+
+   ✅ À vérifier dans Supabase Dashboard → Authentication → Policies :
+   - Table "tontines" : SELECT WHERE createur = auth.uid()
+   - Table "membres"  : SELECT WHERE tontine_id IN (SELECT id FROM tontines WHERE createur = auth.uid())
+   - Table "alertes"  : SELECT WHERE "utilisateurId" = auth.uid()
    ========================================================= */
 
 const API_BASE = "https://ma-tontine-backend.onrender.com/api";
