@@ -100,11 +100,36 @@ async function creerTontine() {
   }
 }
 
-// ─── Afficher liste tontines ───
+// ─── État recherche/filtre ───
+let _searchQuery  = '';
+let _activeFilter = 'tous';
+
+// ─── Afficher liste tontines (avec search + filtre) ───
 function afficherTontines() {
-  const liste = document.getElementById('listeTontines');
+  // Mettre à jour les deux conteneurs (accueil + page tontines)
+  _renderTontineList('listeTontines');
+  _renderTontineList('listeTontinesPage');
+  _updateFilterCounts();
+}
+
+function _renderTontineList(containerId) {
+  const liste = document.getElementById(containerId);
   if (!liste) return;
   liste.innerHTML = '';
+
+  // Filtrer selon recherche + chip actif
+  const filtered = tontines.filter(t => {
+    const matchSearch = !_searchQuery ||
+      t.nom.toLowerCase().includes(_searchQuery) ||
+      (t.type || '').toLowerCase().includes(_searchQuery) ||
+      (t.description || '').toLowerCase().includes(_searchQuery);
+    const matchFilter =
+      _activeFilter === 'tous' ||
+      _activeFilter === t.type ||
+      (_activeFilter === 'active'   && (t.statut || 'active') === 'active') ||
+      (_activeFilter === 'terminee' && t.statut === 'terminee');
+    return matchSearch && matchFilter;
+  });
 
   if (!tontines.length) {
     liste.innerHTML = `
@@ -119,7 +144,20 @@ function afficherTontines() {
     return;
   }
 
-  tontines.forEach((tontine, index) => {
+  if (!filtered.length) {
+    liste.innerHTML = `
+      <div class="search-empty" style="grid-column:1/-1;">
+        <div class="search-empty-icon">🔍</div>
+        <p style="font-size:.95rem;font-weight:600;color:rgba(255,255,255,.7);">Aucune tontine trouvée</p>
+        <p style="font-size:.82rem;color:rgba(255,255,255,.4);margin-top:4px;">Essayez un autre mot-clé ou filtre</p>
+        <button onclick="resetRecherche()" style="margin-top:14px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:rgba(255,255,255,.8);padding:8px 18px;border-radius:20px;cursor:pointer;font-size:.82rem;">
+          Effacer les filtres
+        </button>
+      </div>`;
+    return;
+  }
+
+  filtered.forEach((tontine, index) => {
     const membres     = tontine.membres     || [];
     const cotisations = tontine.cotisations || [];
     const tirages     = tontine.tirages     || [];
@@ -180,6 +218,47 @@ function afficherTontines() {
         </div>
       </div>`;
     liste.appendChild(card);
+  });
+}
+
+// ─── Helpers recherche & filtre ───
+function onSearchInput(val) {
+  _searchQuery = val.toLowerCase().trim();
+  afficherTontines();
+}
+
+function setFiltreActif(chip, filtre) {
+  _activeFilter = filtre;
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  afficherTontines();
+}
+
+function resetRecherche() {
+  _searchQuery  = '';
+  _activeFilter = 'tous';
+  const input = document.getElementById('searchTontines');
+  if (input) input.value = '';
+  document.querySelectorAll('.filter-chip').forEach((c, i) => {
+    c.classList.toggle('active', i === 0);
+  });
+  afficherTontines();
+}
+
+function _updateFilterCounts() {
+  const counts = {
+    tous:     tontines.length,
+    argent:   tontines.filter(t => t.type === 'argent').length,
+    electronique: tontines.filter(t => t.type === 'electronique').length,
+    cosmetique:   tontines.filter(t => t.type === 'cosmetique').length,
+    autre:        tontines.filter(t => t.type === 'autre').length,
+    active:   tontines.filter(t => (t.statut || 'active') === 'active').length,
+    terminee: tontines.filter(t => t.statut === 'terminee').length,
+  };
+  document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
+    const f   = chip.dataset.filter;
+    const cnt = document.getElementById('filter-count-' + f);
+    if (cnt) cnt.textContent = counts[f] ?? '';
   });
 }
 
