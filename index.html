@@ -853,29 +853,15 @@ async function supprimerTontineActive() {
   ouvrirPage('accueil');
 }
 
-// ─── Afficher onboarding après connexion ───
+// ─── Auto-actualisation toutes les 30s ───
 document.addEventListener('DOMContentLoaded', () => {
-  // Afficher guide après premier login
-  const origAfficher = window.afficherInterfaceConnectee;
-  window.afficherInterfaceConnectee = function() {
-    origAfficher?.();
-    setTimeout(afficherOnboarding, 600);
-  };
-
-  // Intervalle auto actualisation
   setInterval(() => {
-    if (utilisateurConnecte) {
-      chargerTontineGestion?.();
-      chargerTontineTirage?.();
-      chargerPaiements?.();
+    if (typeof utilisateurConnecte !== 'undefined' && utilisateurConnecte) {
+      if (typeof chargerTontineGestion === 'function') chargerTontineGestion();
+      if (typeof chargerTontineTirage  === 'function') chargerTontineTirage();
+      if (typeof chargerPaiements      === 'function') chargerPaiements();
     }
   }, 30000);
-
-  // Guide accueil legacy
-  const guideEl = document.getElementById('guide-accueil');
-  if (guideEl && localStorage.getItem('guideAccueilMasque') === 'true') {
-    guideEl.style.display = 'none';
-  }
 });
 </script>
 
