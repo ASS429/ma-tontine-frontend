@@ -333,19 +333,39 @@
       </div>
     </div>
 
+    <!-- Barre de recherche + filtres -->
+    <div class="search-filter-bar">
+      <div class="search-input-wrap">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="8.5" cy="8.5" r="5.5"/><path d="M15 15l-3.5-3.5" stroke-linecap="round"/>
+        </svg>
+        <input type="search" id="searchTontines" class="search-input"
+               placeholder="Rechercher une tontine…"
+               oninput="onSearchInput(this.value)">
+      </div>
+      <div class="filter-chips" id="filterChips">
+        <button class="filter-chip active" data-filter="tous"        onclick="setFiltreActif(this,'tous')">Toutes <span class="filter-count" id="filter-count-tous"></span></button>
+        <button class="filter-chip"        data-filter="active"      onclick="setFiltreActif(this,'active')">Actives <span class="filter-count" id="filter-count-active"></span></button>
+        <button class="filter-chip"        data-filter="argent"      onclick="setFiltreActif(this,'argent')">💰 Argent <span class="filter-count" id="filter-count-argent"></span></button>
+        <button class="filter-chip"        data-filter="electronique" onclick="setFiltreActif(this,'electronique')">📱 Électronique <span class="filter-count" id="filter-count-electronique"></span></button>
+        <button class="filter-chip"        data-filter="cosmetique"  onclick="setFiltreActif(this,'cosmetique')">💄 Cosmétiques <span class="filter-count" id="filter-count-cosmetique"></span></button>
+        <button class="filter-chip"        data-filter="autre"       onclick="setFiltreActif(this,'autre')">🎁 Autre <span class="filter-count" id="filter-count-autre"></span></button>
+        <button class="filter-chip"        data-filter="terminee"    onclick="setFiltreActif(this,'terminee')">🏁 Terminées <span class="filter-count" id="filter-count-terminee"></span></button>
+      </div>
+    </div>
+
     <!-- Liste des tontines -->
-    <div class="page-content">
-      <p style="font-size:.78rem;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px;">Mes tontines</p>
+    <div class="page-content" style="padding-top:8px;">
       <div id="listeTontinesPage" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;"></div>
     </div>
   </div>
 
   <!-- ── PAGE MES TONTINES ── -->
   <div id="page-tontines" class="page">
-    <div class="page-content">
+    <div style="padding:16px 12px 8px;">
       <h2 class="section-title"><span class="icon">📋</span> Mes Tontines</h2>
-      <div id="listeTontines" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;"></div>
     </div>
+    <div id="listeTontines" class="page-content" style="padding-top:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;"></div>
   </div>
 
   <!-- ── PAGE CRÉER ── -->
