@@ -32,35 +32,112 @@ async function apiFetch(url, options = {}) {
   }
 }
 
-// ─── Charger données Supabase ───
+// ─── Skeleton loader ───
+function afficherSkeleton(nb = 3) {
+  const cibles = ['listeTontines', 'listeTontinesPage'];
+  const html = Array.from({ length: nb }, () => `
+    <div class="skeleton-card">
+      <div style="display:flex;gap:10px;margin-bottom:14px;">
+        <div class="skeleton skel-line" style="width:36px;height:36px;border-radius:10px;flex-shrink:0;"></div>
+        <div style="flex:1;">
+          <div class="skeleton skel-line skel-title"></div>
+          <div class="skeleton skel-line skel-sub"></div>
+        </div>
+      </div>
+      <div class="skeleton skel-bar"></div>
+      <div class="skeleton skel-status"></div>
+      <div class="skel-btns">
+        <div class="skeleton skel-btn"></div>
+        <div class="skeleton skel-btn"></div>
+      </div>
+    </div>`).join('');
+  cibles.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  });
+}
+
+function masquerSkeleton() {
+  // Le skeleton est remplacé automatiquement par afficherTontines()
+}
+
+// ─── Cache localStorage ───
+const CACHE_KEY_PREFIX = 'tontines_cache_';
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function sauvegarderCache(userId, data) {
+  if (!userId) return;
+  try {
+    localStorage.setItem(CACHE_KEY_PREFIX + userId, JSON.stringify({
+      data, ts: Date.now()
+    }));
+  } catch (e) { /* quota dépassé → ignorer */ }
+}
+
+function lireCache(userId) {
+  if (!userId) return null;
+  try {
+    const raw = localStorage.getItem(CACHE_KEY_PREFIX + userId);
+    if (!raw) return null;
+    const { data, ts } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null; // expiré
+    return data;
+  } catch { return null; }
+}
+
+// ─── Charger données Supabase (avec skeleton + cache) ───
 async function chargerDepuisSupabase() {
   if (!utilisateurConnecte) return;
 
-  const { data: rows, error } = await sb
-    .from('tontines')
-    .select(`
-      id, nom, type, montant_cotisation, frequence_cotisation, jour_cotisation,
-      frequence_tirage, nombre_membres, description, cree_le, statut,
-      membres ( id, nom, telephone, adresse, cree_le ),
-      cotisations ( id, membre_id, montant, date_cotisation ),
-      tirages ( id, membre_id, date_tirage )
-    `)
-    .order('cree_le', { ascending: true });
+  // 1. Afficher skeleton immédiatement
+  afficherSkeleton(3);
 
-  if (error) {
-    console.error(error);
-    showNotification('❌ Erreur chargement: ' + error.message, 'error');
-    return;
+  // 2. Charger depuis le cache si disponible (affichage instantané)
+  const cached = lireCache(utilisateurConnecte.id);
+  if (cached) {
+    tontines = cached;
+    afficherTontines();
+    mettreAJourAffichage();
+    console.log('📦 Données depuis le cache');
   }
 
-  tontines = (rows || []).map(mapTontineRowToLocal);
+  // 3. Charger depuis Supabase en arrière-plan
+  try {
+    const { data: rows, error } = await sb
+      .from('tontines')
+      .select(`
+        id, nom, type, montant_cotisation, frequence_cotisation, jour_cotisation,
+        frequence_tirage, nombre_membres, description, cree_le, statut,
+        membres ( id, nom, telephone, adresse, cree_le ),
+        cotisations ( id, membre_id, montant, date_cotisation ),
+        tirages ( id, membre_id, date_tirage )
+      `)
+      .order('cree_le', { ascending: true });
 
-  tontines.forEach(t => {
-    (t.cotisations || []).forEach(c => {
-      const m = t.membres.find(mm => mm.id === c.membreId);
-      if (m) m.cotisationsPayees.push({ id: c.id, date: c.date, montant: c.montant });
+    if (error) {
+      console.error(error);
+      if (!cached) showNotification('❌ Erreur chargement: ' + error.message, 'error');
+      return;
+    }
+
+    tontines = (rows || []).map(mapTontineRowToLocal);
+
+    tontines.forEach(t => {
+      (t.cotisations || []).forEach(c => {
+        const m = t.membres.find(mm => mm.id === c.membreId);
+        if (m) m.cotisationsPayees.push({ id: c.id, date: c.date, montant: c.montant });
+      });
     });
-  });
+
+    // 4. Sauvegarder dans le cache + rafraîchir l'affichage
+    sauvegarderCache(utilisateurConnecte.id, tontines);
+    afficherTontines();
+    mettreAJourAffichage();
+
+  } catch (err) {
+    console.error('❌ chargerDepuisSupabase:', err);
+    if (!cached) showNotification('❌ Chargement impossible. Vérifiez votre connexion.', 'error');
+  }
 }
 
 function mapTontineRowToLocal(r) {
