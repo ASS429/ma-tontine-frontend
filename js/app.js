@@ -187,10 +187,10 @@ async function genererResumeAlertes() {
       <div class="stat-card"><div class="stat-value" style="color:#F59E0B;">${cycles}</div><div class="stat-label">⏳ Cycles retard</div></div>
       <div class="stat-card"><div class="stat-value" style="color:#3B82F6;">${paiements}</div><div class="stat-label">💳 Paiements attente</div></div>
       <div class="stat-card"><div class="stat-value" style="color:#10B981;">${tirages}</div><div class="stat-label">🎲 Tirages dispo</div></div>`;
-    document.getElementById('statRetards')?.           && (document.getElementById('statRetards').textContent = retards);
-    document.getElementById('statCyclesRetard')?.      && (document.getElementById('statCyclesRetard').textContent = cycles);
-    document.getElementById('statPaiementsAttente')?.  && (document.getElementById('statPaiementsAttente').textContent = paiements);
-    document.getElementById('statTiragesDisponibles')?.&& (document.getElementById('statTiragesDisponibles').textContent = tirages);
+    const elR  = document.getElementById('statRetards');           if (elR)  elR.textContent  = retards;
+    const elC  = document.getElementById('statCyclesRetard');      if (elC)  elC.textContent  = cycles;
+    const elP  = document.getElementById('statPaiementsAttente');  if (elP)  elP.textContent  = paiements;
+    const elT  = document.getElementById('statTiragesDisponibles');if (elT)  elT.textContent  = tirages;
   } catch (err) { console.error('❌ genererResumeAlertes:', err); }
 }
 
