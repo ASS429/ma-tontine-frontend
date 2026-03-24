@@ -196,14 +196,21 @@ function mettreAJourAffichage() {
 // ─── Alertes ───
 async function mettreAJourAlertes() {
   try {
-    await apiFetch(`${API_BASE}/alertes/generer`, { method: 'POST' });
+    // Génération silencieuse — ignorer si backend KO
+    await apiFetch(`${API_BASE}/alertes/generer`, { method: 'POST' }).catch(() => {});
     const res = await apiFetch(`${API_BASE}/alertes`);
-    if (!res.ok) throw new Error('Erreur récupération alertes');
+    if (!res.ok) {
+      // 500 côté backend → pas d'erreur critique, retourner tableau vide
+      console.warn('⚠️ /alertes retourné', res.status, '— badges masqués');
+      mettreAJourBadgeAlertes([]);
+      return [];
+    }
     const al = await res.json();
     mettreAJourBadgeAlertes(al);
     return al;
   } catch (err) {
-    console.error('❌ mettreAJourAlertes:', err);
+    // Erreur réseau / offline → silencieux
+    console.warn('⚠️ mettreAJourAlertes offline:', err.message);
     return [];
   }
 }
