@@ -64,6 +64,10 @@ function afficherInterfaceConnectee() {
   document.getElementById('btnRetour')?.classList.add('hidden');
   majSidebarInfos?.();
   ouvrirPage('accueil');
+  // Afficher l'onboarding à la première connexion (défini dans app.js)
+  setTimeout(() => {
+    if (typeof afficherOnboarding === 'function') afficherOnboarding();
+  }, 700);
 }
 
 function retourAccueil() { ouvrirPage('accueil'); }
