@@ -178,8 +178,7 @@ function initialiserApplication() {
   window.addEventListener('online',  () => { estEnLigne = true;  setReseau('synced'); });
   window.addEventListener('offline', () => { estEnLigne = false; setReseau('offline'); });
   if (!estEnLigne) setReseau('offline');
-  mettreAJourAffichage();
-  mettreAJourAlertes();
+  mettreAJourAffichage(); // appelle verifierAlertes → mettreAJourAlertes en interne
   const dateCot = document.getElementById('dateCotisation');
   if (dateCot) dateCot.value = new Date().toISOString().split('T')[0];
 }
@@ -190,7 +189,7 @@ function mettreAJourAffichage() {
   if (el) el.textContent = nb;
   const wc = document.getElementById('welcomeCount');
   if (wc) wc.textContent = nb;
-  verifierAlertes();
+  // Alertes chargées séparément (évite double appel)
 }
 
 // ─── Alertes ───
