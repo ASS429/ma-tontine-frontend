@@ -1,5 +1,10 @@
 /* =========================================================
    data.js — Couche données : Supabase + API helpers
+   ✅ CORRECTIFS :
+     - apiFetch utilise sb.auth.getSession() → token auto-rafraîchi
+       (plus de déconnexion silencieuse après 1h)
+     - Détection réseau dans apiFetch + listeners online/offline
+     - esc() ajoutée ici pour être disponible dans tous les fichiers
    ========================================================= */
 
 let tontines      = [];
@@ -10,18 +15,57 @@ let membreEnEdition = null;
 let estEnLigne       = navigator.onLine;
 let donneesModifiees = false;
 
-// ─── API Fetch centralisé ───
+// =========================================================
+// 🔒 Échappement HTML — protection XSS
+//    À utiliser sur TOUTES les données venant de l'API
+//    avant de les injecter dans innerHTML.
+//    Exemple : `<span>${esc(membre.nom)}</span>`
+// =========================================================
+function esc(str) {
+  const d = document.createElement('div');
+  d.textContent = String(str ?? '');
+  return d.innerHTML;
+}
+
+// =========================================================
+// 🌐 API Fetch centralisé
+//    ✅ Récupère toujours le token frais via sb.auth.getSession()
+//       Le SDK Supabase gère le refresh automatiquement.
+//    ✅ Détecte le mode hors-ligne avant d'envoyer la requête.
+// =========================================================
 async function apiFetch(url, options = {}) {
-  const token = localStorage.getItem('token');
+  // ✅ Vérification réseau avant toute requête
+  if (!navigator.onLine) {
+    showNotification('📶 Pas de connexion internet', 'warning');
+    throw new Error('Hors ligne');
+  }
+
+  // ✅ Toujours demander la session courante (auto-refresh inclus)
+  //    Ne plus lire localStorage.getItem('token') qui peut être expiré
+  let token = null;
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    token = session?.access_token;
+  } catch {
+    // sb pas encore initialisé (chargement initial) → fallback localStorage
+    token = localStorage.getItem('token');
+  }
+
+  if (!token) {
+    await seDeconnecter(true);
+    throw new Error('Session expirée');
+  }
+
   const headers = {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json',
     ...(options.headers || {})
   };
+
   try {
     const res = await fetch(url, { ...options, headers });
     if (res.status === 401) {
-      console.warn('⛔ Token expiré');
+      console.warn('⛔ Token refusé par le backend');
       await seDeconnecter(true);
       throw new Error('Session expirée');
     }
@@ -61,7 +105,7 @@ function masquerSkeleton() {
   // Le skeleton est remplacé automatiquement par afficherTontines()
 }
 
-// ─── Cache localStorage ───
+// ─── Cache localStorage avec TTL ───
 const CACHE_KEY_PREFIX = 'tontines_cache_';
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
@@ -230,10 +274,8 @@ function obtenirJoursRestantsAvantTirage(tontine) {
 }
 
 function getUserProfile() {
-  const token = localStorage.getItem('token');
-  return fetch(`${API_BASE}/utilisateurs/me`, {
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` }
-  }).then(r => r.ok ? r.json() : { nom_complet: 'Utilisateur' })
+  return apiFetch(`${API_BASE}/utilisateurs/me`)
+    .then(r => r.ok ? r.json() : { nom_complet: 'Utilisateur' })
     .catch(() => ({ nom_complet: 'Utilisateur' }));
 }
 
@@ -252,10 +294,20 @@ function getUserTontineCount() { return tontines?.length ?? 0; }
 
 // ─── Init application ───
 function initialiserApplication() {
-  window.addEventListener('online',  () => { estEnLigne = true;  setReseau('synced'); });
-  window.addEventListener('offline', () => { estEnLigne = false; setReseau('offline'); });
-  if (!estEnLigne) setReseau('offline');
-  mettreAJourAffichage(); // appelle verifierAlertes → mettreAJourAlertes en interne
+  // ✅ Listeners de connectivité avec notification utilisateur
+  window.addEventListener('online', () => {
+    estEnLigne = true;
+    setReseau?.('synced');
+    showNotification('✅ Connexion rétablie', 'success');
+  });
+  window.addEventListener('offline', () => {
+    estEnLigne = false;
+    setReseau?.('offline');
+    showNotification('📶 Connexion perdue — mode hors-ligne', 'warning');
+  });
+
+  if (!estEnLigne) setReseau?.('offline');
+  mettreAJourAffichage();
   const dateCot = document.getElementById('dateCotisation');
   if (dateCot) dateCot.value = new Date().toISOString().split('T')[0];
 }
@@ -266,18 +318,15 @@ function mettreAJourAffichage() {
   if (el) el.textContent = nb;
   const wc = document.getElementById('welcomeCount');
   if (wc) wc.textContent = nb;
-  // Alertes chargées séparément (évite double appel)
 }
 
 // ─── Alertes ───
 async function mettreAJourAlertes() {
   try {
-    // Génération silencieuse — ignorer si backend KO
     await apiFetch(`${API_BASE}/alertes/generer`, { method: 'POST' }).catch(() => {});
     const res = await apiFetch(`${API_BASE}/alertes`);
     if (!res.ok) {
-      // 500 côté backend → pas d'erreur critique, retourner tableau vide
-      console.warn('⚠️ /alertes retourné', res.status, '— badges masqués');
+      console.warn('⚠️ /alertes retourné', res.status);
       mettreAJourBadgeAlertes([]);
       return [];
     }
@@ -285,7 +334,6 @@ async function mettreAJourAlertes() {
     mettreAJourBadgeAlertes(al);
     return al;
   } catch (err) {
-    // Erreur réseau / offline → silencieux
     console.warn('⚠️ mettreAJourAlertes offline:', err.message);
     return [];
   }
@@ -294,17 +342,15 @@ async function mettreAJourAlertes() {
 function verifierAlertes() { return mettreAJourAlertes(); }
 
 function mettreAJourBadgeAlertes(al = []) {
-  const badge = document.getElementById('badgeAlertes');
+  const badge    = document.getElementById('badgeAlertes');
   const badgeNav = document.getElementById('navBadgeAlertes');
 
   if (al?.length > 0) {
-    if (badge) { badge.textContent = al.length; badge.classList.remove('hidden'); }
+    if (badge)    { badge.textContent    = al.length; badge.classList.remove('hidden'); }
     if (badgeNav) { badgeNav.textContent = al.length; badgeNav.classList.remove('hidden'); }
-
-    const haute = al.some(a => a.urgence === 'haute');
-    if (haute) {
+    if (al.some(a => a.urgence === 'haute')) {
       badge?.classList.add('animate-bounce');
-      flashVisuel();
+      flashVisuel?.();
     } else {
       badge?.classList.remove('animate-bounce');
     }
