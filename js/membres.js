@@ -1,6 +1,17 @@
 /* =========================================================
    membres.js — Gestion des membres (ajout, édition, suppression)
+   ✅ CORRECTIFS XSS : esc() sur toutes les données API dans innerHTML
+   ✅ Validation renforcée : format téléphone, longueur nom
    ========================================================= */
+
+// ─── Validation membre ───
+function validerMembre({ nom, telephone }) {
+  if (!nom?.trim() || nom.length > 100)
+    return 'Nom invalide (1 à 100 caractères requis)';
+  if (telephone && !/^[0-9+\s\-(). ]{6,20}$/.test(telephone))
+    return 'Numéro de téléphone invalide (6 à 20 chiffres)';
+  return null;
+}
 
 // ─── Afficher les membres d'une tontine ───
 async function afficherMembresTontine() {
@@ -32,23 +43,25 @@ async function afficherMembresTontine() {
     membres.forEach((m, i) => {
       const cotCount = m.cotisationsPayees?.length || 0;
       const cotTotal = (m.cotisationsPayees||[]).reduce((s,c) => s + Number(c.montant||0), 0);
+      // ✅ initiale calculée en JS, pas dans le HTML
       const initiale = (m.nom||'?')[0].toUpperCase();
 
       const div = document.createElement('div');
       div.className = 'card card-p fade-in-up';
       div.style.animationDelay = `${i * 0.08}s`;
+      // ✅ esc() sur nom, téléphone, adresse
       div.innerHTML = `
         <div style="text-align:center;margin-bottom:14px;">
-          <div class="member-avatar" style="width:54px;height:54px;font-size:1.4rem;margin:0 auto 10px;">${initiale}</div>
-          <h3 style="font-weight:700;font-size:1rem;color:#1e1b4b;">${m.nom}</h3>
+          <div class="member-avatar" style="width:54px;height:54px;font-size:1.4rem;margin:0 auto 10px;">${esc(initiale)}</div>
+          <h3 style="font-weight:700;font-size:1rem;color:#1e1b4b;">${esc(m.nom)}</h3>
           <span class="pill pill-success">Actif</span>
         </div>
         <div style="display:flex;flex-direction:column;gap:6px;font-size:.82rem;margin-bottom:14px;">
           <div style="display:flex;justify-content:space-between;padding:6px 8px;background:#F9FAFB;border-radius:8px;">
-            <span style="color:#6B7280;">📞 Tél</span><span style="font-weight:600;">${m.telephone||'-'}</span>
+            <span style="color:#6B7280;">📞 Tél</span><span style="font-weight:600;">${esc(m.telephone||'-')}</span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:6px 8px;background:#F9FAFB;border-radius:8px;">
-            <span style="color:#6B7280;">📍 Adresse</span><span style="font-weight:600;">${m.adresse||'-'}</span>
+            <span style="color:#6B7280;">📍 Adresse</span><span style="font-weight:600;">${esc(m.adresse||'-')}</span>
           </div>
           <div style="display:flex;justify-content:space-between;padding:6px 8px;background:#F9FAFB;border-radius:8px;">
             <span style="color:#6B7280;">Cotisations</span><span style="font-weight:700;color:#7C3AED;">${cotCount}</span>
@@ -58,8 +71,8 @@ async function afficherMembresTontine() {
           </div>
         </div>
         <div class="grid-2">
-          <button onclick="ouvrirModaleEditionMembre('${m.id}')" class="btn btn-warning btn-sm">✏️ Éditer</button>
-          <button onclick="retirerMembreTontine('${m.id}','${tontineId}')" class="btn btn-danger btn-sm">🗑️ Retirer</button>
+          <button onclick="ouvrirModaleEditionMembre('${esc(m.id)}')" class="btn btn-warning btn-sm">✏️ Éditer</button>
+          <button onclick="retirerMembreTontine('${esc(m.id)}','${esc(tontineId)}')" class="btn btn-danger btn-sm">🗑️ Retirer</button>
         </div>`;
       cartes.appendChild(div);
     });
@@ -91,23 +104,23 @@ function afficherMembresTontineGestion() {
     const div = document.createElement('div');
     div.className = 'member-card fade-in-up';
     div.style.animationDelay = `${i * 0.07}s`;
+    // ✅ esc() sur nom
     div.innerHTML = `
-      <div class="member-avatar">${(m.nom||'?')[0].toUpperCase()}</div>
+      <div class="member-avatar">${esc((m.nom||'?')[0].toUpperCase())}</div>
       <div style="flex:1;">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <span style="font-weight:700;color:#1e1b4b;">${m.nom}</span>
+          <span style="font-weight:700;color:#1e1b4b;">${esc(m.nom)}</span>
           <span class="pill ${aGagne ? 'pill-warning' : 'pill-success'}">${aGagne ? '🏆 Gagnant' : 'Actif'}</span>
         </div>
         <div style="font-size:.78rem;color:#6B7280;margin-top:2px;">${cotisations.length} cotisation(s) • ${cotisations.reduce((s,c)=>s+Number(c.montant||0),0).toLocaleString()} FCFA</div>
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0;">
-        <button onclick="ouvrirModaleEditionMembre('${m.id}')" class="btn btn-warning btn-xs">✏️</button>
-        <button onclick="retirerMembreTontine('${m.id}','${tontineActive.id}')" class="btn btn-danger btn-xs">🗑️</button>
+        <button onclick="ouvrirModaleEditionMembre('${esc(m.id)}')" class="btn btn-warning btn-xs">✏️</button>
+        <button onclick="retirerMembreTontine('${esc(m.id)}','${esc(tontineActive.id)}')" class="btn btn-danger btn-xs">🗑️</button>
       </div>`;
     container.appendChild(div);
   });
 
-  // Maj select cotisation
   mettreAJourSelectMembres();
 }
 
@@ -116,7 +129,10 @@ function mettreAJourSelectMembres() {
   if (!sel || !tontineActive) return;
   sel.innerHTML = '<option value="">Choisir un membre</option>';
   (tontineActive.membres||[]).forEach(m => {
-    const o = document.createElement('option'); o.value = m.id; o.textContent = m.nom;
+    const o = document.createElement('option');
+    o.value = m.id;
+    // ✅ textContent échappe automatiquement
+    o.textContent = m.nom;
     sel.appendChild(o);
   });
 }
@@ -129,8 +145,12 @@ async function ajouterMembreTontine() {
   const telephone = document.getElementById('telephoneMembre').value.trim();
   const adresse   = document.getElementById('adresseMembre').value.trim();
 
-  if (!nom || !telephone || !adresse)
-    return showNotification('⚠️ Remplissez nom, téléphone et adresse.', 'warning');
+  // ✅ Validation renforcée
+  const erreur = validerMembre({ nom, telephone });
+  if (erreur) return showNotification(`⚠️ ${erreur}`, 'warning');
+
+  if (!telephone)
+    return showNotification('⚠️ Le numéro de téléphone est requis.', 'warning');
 
   try {
     const res = await apiFetch(`${API_BASE}/membres`, {
@@ -149,9 +169,9 @@ async function ajouterMembreTontine() {
     document.getElementById('adresseMembre').value = '';
     afficherMembresTontineGestion?.();
     afficherMembresTontine?.();
-    showNotification(`✅ Membre "${nom}" ajouté !`, 'success');
+    showNotification(`✅ Membre "${esc(nom)}" ajouté !`, 'success');
   } catch (err) {
-    showNotification('❌ ' + err.message, 'error');
+    showNotification('❌ ' + esc(err.message), 'error');
   }
 }
 
@@ -163,7 +183,7 @@ async function retirerMembreTontine(membreId, tontineId) {
 
   const cots  = m.cotisationsPayees || [];
   const total = cots.reduce((s,c) => s+Number(c.montant||0), 0);
-  const ok = await confirm(`⚠️ Retirer "${m.nom}" ?\n${cots.length} cotisations (${total.toLocaleString()} FCFA) seront supprimées.`);
+  const ok = await customConfirm(`Retirer "${m.nom}" ?\n${cots.length} cotisation(s) (${total.toLocaleString()} FCFA) seront supprimées.`);
   if (!ok) return;
 
   try {
@@ -173,9 +193,9 @@ async function retirerMembreTontine(membreId, tontineId) {
     if (pageActuelle === 'gestion') { afficherMembresTontineGestion?.(); mettreAJourSelectMembres?.(); }
     else afficherMembresTontine?.();
     mettreAJourAlertes?.();
-    showNotification(`✅ Membre "${m.nom}" retiré.`, 'success');
+    showNotification(`✅ Membre "${esc(m.nom)}" retiré.`, 'success');
   } catch (err) {
-    showNotification('❌ ' + err.message, 'error');
+    showNotification('❌ ' + esc(err.message), 'error');
   }
 }
 
@@ -187,10 +207,11 @@ function ouvrirModaleEditionMembre(membreId) {
   }
   if (!membre) return;
   membreEnEdition = membre;
-  document.getElementById('editNomMembre').value       = membre.nom || '';
-  document.getElementById('editTelephoneMembre').value  = membre.telephone || '';
-  document.getElementById('editAdresseMembre').value    = membre.adresse || '';
-  document.getElementById('editDateAjoutMembre').value  =
+  // ✅ .value = ... échappe automatiquement, pas besoin de esc()
+  document.getElementById('editNomMembre').value      = membre.nom || '';
+  document.getElementById('editTelephoneMembre').value = membre.telephone || '';
+  document.getElementById('editAdresseMembre').value   = membre.adresse || '';
+  document.getElementById('editDateAjoutMembre').value =
     membre.cree_le ? new Date(membre.cree_le).toISOString().split('T')[0] : '';
   document.getElementById('modaleEditionMembre').classList.remove('hidden');
 }
@@ -207,8 +228,10 @@ async function sauvegarderEditionMembre() {
   const adresse   = document.getElementById('editAdresseMembre').value.trim();
   const dateAjout = document.getElementById('editDateAjoutMembre').value;
 
-  if (!nom || !telephone || !adresse || !dateAjout)
-    return showNotification('⚠️ Remplissez tous les champs', 'warning');
+  // ✅ Validation renforcée
+  const erreur = validerMembre({ nom, telephone });
+  if (erreur) return showNotification(`⚠️ ${erreur}`, 'warning');
+  if (!dateAjout) return showNotification('⚠️ La date est requise', 'warning');
 
   try {
     const res = await apiFetch(`${API_BASE}/membres/${membreEnEdition.id}`, {
@@ -217,16 +240,16 @@ async function sauvegarderEditionMembre() {
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
     const updated = await res.json();
-    membreEnEdition.nom = updated.nom;
+    membreEnEdition.nom       = updated.nom;
     membreEnEdition.telephone = updated.telephone;
     membreEnEdition.adresse   = updated.adresse;
     membreEnEdition.cree_le   = updated.cree_le;
     fermerModaleEditionMembre();
     if (pageActuelle === 'gestion') afficherMembresTontineGestion?.();
     else afficherMembresTontine?.();
-    showNotification(`✅ Membre "${updated.nom}" modifié.`, 'success');
+    showNotification(`✅ Membre "${esc(updated.nom)}" modifié.`, 'success');
   } catch (err) {
-    showNotification('❌ ' + err.message, 'error');
+    showNotification('❌ ' + esc(err.message), 'error');
   }
 }
 
@@ -247,13 +270,16 @@ async function enregistrerCotisationTontine() {
     if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
     const data = await res.json();
     if (!tontineActive.cotisations) tontineActive.cotisations = [];
-    tontineActive.cotisations.push({ id: data.id, membre_id: data.membre_id, montant: Number(data.montant), date_cotisation: data.date_cotisation });
+    tontineActive.cotisations.push({
+      id: data.id, membre_id: data.membre_id,
+      montant: Number(data.montant), date_cotisation: data.date_cotisation
+    });
     afficherHistoriqueCotisations?.();
     afficherMembresTontineGestion?.();
     mettreAJourAlertes?.();
     showNotification('✅ Cotisation enregistrée.', 'success');
   } catch (err) {
-    showNotification('❌ ' + err.message, 'error');
+    showNotification('❌ ' + esc(err.message), 'error');
   }
 }
 
@@ -277,10 +303,11 @@ function afficherHistoriqueCotisations() {
     const d = document.createElement('div');
     d.className = 'member-card fade-in-up';
     d.style.animationDelay = `${i * 0.05}s`;
+    // ✅ esc() sur le nom du membre
     d.innerHTML = `
-      <div class="member-avatar" style="width:36px;height:36px;font-size:.9rem;">${(m?.nom||'?')[0].toUpperCase()}</div>
+      <div class="member-avatar" style="width:36px;height:36px;font-size:.9rem;">${esc((m?.nom||'?')[0].toUpperCase())}</div>
       <div style="flex:1;">
-        <span style="font-weight:600;color:#1e1b4b;">${m?.nom||'Membre supprimé'}</span>
+        <span style="font-weight:600;color:#1e1b4b;">${esc(m?.nom||'Membre supprimé')}</span>
         <div style="font-size:.75rem;color:#6B7280;">${new Date(c.date_cotisation||c.date).toLocaleDateString('fr-FR')}</div>
       </div>
       <span style="font-weight:700;color:#10B981;">+${Number(c.montant).toLocaleString()} FCFA</span>`;
