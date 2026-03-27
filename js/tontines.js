@@ -1,5 +1,8 @@
 /* =========================================================
    tontines.js — Création, affichage, édition, suppression
+   ✅ CORRECTIF XSS : toutes les données venant de l'API
+      (noms, descriptions, types…) sont passées par esc()
+      avant injection dans innerHTML.
    ========================================================= */
 
 // ─── Créer une tontine (pas à pas) ───
@@ -12,7 +15,6 @@ function changerEtape(dir) {
   document.getElementById('etape-' + etape).style.display = 'flex';
   document.getElementById('etapeNum').textContent = etape;
 
-  // Mise à jour indicateur de progression
   for (let i = 1; i <= 4; i++) {
     const dot = document.getElementById('step-dot-' + i);
     if (dot) {
@@ -80,7 +82,6 @@ async function creerTontine() {
     tontines.push(mapTontineRowToLocal({ ...data, membres: [], cotisations: [], tirages: [] }));
     sauvegarder();
 
-    // Reset form
     etape = 1;
     document.querySelectorAll('.etape').forEach((e, i) => e.classList.toggle('hidden', i > 0));
     document.getElementById('etapeNum').textContent = '1';
@@ -89,11 +90,11 @@ async function creerTontine() {
     document.getElementById('nombreMembres').value = '';
     document.getElementById('descriptionTontine').value = '';
 
-    showNotification(`✅ Tontine "${body.nom}" créée avec succès !`, 'success');
+    showNotification(`✅ Tontine "${esc(body.nom)}" créée avec succès !`, 'success');
     ouvrirPage('accueil');
   } catch (err) {
     console.error('❌ creerTontine:', err);
-    showNotification('❌ ' + err.message, 'error');
+    showNotification('❌ ' + esc(err.message), 'error');
   } finally {
     const btn = document.getElementById('btnCreate');
     if (btn) { btn.disabled = false; btn.textContent = '✅ Créer la Tontine'; }
@@ -106,7 +107,6 @@ let _activeFilter = 'tous';
 
 // ─── Afficher liste tontines (avec search + filtre) ───
 function afficherTontines() {
-  // Mettre à jour les deux conteneurs (accueil + page tontines)
   _renderTontineList('listeTontines');
   _renderTontineList('listeTontinesPage');
   _updateFilterCounts();
@@ -117,7 +117,6 @@ function _renderTontineList(containerId) {
   if (!liste) return;
   liste.innerHTML = '';
 
-  // Filtrer selon recherche + chip actif
   const filtered = tontines.filter(t => {
     const matchSearch = !_searchQuery ||
       t.nom.toLowerCase().includes(_searchQuery) ||
@@ -183,17 +182,18 @@ function _renderTontineList(containerId) {
     const card = document.createElement('div');
     card.className = 'tontine-card fade-in-up';
     card.style.animationDelay = `${index * 0.08}s`;
+    // ✅ esc() sur nom, type, description, statut
     card.innerHTML = `
       <div class="tontine-card-body">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
           <div style="display:flex;align-items:center;gap:10px;">
             <div style="font-size:2rem;">${TYPE_ICONS[tontine.type]||'🎁'}</div>
             <div>
-              <h3 style="font-weight:700;font-size:1.05rem;color:#1e1b4b;line-height:1.2;">${tontine.nom}</h3>
-              <p style="color:#6B7280;font-size:.8rem;">${FREQ_LABELS[tontine.frequenceCotisation]||tontine.frequenceCotisation} · ${tontine.montant.toLocaleString()} FCFA</p>
+              <h3 style="font-weight:700;font-size:1.05rem;color:#1e1b4b;line-height:1.2;">${esc(tontine.nom)}</h3>
+              <p style="color:#6B7280;font-size:.8rem;">${esc(FREQ_LABELS[tontine.frequenceCotisation]||tontine.frequenceCotisation)} · ${tontine.montant.toLocaleString()} FCFA</p>
             </div>
           </div>
-          <span class="pill pill-success">${tontine.statut||'active'}</span>
+          <span class="pill pill-success">${esc(tontine.statut||'active')}</span>
         </div>
 
         <div style="margin-bottom:12px;">
@@ -209,12 +209,12 @@ function _renderTontineList(containerId) {
         ${statusBand}
 
         <div class="grid-2" style="margin-bottom:8px;">
-          <button onclick="gererTontine('${tontine.id}')" class="btn btn-primary btn-sm">⚙️ Gérer</button>
-          <button onclick="voirMembres('${tontine.id}')" class="btn btn-sm" style="background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;">👥 Membres</button>
+          <button onclick="gererTontine('${esc(tontine.id)}')" class="btn btn-primary btn-sm">⚙️ Gérer</button>
+          <button onclick="voirMembres('${esc(tontine.id)}')" class="btn btn-sm" style="background:linear-gradient(135deg,#f093fb,#f5576c);color:#fff;">👥 Membres</button>
         </div>
         <div class="grid-2">
-          <button onclick="editerTontineAccueil('${tontine.id}')" class="btn btn-warning btn-sm">✏️ Éditer</button>
-          <button onclick="demanderSuppressionTontine('${tontine.id}')" class="btn btn-danger btn-sm">🗑️ Supprimer</button>
+          <button onclick="editerTontineAccueil('${esc(tontine.id)}')" class="btn btn-warning btn-sm">✏️ Éditer</button>
+          <button onclick="demanderSuppressionTontine('${esc(tontine.id)}')" class="btn btn-danger btn-sm">🗑️ Supprimer</button>
         </div>
       </div>`;
     liste.appendChild(card);
@@ -247,13 +247,13 @@ function resetRecherche() {
 
 function _updateFilterCounts() {
   const counts = {
-    tous:     tontines.length,
-    argent:   tontines.filter(t => t.type === 'argent').length,
+    tous:         tontines.length,
+    argent:       tontines.filter(t => t.type === 'argent').length,
     electronique: tontines.filter(t => t.type === 'electronique').length,
     cosmetique:   tontines.filter(t => t.type === 'cosmetique').length,
     autre:        tontines.filter(t => t.type === 'autre').length,
-    active:   tontines.filter(t => (t.statut || 'active') === 'active').length,
-    terminee: tontines.filter(t => t.statut === 'terminee').length,
+    active:       tontines.filter(t => (t.statut || 'active') === 'active').length,
+    terminee:     tontines.filter(t => t.statut === 'terminee').length,
   };
   document.querySelectorAll('.filter-chip[data-filter]').forEach(chip => {
     const f   = chip.dataset.filter;
@@ -262,7 +262,7 @@ function _updateFilterCounts() {
   });
 }
 
-// ─── Naviguer vers gestion/membres ───
+// ─── Navigation ───
 function gererTontine(id) {
   ouvrirPage('gestion');
   const sel = document.getElementById('selectTontineGestion');
@@ -289,13 +289,15 @@ function chargerSelectsTontines() {
     sel.innerHTML = '<option value="">Choisir une tontine…</option>';
     tontines.forEach(t => {
       const o = document.createElement('option');
-      o.value = t.id; o.textContent = t.nom;
+      o.value = t.id;
+      // ✅ textContent échappe automatiquement — pas besoin de esc() pour les options
+      o.textContent = t.nom;
       sel.appendChild(o);
     });
   });
 }
 
-// ─── Gestion (charger tontine active) ───
+// ─── Gestion ───
 async function chargerTontineGestion() {
   const id = document.getElementById('selectTontineGestion').value;
   if (!id) { document.getElementById('panneauGestion').classList.add('hidden'); return; }
@@ -321,12 +323,13 @@ function afficherInfosTontine() {
   const max   = t.nombreMembresMax || t.nombre_membres || 0;
   const cycle = total > 0 && max > 0 ? Math.ceil(total / max) : 1;
 
+  // ✅ esc() sur nom et type
   document.getElementById('infosTontine').innerHTML = `
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;">
       <div class="stat-card">
         <div style="font-size:2rem;margin-bottom:6px;">${TYPE_ICONS[t.type]||'🎁'}</div>
-        <div style="font-weight:700;font-size:.95rem;color:#1e1b4b;">${t.nom}</div>
-        <div style="font-size:.75rem;color:#6B7280;">${t.type}</div>
+        <div style="font-weight:700;font-size:.95rem;color:#1e1b4b;">${esc(t.nom)}</div>
+        <div style="font-size:.75rem;color:#6B7280;">${esc(t.type)}</div>
       </div>
       <div class="stat-card">
         <div class="stat-value">${Number(t.montant_cotisation||t.montant||0).toLocaleString()}</div>
@@ -354,8 +357,9 @@ function demanderSuppressionTontine(id) {
   tontineASupprimer = id;
   const t = tontines.find(t => t.id === id);
   if (t) {
+    // ✅ esc() sur le nom dans la modale de confirmation
     document.getElementById('texteSuppression').innerHTML =
-      `Supprimer <strong>${t.nom}</strong> ? Tous les membres, cotisations et tirages seront effacés.`;
+      `Supprimer <strong>${esc(t.nom)}</strong> ? Tous les membres, cotisations et tirages seront effacés.`;
   }
   document.getElementById('modaleSuppressionTontine').classList.remove('hidden');
 }
@@ -382,7 +386,7 @@ async function supprimerTontine(id) {
     afficherTontines();
     showNotification('✅ Tontine supprimée.', 'success');
   } catch (err) {
-    showNotification('❌ ' + err.message, 'error');
+    showNotification('❌ ' + esc(err.message), 'error');
   }
 }
 
@@ -392,14 +396,15 @@ async function editerTontineAccueil(id) {
     const res = await apiFetch(`${API_BASE}/tontines/${id}`);
     if (!res.ok) throw new Error();
     tontineActive = await res.json();
-    document.getElementById('editNomTontine').value        = tontineActive.nom;
-    document.getElementById('editTypeTontine').value       = tontineActive.type;
-    document.getElementById('editMontantCotisation').value = tontineActive.montant_cotisation;
+    // Champs de formulaire : utiliser .value = ... (pas d'injection HTML)
+    document.getElementById('editNomTontine').value         = tontineActive.nom;
+    document.getElementById('editTypeTontine').value        = tontineActive.type;
+    document.getElementById('editMontantCotisation').value  = tontineActive.montant_cotisation;
     document.getElementById('editFrequenceCotisation').value= tontineActive.frequence_cotisation;
-    document.getElementById('editJourCotisation').value    = tontineActive.jour_cotisation||'';
-    document.getElementById('editFrequenceTirage').value   = tontineActive.frequence_tirage;
-    document.getElementById('editNombreMembres').value     = tontineActive.nombre_membres;
-    document.getElementById('editDescriptionTontine').value= tontineActive.description||'';
+    document.getElementById('editJourCotisation').value     = tontineActive.jour_cotisation||'';
+    document.getElementById('editFrequenceTirage').value    = tontineActive.frequence_tirage;
+    document.getElementById('editNombreMembres').value      = tontineActive.nombre_membres;
+    document.getElementById('editDescriptionTontine').value = tontineActive.description||'';
     document.getElementById('modaleEditionTontine').classList.remove('hidden');
   } catch { showNotification('❌ Chargement impossible', 'error'); }
 }
@@ -426,11 +431,14 @@ async function sauvegarderEditionTontine() {
     });
     if (!res.ok) { const e = await res.json(); throw new Error(e.error); }
     const updated = await res.json();
-    tontines = tontines.map(t => t.id === updated.id ? mapTontineRowToLocal({ ...updated, membres:updated.membres||[], cotisations:updated.cotisations||[], tirages:updated.tirages||[] }) : t);
+    tontines = tontines.map(t => t.id === updated.id
+      ? mapTontineRowToLocal({ ...updated, membres: updated.membres||[], cotisations: updated.cotisations||[], tirages: updated.tirages||[] })
+      : t
+    );
     afficherTontines();
     fermerModaleEditionTontine();
-    showNotification(`✅ Tontine "${body.nom}" mise à jour.`, 'success');
-  } catch (err) { showNotification('❌ ' + err.message, 'error'); }
+    showNotification(`✅ Tontine "${esc(body.nom)}" mise à jour.`, 'success');
+  } catch (err) { showNotification('❌ ' + esc(err.message), 'error'); }
 }
 
 // ─── Fréquence cotisation — afficher/masquer jour ───
