@@ -1,12 +1,59 @@
 /* =========================================================
    auth.js — Connexion, Inscription, Déconnexion, 2FA
+   ✅ CORRECTIFS :
+     - onAuthStateChange surveille la session (refresh auto inclus)
+     - setInterval(alertes) remplacé par Supabase Realtime
+     - Vérification rôle admin côté serveur au chargement de la page
    ========================================================= */
 
 let utilisateurConnecte = null;
-let sb; // Supabase client, initialisé dans init.js
+let sb;                     // Supabase client
+let _realtimeChannel = null; // Canal Realtime alertes (référence pour cleanup)
 
 function initSupabase() {
   sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+// =========================================================
+// 🔔 Supabase Realtime — alertes en temps réel
+//    Remplace setInterval(mettreAJourAlertes, 5min)
+//    Les alertes apparaissent instantanément à l'insertion.
+// =========================================================
+function abonnerAlertes(userId) {
+  // Éviter les doublons de canal
+  if (_realtimeChannel) {
+    sb.removeChannel(_realtimeChannel);
+    _realtimeChannel = null;
+  }
+
+  _realtimeChannel = sb
+    .channel(`alertes-${userId}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'alertes',
+        filter: `utilisateurId=eq.${userId}`
+      },
+      () => {
+        console.log('🔔 Nouvelle alerte reçue via Realtime');
+        mettreAJourAlertes();
+      }
+    )
+    .subscribe(status => {
+      if (status === 'SUBSCRIBED') {
+        console.log('✅ Realtime alertes actif');
+      }
+    });
+}
+
+function desabonnerAlertes() {
+  if (_realtimeChannel) {
+    sb.removeChannel(_realtimeChannel);
+    _realtimeChannel = null;
+    console.log('🔕 Realtime alertes désabonné');
+  }
 }
 
 // ─── Connexion ───
@@ -35,6 +82,8 @@ async function seConnecter(event) {
     const { user, session } = data;
     if (!session) { showNotification('❌ Session invalide', 'error'); return; }
 
+    // On garde le token en localStorage pour les appels apiFetch synchrones
+    // au tout début du chargement, avant que getSession() soit disponible.
     localStorage.setItem('token', session.access_token);
 
     utilisateurConnecte = {
@@ -44,8 +93,10 @@ async function seConnecter(event) {
     };
     localStorage.setItem('userData', JSON.stringify(utilisateurConnecte));
 
-    // Vérifier / créer profil
-    const { data: profil } = await sb.from('utilisateurs').select('*').eq('id', user.id).maybeSingle();
+    // Le trigger Supabase crée le profil automatiquement désormais
+    // (voir migration migration_indexes_trigger.sql § 4)
+    // On garde la vérification en fallback pour les anciens comptes
+    const { data: profil } = await sb.from('utilisateurs').select('id').eq('id', user.id).maybeSingle();
     if (!profil) {
       await sb.from('utilisateurs').insert({
         id: user.id,
@@ -83,6 +134,8 @@ async function seConnecter(event) {
     await chargerDepuisSupabase();
     initialiserApplication();
     afficherInterfaceConnectee();
+    // ✅ Démarrer le Realtime alertes après connexion
+    abonnerAlertes(user.id);
 
   } catch (err) {
     console.error('❌ seConnecter:', err);
@@ -158,8 +211,16 @@ async function sInscrire(event) {
 
 // ─── Déconnexion ───
 async function seDeconnecter(silencieux = false) {
+  // ✅ Couper le Realtime avant de se déconnecter
+  desabonnerAlertes();
+
   await sb.auth?.signOut();
   localStorage.removeItem('token');
+  localStorage.removeItem('userData');
+  localStorage.removeItem('userRole');
+  localStorage.removeItem('userPlan');
+  localStorage.removeItem('paymentStatus');
+
   utilisateurConnecte = null;
   tontines   = [];
   alertes    = [];
@@ -178,38 +239,88 @@ async function seDeconnecter(silencieux = false) {
 document.addEventListener('DOMContentLoaded', async () => {
   initSupabase();
 
+  // ✅ Enregistrement du Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/pwa/sw.js')
       .then(() => console.log('✅ SW enregistré'))
       .catch(err => console.error('❌ SW:', err));
   }
 
-  const token = localStorage.getItem('token');
-  if (token) {
+  // =========================================================
+  // ✅ onAuthStateChange — surveille la session en continu
+  //    Gère le refresh automatique du token Supabase.
+  //    Si la session expire côté Supabase, l'utilisateur
+  //    est déconnecté proprement.
+  // =========================================================
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'TOKEN_REFRESHED' && session) {
+      // Mettre à jour le token en localStorage après refresh auto
+      localStorage.setItem('token', session.access_token);
+      console.log('🔄 Token rafraîchi automatiquement');
+    }
+    if (event === 'SIGNED_OUT') {
+      await seDeconnecter(true);
+    }
+  });
+
+  // ─── Restaurer la session au chargement ───
+  const { data: { session } } = await sb.auth.getSession();
+
+  if (session) {
+    // Toujours utiliser le token frais de la session
+    localStorage.setItem('token', session.access_token);
+
     try {
+      // ✅ Vérification serveur (pas juste localStorage)
       const res = await apiFetch(`${API_BASE}/auth/me`);
-      if (!res.ok) throw new Error('Token invalide');
+      if (!res.ok) throw new Error('Token refusé');
       const user = await res.json();
 
       utilisateurConnecte = {
-        id: user.id,
-        nom: user.email.split('@')[0],
+        id: session.user.id,
+        nom: session.user.user_metadata?.nom_complet || user.email.split('@')[0],
         email: user.email
       };
+
+      localStorage.setItem('userRole', user.role || 'user');
 
       await chargerDepuisSupabase();
       initialiserApplication();
       afficherInterfaceConnectee();
-      majSidebarInfos();
+      majSidebarInfos?.();
+
+      // ✅ Démarrer le Realtime alertes
+      abonnerAlertes(session.user.id);
+
+      // Chargement initial des alertes
+      await mettreAJourAlertes();
+
     } catch {
       await seDeconnecter(true);
     }
   } else {
     afficherPageConnexion();
   }
-
-  setInterval(mettreAJourAlertes, 5 * 60 * 1000);
 });
+
+// =========================================================
+// ✅ Guard admin — à appeler en haut de admin.html
+//    Empêche l'accès à la page admin en modifiant localStorage.
+//    La vérification est faite côté serveur.
+// =========================================================
+async function verifierAccesAdmin() {
+  try {
+    const res = await apiFetch(`${API_BASE}/auth/me`);
+    if (!res.ok) throw new Error('Non authentifié');
+    const user = await res.json();
+    if (user.role !== 'admin') {
+      console.warn('⛔ Accès admin refusé pour le rôle:', user.role);
+      window.location.replace('index.html');
+    }
+  } catch {
+    window.location.replace('index.html');
+  }
+}
 
 // ─── PWA Install ───
 let deferredPrompt;
